@@ -18,9 +18,11 @@ const io = new Server(server, {
   },
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+// ── AANGEPASTE REGELS ─────────────────────────────────────────────────────────
+app.use(express.static(path.join(__dirname, '..', 'public')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, '..', 'public', 'index.html')));
 app.get('/ping', (req, res) => res.send('pong'));
+// ──────────────────────────────────────────────────────────────────────────────
 
 // rooms[roomCode] = { players: [{socket, name, slot, secretFlag, ready}], boardSize, currentPlayer, history, rollback }
 const rooms = {};
