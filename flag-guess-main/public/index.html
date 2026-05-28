@@ -1,4 +1,4 @@
-1<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -225,6 +225,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 /* Action used indicator */
 .action-used { display: flex; align-items: center; gap: 6px; background: #FFF3E0; border: 1px solid #FFB74D; border-radius: var(--radius-sm); padding: 8px 12px; font-size: .78rem; color: #7B4500; font-weight: 600; margin-bottom: 10px; }
 
+.room-card { background: white; border: 2px solid var(--border); border-radius: var(--radius); padding: 16px 18px; cursor: pointer; transition: .2s; display: flex; align-items: center; justify-content: space-between; }
+.room-card:hover { border-color: var(--accent); background: #F8F8FF; }
+.room-card.full { opacity: .5; cursor: not-allowed; }
+.room-card.joined { border-color: var(--accent); background: #F0F0FF; }
+.room-card-left { display: flex; flex-direction: column; gap: 3px; }
+.room-card-name { font-size: .95rem; font-weight: 800; }
+.room-card-status { font-size: .75rem; color: var(--muted); }
+.room-card-badge { background: var(--accent); color: white; border-radius: 100px; padding: 5px 14px; font-size: .75rem; font-weight: 700; }
+.room-card.full .room-card-badge { background: var(--border); color: var(--muted); }
+.room-card.joined .room-card-badge { background: var(--success); }
+
 footer { text-align: center; padding: 24px; font-size: .75rem; color: var(--muted); }
 </style>
 </head>
@@ -244,18 +255,15 @@ footer { text-align: center; padding: 24px; font-size: .75rem; color: var(--mute
 <div id="toast"></div>
 
 <!-- ══════════════════════════════════════════════ -->
-<!-- SCREEN 1: MODE SELECT                         -->
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN 1: HOME / LOBBY                        -->
 <!-- ══════════════════════════════════════════════ -->
 <div class="screen active" id="screen-mode">
   <div class="setup-wrap">
-    <div class="step-dots">
-      <div class="step-dot active"></div>
-      <div class="step-dot"></div>
-      <div class="step-dot"></div>
-    </div>
-    <h2 class="setup-title">How do you want to play?</h2>
-    <p class="setup-sub">Choose local or online multiplayer</p>
-    <div class="mode-options">
+    <h2 class="setup-title" style="margin-bottom:6px">Flag Guess Who</h2>
+    <p class="setup-sub" style="margin-bottom:24px">How do you want to play?</p>
+
+    <div class="mode-options" style="margin-bottom:28px">
       <div class="mode-card selected" id="mode-local" onclick="selectMode('local')">
         <div class="mode-icon">🏠</div>
         <div class="mode-name">Local</div>
@@ -268,60 +276,55 @@ footer { text-align: center; padding: 24px; font-size: .75rem; color: var(--mute
       </div>
     </div>
 
+    <!-- Online lobby -->
     <div id="online-setup" style="display:none">
-      <div class="room-setup">
+      <div class="room-setup" style="margin-bottom:16px">
         <div class="room-input-group">
           <label class="room-input-label">Your Name</label>
           <input class="room-input" id="player-name" placeholder="Enter your name..." maxlength="20">
         </div>
-        <!-- Online mode type -->
-        <div style="display:flex;gap:10px;margin-top:4px;margin-bottom:4px">
-          <div class="mode-card selected" id="match-quick" onclick="selectMatchType('quick')" style="padding:12px 8px">
-            <div class="mode-icon" style="font-size:1.4rem">⚡</div>
-            <div class="mode-name" style="font-size:.82rem">Quick Match</div>
-            <div class="mode-desc">Auto-match with anyone</div>
+      </div>
+
+      <!-- Room cards -->
+      <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Pick a Room</div>
+      <div id="room-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+        <div class="room-card" id="room-card-1" onclick="joinLobbyRoom(1)">
+          <div class="room-card-left">
+            <div class="room-card-name">Room 1</div>
+            <div class="room-card-status" id="room-status-1">0 / 2 players</div>
           </div>
-          <div class="mode-card" id="match-friend" onclick="selectMatchType('friend')" style="padding:12px 8px">
-            <div class="mode-icon" style="font-size:1.4rem">🔗</div>
-            <div class="mode-name" style="font-size:.82rem">Invite Friend</div>
-            <div class="mode-desc">Get a shareable link</div>
-          </div>
+          <div class="room-card-badge" id="room-badge-1">Join</div>
         </div>
-        <!-- Friend code input (hidden by default) -->
-        <div id="friend-code-area" style="display:none">
-          <div class="room-input-group" style="margin-top:10px">
-            <label class="room-input-label">Friend's Invite Code (optional)</label>
-            <input class="room-input" id="room-code-input" placeholder="Paste invite code to join friend..." maxlength="10" style="text-transform:uppercase">
+        <div class="room-card" id="room-card-2" onclick="joinLobbyRoom(2)">
+          <div class="room-card-left">
+            <div class="room-card-name">Room 2</div>
+            <div class="room-card-status" id="room-status-2">0 / 2 players</div>
           </div>
-          <div class="room-info">💡 Leave blank to create a new room and share your code with a friend.</div>
+          <div class="room-card-badge" id="room-badge-2">Join</div>
+        </div>
+        <div class="room-card" id="room-card-3" onclick="joinLobbyRoom(3)">
+          <div class="room-card-left">
+            <div class="room-card-name">Room 3</div>
+            <div class="room-card-status" id="room-status-3">0 / 2 players</div>
+          </div>
+          <div class="room-card-badge" id="room-badge-3">Join</div>
         </div>
       </div>
-      <!-- Waiting states -->
+
+      <!-- Waiting indicator -->
       <div id="waiting-area" style="display:none">
         <div class="waiting-indicator">
           <div class="pulse-dot"></div>
-          <div style="flex:1">
-            <div style="font-size:.85rem;font-weight:700" id="waiting-label">Finding an opponent...</div>
-            <div style="font-size:.75rem;color:var(--muted);margin-top:3px" id="waiting-sub"></div>
-          </div>
-        </div>
-        <!-- Invite link shown when hosting a friend room -->
-        <div id="invite-share-area" style="display:none;margin-top:12px">
-          <div class="room-info" style="background:#F0F0FF;border-color:#CCCCFF;color:#333">
-            <div style="font-size:.72rem;font-weight:700;color:var(--accent);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Your Invite Code</div>
-            <div style="display:flex;align-items:center;gap:8px">
-              <span id="invite-code-display" style="font-family:monospace;font-size:1.3rem;font-weight:900;letter-spacing:.1em;color:var(--accent)"></span>
-              <button onclick="copyInviteCode()" class="btn btn-secondary" style="width:auto;padding:7px 14px;font-size:.78rem">Copy</button>
-            </div>
-            <div style="font-size:.72rem;color:var(--muted);margin-top:6px">Share this code with your friend so they can join.</div>
+          <div>
+            <div style="font-size:.85rem;font-weight:700" id="waiting-label">Waiting for opponent...</div>
+            <div style="font-size:.75rem;color:var(--muted);margin-top:2px" id="waiting-sub"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <button class="btn" onclick="goToSizeSelect()">
-      Continue →
-    </button>
+    <!-- Local: straight to size select -->
+    <button class="btn" id="local-continue-btn" onclick="goToSizeSelect()">Continue →</button>
   </div>
 </div>
 
@@ -735,28 +738,83 @@ function selectMode(mode) {
   state.mode = mode;
   document.getElementById('mode-local').classList.toggle('selected', mode === 'local');
   document.getElementById('mode-online').classList.toggle('selected', mode === 'online');
-  document.getElementById('online-setup').style.display = (mode === 'online') ? 'block' : 'none';
-}
-
-function selectMatchType(type) {
-  state.matchType = type;
-  document.getElementById('match-quick').classList.toggle('selected', type === 'quick');
-  document.getElementById('match-friend').classList.toggle('selected', type === 'friend');
-  document.getElementById('friend-code-area').style.display = type === 'friend' ? 'block' : 'none';
-}
-
-function copyInviteCode() {
-  const code = document.getElementById('invite-code-display').textContent;
-  navigator.clipboard.writeText(code).then(() => showToast('Invite code copied! ✓'));
+  document.getElementById('online-setup').style.display = mode === 'online' ? 'block' : 'none';
+  document.getElementById('local-continue-btn').style.display = mode === 'local' ? 'flex' : 'none';
+  if (mode === 'online') connectLobby();
 }
 
 function goToSizeSelect() {
-  if (state.mode === 'online') {
-    const name = document.getElementById('player-name').value.trim();
-    if (!name) return showToast('Please enter your name');
-    state.p1.name = name;
-  }
   showScreen('screen-size');
+}
+
+// ─── LOBBY ─────────────────────────────────────
+let lobbySocket = null;
+
+function connectLobby() {
+  if (lobbySocket && lobbySocket.connected) { fetchRoomStatus(); return; }
+  if (typeof io === 'undefined') { showToast('Could not connect to server.'); return; }
+
+  const RENDER_URL = 'https://guess-my-flag.onrender.com';
+  lobbySocket = io(RENDER_URL, { transports: ['websocket', 'polling'] });
+
+  lobbySocket.on('connect', () => {
+    fetchRoomStatus();
+  });
+  lobbySocket.on('connect_error', () => {
+    showToast('Server is waking up, please wait a moment...', 4000);
+  });
+  lobbySocket.on('roomStatus', ({ rooms }) => {
+    rooms.forEach(({ roomNumber, count }) => {
+      const card = document.getElementById('room-card-' + roomNumber);
+      const status = document.getElementById('room-status-' + roomNumber);
+      const badge = document.getElementById('room-badge-' + roomNumber);
+      if (!card) return;
+      status.textContent = count + ' / 2 players';
+      card.classList.toggle('full', count >= 2);
+      badge.textContent = count >= 2 ? 'Full' : 'Join';
+    });
+  });
+  lobbySocket.on('matchFound', ({ roomCode, slot, opponentName }) => {
+    state.roomCode = roomCode;
+    state.playerSlot = slot;
+    state.socket = lobbySocket;
+    if (slot === 1) {
+      state.p2.name = opponentName || 'Player 2';
+    } else {
+      const myName = state.p1.name;
+      state.p1.name = opponentName || 'Player 1';
+      state.p2.name = myName;
+    }
+    document.getElementById('online-bar').style.display = 'block';
+    document.getElementById('bar-room-code').textContent = 'Room ' + state.joinedRoom;
+    // Go straight to board size, then flag select
+    showScreen('screen-size');
+  });
+  lobbySocket.on('waitingForOpponent', () => {
+    document.getElementById('waiting-area').style.display = 'block';
+    document.getElementById('waiting-label').textContent = 'Waiting for an opponent...';
+    document.getElementById('waiting-sub').textContent = 'Room ' + state.joinedRoom + ' — 1 / 2 players';
+    document.getElementById('room-list').style.display = 'none';
+  });
+  lobbySocket.on('joinError', ({ message }) => {
+    showToast(message);
+  });
+}
+
+function fetchRoomStatus() {
+  if (lobbySocket) lobbySocket.emit('getRoomStatus');
+}
+
+function joinLobbyRoom(roomNumber) {
+  const name = document.getElementById('player-name').value.trim();
+  if (!name) return showToast('Please enter your name first');
+  if (!lobbySocket || !lobbySocket.connected) return showToast('Connecting to server...');
+  const card = document.getElementById('room-card-' + roomNumber);
+  if (card.classList.contains('full')) return showToast('That room is full, pick another');
+
+  state.p1.name = name;
+  state.joinedRoom = roomNumber;
+  lobbySocket.emit('joinLobbyRoom', { roomNumber, playerName: name });
 }
 
 function selectSize(n) {
@@ -1341,7 +1399,7 @@ function goHome() {
     p2: { name: 'Player 2', secretFlag: null, eliminated: [], actionUsed: false },
     currentPlayer: 1, phase: 'setup',
     pendingQuestion: null, pendingGuess: null, history: [], rollback: null, secretVisible: false,
-    roomCode: '', matchType: 'quick', playerSlot: 0, socket: null,
+    roomCode: '', joinedRoom: 0, playerSlot: 0, socket: null,
   };
   guessMode = false;
   document.getElementById('size-12').classList.remove('selected');
@@ -1356,104 +1414,10 @@ function goHome() {
 // ONLINE MULTIPLAYER (Socket.io)
 // ════════════════════════════════════════════════
 function initOnlineGame() {
-  if (typeof io === 'undefined') {
-    showToast('Connecting to server failed. Check your internet connection.');
-    return;
-  }
-
-  const RENDER_URL = 'https://guess-my-flag.onrender.com';
-  const socket = io(RENDER_URL, { transports: ['websocket', 'polling'] });
+  // lobbySocket is already connected and matched — just set it up for game events
+  const socket = lobbySocket;
+  if (!socket) { showToast('Not connected!'); return; }
   state.socket = socket;
-
-  // Show waiting UI
-  document.getElementById('waiting-area').style.display = 'block';
-
-  socket.on('connect_error', () => {
-    showToast('Could not reach game server. Try again in a moment.', 4000);
-  });
-
-  if (state.matchType === 'quick') {
-    // Auto-matchmaking: join a random open room
-    document.getElementById('waiting-label').textContent = 'Finding an opponent...';
-    document.getElementById('waiting-sub').textContent = 'You will be matched automatically';
-    socket.emit('quickMatch', {
-      playerName: state.p1.name,
-      boardSize: state.boardSize,
-    });
-  } else {
-    // Friend mode
-    const friendCode = (document.getElementById('room-code-input')?.value || '').trim().toUpperCase();
-    if (friendCode) {
-      // Joining a friend's room
-      document.getElementById('waiting-label').textContent = 'Joining your friend\'s room...';
-      document.getElementById('waiting-sub').textContent = 'Code: ' + friendCode;
-      socket.emit('joinRoom', {
-        roomCode: friendCode,
-        playerName: state.p1.name,
-        boardSize: state.boardSize,
-      });
-    } else {
-      // Creating a new friend room — server will assign a code
-      document.getElementById('waiting-label').textContent = 'Creating a room for your friend...';
-      document.getElementById('waiting-sub').textContent = 'Share the code below!';
-      socket.emit('createFriendRoom', {
-        playerName: state.p1.name,
-        boardSize: state.boardSize,
-      });
-    }
-  }
-
-  // Server assigned us a room and slot
-  socket.on('roomCreated', ({ roomCode }) => {
-    state.roomCode = roomCode;
-    document.getElementById('invite-share-area').style.display = 'block';
-    document.getElementById('invite-code-display').textContent = roomCode;
-    document.getElementById('waiting-label').textContent = 'Waiting for your friend...';
-    document.getElementById('bar-room-code').textContent = roomCode;
-  });
-
-  socket.on('assignSlot', ({ slot, opponent, roomCode }) => {
-    state.playerSlot = slot;
-    if (roomCode) state.roomCode = roomCode;
-    if (slot === 1) {
-      state.p2.name = opponent || 'Player 2';
-    } else {
-      const myName = state.p1.name;
-      state.p2.name = myName;
-      state.p1.name = opponent || 'Player 1';
-    }
-    document.getElementById('online-bar').style.display = 'block';
-    document.getElementById('bar-room-code').textContent = state.roomCode;
-    renderFlagGrid('p1-flags-grid', null, (flagId) => selectFlagP1(flagId));
-    document.getElementById('p1-select-title').textContent = `${slot === 1 ? state.p1.name : state.p2.name}: Choose Your Secret Flag`;
-    showScreen('screen-p1-select');
-  });
-
-  socket.on('matchFound', ({ roomCode, slot, opponent }) => {
-    state.roomCode = roomCode;
-    state.playerSlot = slot;
-    if (slot === 1) {
-      state.p2.name = opponent || 'Player 2';
-    } else {
-      const myName = state.p1.name;
-      state.p2.name = myName;
-      state.p1.name = opponent || 'Player 1';
-    }
-    document.getElementById('online-bar').style.display = 'block';
-    document.getElementById('bar-room-code').textContent = roomCode;
-    showToast('Opponent found! Game starting...');
-    renderFlagGrid('p1-flags-grid', null, (flagId) => selectFlagP1(flagId));
-    document.getElementById('p1-select-title').textContent = `${slot === 1 ? state.p1.name : state.p2.name}: Choose Your Secret Flag`;
-    showScreen('screen-p1-select');
-  });
-
-  socket.on('waitingForOpponent', () => {
-    showToast('Waiting for opponent to join...');
-  });
-
-  socket.on('opponentReady', () => {
-    showToast('Opponent is ready! Game starting...');
-  });
 
   socket.on('startGame', ({ startingPlayer }) => {
     state.currentPlayer = startingPlayer;
@@ -1475,14 +1439,14 @@ function initOnlineGame() {
     if (qEntry) qEntry.answer = answer;
     renderHistory();
     showToast(`Opponent answered: ${answer ? 'YES' : 'NO'}`);
-    // Now my turn to ask
     showActionPanel('post-answer');
     document.getElementById('end-turn-row').style.display = 'flex';
     document.getElementById('rollback-request-area').style.display = 'block';
   });
 
   socket.on('opponentGuess', ({ flagId, flagName }) => {
-    const correct = flagId === (state.playerSlot === 1 ? state.p1.secretFlag : state.p2.secretFlag);
+    const mySecretFlag = state.playerSlot === 1 ? state.p1.secretFlag : state.p2.secretFlag;
+    const correct = flagId === mySecretFlag;
     socket.emit('guessResult', { correct, flagId });
     if (correct) {
       showToast(`Opponent guessed your flag (${flagName})!`);
@@ -1503,24 +1467,18 @@ function initOnlineGame() {
     }
   });
 
+  socket.on('turnChanged', ({ currentPlayer }) => {
+    state.currentPlayer = currentPlayer;
+    renderBoard();
+  });
+
   socket.on('rollbackRequest', ({ reason, from }) => {
-    state.rollback = {
-      requestedBy: from,
-      reason,
-      p1Accepted: from === 1 ? true : null,
-      p2Accepted: from === 2 ? true : null,
-    };
+    state.rollback = { requestedBy: from, reason, p1Accepted: from === 1 ? true : null, p2Accepted: from === 2 ? true : null };
     showRollbackPanel();
   });
 
   socket.on('rollbackDecision', ({ accepted }) => {
-    if (accepted) {
-      applyRollback();
-    } else {
-      showToast('Rollback declined.');
-      state.rollback = null;
-      renderBoard();
-    }
+    if (accepted) { applyRollback(); } else { showToast('Rollback declined.'); state.rollback = null; renderBoard(); }
   });
 
   socket.on('opponentDisconnected', () => {
@@ -1551,4 +1509,4 @@ function emitRollbackRequest(reason) {
 }
 </script>
 </body>
-  </html>
+</html>
