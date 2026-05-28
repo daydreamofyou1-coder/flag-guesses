@@ -1,0 +1,1464 @@
+1<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Flag Guess Who</title>
+<style>
+:root {
+  --accent: #2626CC;
+  --accent-light: #4444EE;
+  --bg: #F5F5F7;
+  --card: #FFFFFF;
+  --border: #E0E0E0;
+  --text: #1A1A2E;
+  --muted: #666;
+  --danger: #E74C3C;
+  --success: #27AE60;
+  --warning: #F39C12;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* ── HEADER ── */
+.header { background: white; border-bottom: 1px solid var(--border); padding: 0 20px; height: 60px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; }
+.header-logo { width: 36px; height: 36px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.header-logo svg { width: 20px; height: 20px; fill: white; }
+.header h1 { font-size: 1.1rem; font-weight: 700; }
+.header-sub { font-size: .7rem; color: var(--muted); margin-top: 1px; }
+
+/* ── SCREEN SYSTEM ── */
+.screen { display: none; min-height: calc(100vh - 60px); }
+.screen.active { display: block; }
+
+/* ── SETUP SCREEN ── */
+.setup-wrap { max-width: 480px; margin: 0 auto; padding: 32px 20px; }
+.step-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 28px; }
+.step-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: .3s; }
+.step-dot.active { background: var(--accent); transform: scale(1.2); }
+.step-dot.done { background: var(--accent); opacity: .5; }
+
+.mode-badge { display: inline-flex; align-items: center; gap: 6px; background: #F0F0FF; border: 1px solid #CCCCFF; border-radius: 100px; padding: 5px 14px; font-size: .75rem; font-weight: 600; color: var(--accent); margin-bottom: 14px; }
+
+.setup-title { font-size: 1.7rem; font-weight: 800; margin-bottom: 8px; }
+.setup-sub { color: var(--muted); font-size: .9rem; margin-bottom: 28px; }
+
+/* Board size cards */
+.size-options { display: flex; flex-direction: column; gap: 14px; margin-bottom: 28px; }
+.size-card { background: white; border: 2px solid var(--border); border-radius: var(--radius); padding: 20px; cursor: pointer; transition: .2s; }
+.size-card:hover { border-color: var(--accent); }
+.size-card.selected { border-color: var(--accent); background: #F0F0FF; }
+.size-card .size-icon { width: 44px; height: 44px; background: #F0F0FF; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 1.3rem; }
+.size-card .size-num { font-size: 1.3rem; font-weight: 800; }
+.size-card .size-num span { font-size: .9rem; font-weight: 500; color: var(--muted); }
+.size-card .size-desc { font-size: .8rem; color: var(--muted); margin-top: 3px; }
+
+/* Mode selector */
+.mode-options { display: flex; gap: 10px; margin-bottom: 28px; }
+.mode-card { flex: 1; background: white; border: 2px solid var(--border); border-radius: var(--radius); padding: 16px; cursor: pointer; transition: .2s; text-align: center; }
+.mode-card:hover { border-color: var(--accent); }
+.mode-card.selected { border-color: var(--accent); background: #F0F0FF; }
+.mode-card .mode-icon { font-size: 2rem; margin-bottom: 8px; }
+.mode-card .mode-name { font-size: .9rem; font-weight: 700; }
+.mode-card .mode-desc { font-size: .72rem; color: var(--muted); margin-top: 3px; }
+
+/* Online room setup */
+.room-setup { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+.room-input { width: 100%; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: .95rem; outline: none; transition: .2s; font-family: inherit; }
+.room-input:focus { border-color: var(--accent); }
+.room-input-label { font-size: .75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; display: block; }
+.room-input-group { margin-bottom: 14px; }
+.room-info { background: #FFF8E1; border: 1px solid #FFD54F; border-radius: var(--radius-sm); padding: 12px 14px; font-size: .8rem; color: #7B5500; margin-top: 10px; }
+.waiting-indicator { display: flex; align-items: center; gap: 10px; background: #F0F0FF; border: 1px solid #CCCCFF; border-radius: var(--radius-sm); padding: 14px 16px; margin-top: 12px; }
+.pulse-dot { width: 10px; height: 10px; background: var(--accent); border-radius: 50%; animation: pulse 1.4s ease infinite; flex-shrink: 0; }
+@keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.4);opacity:.6} }
+
+/* Primary button */
+.btn { width: 100%; padding: 16px; background: var(--accent); color: white; border: none; border-radius: var(--radius); font-size: 1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: .2s; font-family: inherit; }
+.btn:hover { background: var(--accent-light); }
+.btn:active { transform: scale(.98); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-secondary { background: white; color: var(--text); border: 2px solid var(--border); }
+.btn-secondary:hover { background: var(--bg); border-color: var(--accent); }
+.btn-danger { background: var(--danger); }
+.btn-danger:hover { background: #c0392b; }
+.btn-success { background: var(--success); }
+.btn-success:hover { background: #219a52; }
+.btn-warning { background: var(--warning); }
+.btn-sm { width: auto; padding: 10px 20px; font-size: .85rem; }
+
+/* ── FLAG SELECTION ── */
+.flag-select-wrap { max-width: 480px; margin: 0 auto; padding: 24px 16px; }
+.flags-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
+.flag-card { background: white; border: 2px solid var(--border); border-radius: var(--radius-sm); padding: 8px 4px 10px; cursor: pointer; transition: .2s; text-align: center; position: relative; }
+.flag-card:hover { border-color: #AAAAFF; transform: translateY(-2px); }
+.flag-card.selected { border-color: var(--accent); background: #F0F0FF; }
+.flag-card .check { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; background: var(--accent); border-radius: 50%; display: none; align-items: center; justify-content: center; }
+.flag-card.selected .check { display: flex; }
+.flag-card .check svg { width: 12px; height: 12px; fill: white; }
+.flag-img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 6px; margin-bottom: 6px; display: block; }
+.flag-name { font-size: .72rem; font-weight: 600; color: var(--text); }
+
+/* ── SWITCH TURNS ── */
+.switch-wrap { max-width: 480px; margin: 0 auto; padding: 40px 20px; display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 60px); }
+.switch-card { background: white; border: 1px solid var(--border); border-radius: 24px; padding: 40px 28px; text-align: center; width: 100%; }
+.switch-icon { width: 80px; height: 80px; background: #F0F0FF; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+.switch-icon svg { width: 36px; height: 36px; stroke: var(--accent); fill: none; stroke-width: 2; }
+.switch-card h2 { font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; }
+.switch-card p { color: var(--muted); margin-bottom: 24px; }
+.privacy-note { background: #F5F5F5; border-radius: var(--radius-sm); padding: 14px; font-size: .8rem; color: var(--muted); display: flex; gap: 8px; align-items: flex-start; text-align: left; margin-bottom: 24px; }
+
+/* ── GAME BOARD ── */
+.game-wrap { max-width: 480px; margin: 0 auto; padding: 16px; }
+.player-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
+.player-card-title { font-size: 1rem; font-weight: 800; margin-bottom: 4px; }
+.player-card-sub { font-size: .78rem; color: var(--muted); margin-bottom: 14px; }
+.secret-flag-row { display: flex; align-items: center; gap: 10px; background: #F5F5F7; border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 14px; }
+.secret-flag-label { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); flex: 1; }
+.secret-flag-value { font-size: .85rem; font-weight: 600; }
+.secret-flag-toggle { background: none; border: none; cursor: pointer; padding: 4px; opacity: .5; }
+
+/* Turn action panel */
+.turn-panel { background: #F5F5F7; border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px; }
+.turn-panel-title { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 10px; }
+.turn-actions { display: flex; flex-direction: column; gap: 8px; }
+.turn-input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: .9rem; outline: none; transition: .2s; font-family: inherit; background: white; resize: none; }
+.turn-input:focus { border-color: var(--accent); }
+.turn-btns { display: flex; gap: 8px; }
+.turn-btns .btn { font-size: .85rem; padding: 12px; }
+
+/* Answer panel */
+.answer-panel { background: #EEF0FF; border: 1.5px solid #CCCCFF; border-radius: var(--radius); padding: 18px; margin-bottom: 14px; }
+.question-bubble { background: white; border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px; font-size: .9rem; line-height: 1.5; border-left: 3px solid var(--accent); }
+.question-from { font-size: .7rem; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
+.answer-btns { display: flex; gap: 10px; }
+.answer-btn { flex: 1; padding: 14px; border: none; border-radius: var(--radius-sm); font-size: 1rem; font-weight: 800; cursor: pointer; transition: .2s; font-family: inherit; }
+.answer-btn-yes { background: var(--success); color: white; }
+.answer-btn-no { background: var(--danger); color: white; }
+.answer-btn:hover { opacity: .85; }
+.answer-btn:active { transform: scale(.97); }
+
+/* Guess panel */
+.guess-panel { background: #FFF3E0; border: 1.5px solid #FFB74D; border-radius: var(--radius); padding: 18px; margin-bottom: 14px; }
+.guess-panel-title { font-size: .75rem; font-weight: 700; color: #7B4500; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .06em; }
+
+/* Rollback */
+.rollback-panel { background: #FFF8E1; border: 1.5px solid var(--warning); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; }
+.rollback-panel h3 { font-size: .9rem; font-weight: 700; margin-bottom: 8px; }
+.rollback-panel p { font-size: .82rem; color: var(--muted); margin-bottom: 14px; }
+.rollback-accept-row { display: flex; gap: 8px; align-items: center; padding: 10px; background: white; border-radius: var(--radius-sm); margin-bottom: 8px; font-size: .82rem; }
+.rollback-accept-row .player-label { font-weight: 700; flex: 1; }
+.check-badge { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+.check-badge.accepted { background: var(--success); color: white; }
+.check-badge.pending { background: var(--border); color: var(--muted); }
+
+/* History log */
+.history-log { background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 14px; max-height: 160px; overflow-y: auto; }
+.history-item { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: .78rem; display: flex; gap: 8px; align-items: flex-start; }
+.history-item:last-child { border-bottom: none; }
+.history-icon { flex-shrink: 0; font-size: .9rem; }
+.history-text { color: var(--muted); line-height: 1.4; }
+.history-text strong { color: var(--text); }
+.history-answer { font-weight: 700; }
+.history-answer.yes { color: var(--success); }
+.history-answer.no { color: var(--danger); }
+
+/* Board flags */
+.board-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+.board-flag { background: white; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 6px 4px 8px; cursor: pointer; transition: .2s; text-align: center; position: relative; }
+.board-flag:hover { border-color: #AAAAFF; }
+.board-flag.eliminated { opacity: .25; }
+.board-flag.eliminated::after { content: '✕'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--danger); font-weight: 900; background: rgba(255,255,255,.6); border-radius: var(--radius-sm); }
+.board-flag .flag-name { font-size: .68rem; }
+
+/* End turn btn row */
+.end-turn-row { display: flex; gap: 10px; margin-bottom: 16px; }
+.end-turn-row .btn { font-size: .85rem; padding: 13px; }
+
+/* Rollback request btn */
+.rollback-request-btn { display: flex; align-items: center; gap: 6px; background: none; border: 1.5px solid var(--warning); color: var(--warning); border-radius: var(--radius-sm); padding: 8px 14px; font-size: .78rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: .2s; }
+.rollback-request-btn:hover { background: #FFF8E1; }
+
+/* ── GAME OVER ── */
+.gameover-wrap { max-width: 480px; margin: 0 auto; padding: 40px 20px; display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 60px); }
+.gameover-card { background: white; border: 1px solid var(--border); border-radius: 24px; padding: 40px 28px; text-align: center; width: 100%; }
+.trophy { font-size: 4rem; margin-bottom: 16px; display: block; }
+.gameover-card h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; }
+.winner-flag { width: 80px; border-radius: 8px; margin: 16px auto; display: block; }
+.gameover-sub { color: var(--muted); margin-bottom: 28px; }
+.gameover-secret { background: #F5F5F7; border-radius: var(--radius-sm); padding: 16px; margin-bottom: 24px; }
+.gameover-secret p { font-size: .78rem; color: var(--muted); margin-bottom: 8px; }
+.gameover-secrets { display: flex; gap: 16px; justify-content: center; }
+.secret-reveal { text-align: center; }
+.secret-reveal img { width: 56px; border-radius: 6px; margin-bottom: 6px; display: block; }
+.secret-reveal span { font-size: .72rem; font-weight: 700; display: block; }
+.secret-reveal small { font-size: .65rem; color: var(--muted); }
+
+/* ── ONLINE STATUS ── */
+.online-badge { position: fixed; bottom: 16px; right: 16px; background: white; border: 1px solid var(--border); border-radius: 100px; padding: 8px 14px; font-size: .75rem; font-weight: 600; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 12px rgba(0,0,0,.1); z-index: 50; }
+.online-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+/* ── NOTIFICATION TOAST ── */
+#toast { position: fixed; top: 76px; left: 50%; transform: translateX(-50%) translateY(-20px); background: rgba(26,26,46,.95); color: white; padding: 10px 20px; border-radius: 100px; font-size: .82rem; font-weight: 600; z-index: 999; opacity: 0; transition: .3s; pointer-events: none; white-space: nowrap; }
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── MODAL ── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: .3s; }
+.modal-overlay.active { opacity: 1; pointer-events: all; }
+.modal-card { background: white; border-radius: 24px 24px 0 0; padding: 28px 24px 40px; width: 100%; max-width: 480px; transform: translateY(40px); transition: .3s; }
+.modal-overlay.active .modal-card { transform: translateY(0); }
+.modal-card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 8px; }
+.modal-card p { font-size: .85rem; color: var(--muted); margin-bottom: 18px; }
+.modal-btns { display: flex; flex-direction: column; gap: 10px; }
+
+/* ── ONLINE GAME STATUS ── */
+.online-status-bar { background: var(--accent); color: white; text-align: center; padding: 8px; font-size: .78rem; font-weight: 600; }
+.room-code-display { font-family: monospace; font-size: 1.1rem; font-weight: 900; letter-spacing: .15em; background: rgba(255,255,255,.2); padding: 2px 8px; border-radius: 6px; }
+
+/* Turn indicator */
+.turn-indicator { background: var(--accent); color: white; border-radius: var(--radius-sm); padding: 10px 14px; font-size: .82rem; font-weight: 700; text-align: center; margin-bottom: 14px; }
+.turn-indicator.other { background: #F5F5F7; color: var(--muted); }
+
+/* Action used indicator */
+.action-used { display: flex; align-items: center; gap: 6px; background: #FFF3E0; border: 1px solid #FFB74D; border-radius: var(--radius-sm); padding: 8px 12px; font-size: .78rem; color: #7B4500; font-weight: 600; margin-bottom: 10px; }
+
+footer { text-align: center; padding: 24px; font-size: .75rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo">
+    <svg viewBox="0 0 24 24"><path d="M4 4h16v12H4V4zm0 0l8 7 8-7"/></svg>
+  </div>
+  <div>
+    <div class="header h1" style="font-size:1.05rem;font-weight:700">Flag Guess Who</div>
+    <div class="header-sub">A fun educational game to learn world flags</div>
+  </div>
+</header>
+
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN 1: MODE SELECT                         -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="screen active" id="screen-mode">
+  <div class="setup-wrap">
+    <div class="step-dots">
+      <div class="step-dot active"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+    </div>
+    <h2 class="setup-title">How do you want to play?</h2>
+    <p class="setup-sub">Choose local or online multiplayer</p>
+    <div class="mode-options">
+      <div class="mode-card selected" id="mode-local" onclick="selectMode('local')">
+        <div class="mode-icon">🏠</div>
+        <div class="mode-name">Local</div>
+        <div class="mode-desc">Pass the device between players</div>
+      </div>
+      <div class="mode-card" id="mode-online" onclick="selectMode('online')">
+        <div class="mode-icon">🌐</div>
+        <div class="mode-name">Online</div>
+        <div class="mode-desc">Play over the internet</div>
+      </div>
+    </div>
+
+    <div id="online-setup" style="display:none">
+      <div class="room-setup">
+        <div class="room-input-group">
+          <label class="room-input-label">Your Name</label>
+          <input class="room-input" id="player-name" placeholder="Enter your name..." maxlength="20">
+        </div>
+        <div class="room-input-group">
+          <label class="room-input-label">Room Code (create or join)</label>
+          <input class="room-input" id="room-code-input" placeholder="e.g. TIGER88" maxlength="8" style="text-transform:uppercase">
+        </div>
+        <div class="room-info">💡 Share the same room code with your friend to play together.</div>
+      </div>
+      <div id="waiting-area" style="display:none">
+        <div class="waiting-indicator">
+          <div class="pulse-dot"></div>
+          <div>
+            <div style="font-size:.85rem;font-weight:700">Waiting for opponent...</div>
+            <div style="font-size:.75rem;color:var(--muted)">Room: <span id="waiting-room-code" style="font-weight:700;font-family:monospace"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn" onclick="goToSizeSelect()">
+      Continue →
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN 2: BOARD SIZE                          -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="screen" id="screen-size">
+  <div class="setup-wrap">
+    <div class="step-dots">
+      <div class="step-dot done"></div>
+      <div class="step-dot active"></div>
+      <div class="step-dot"></div>
+    </div>
+    <h2 class="setup-title">Choose Board Size</h2>
+    <p class="setup-sub">Select how many flags you want to play with</p>
+    <div class="size-options">
+      <div class="size-card" id="size-12" onclick="selectSize(12)">
+        <div class="size-icon">⊞</div>
+        <div class="size-num">12 <span>Flags</span></div>
+        <div class="size-desc">Quick game, perfect for beginners</div>
+      </div>
+      <div class="size-card" id="size-24" onclick="selectSize(24)">
+        <div class="size-icon">⊞</div>
+        <div class="size-num">24 <span>Flags</span></div>
+        <div class="size-desc">Full experience with more challenge</div>
+      </div>
+    </div>
+    <button class="btn" id="start-game-btn" onclick="startGame()">Start Game →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN 3: P1 FLAG SELECTION                   -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="screen" id="screen-p1-select">
+  <div class="flag-select-wrap">
+    <div class="step-dots">
+      <div class="step-dot done"></div>
+      <div class="step-dot done"></div>
+      <div class="step-dot active"></div>
+    </div>
+    <div style="margin-bottom:6px"><span class="mode-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:2px"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>Private Selection</span></div>
+    <h2 class="setup-title" id="p1-select-title">Player 1: Choose Your Secret Flag</h2>
+    <p class="setup-sub">Select a flag that Player 2 will try to guess. Keep it secret!</p>
+    <div class="flags-grid" id="p1-flags-grid"></div>
+    <button class="btn" id="p1-confirm-btn" onclick="confirmP1Selection()" disabled>Confirm Selection →</button>
+  </div>
+  <footer>A fun educational game to learn world flags</footer>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN: SWITCH TO P2                          -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="screen" id="screen-switch-p2">
+  <div class="switch-wrap">
+    <div class="switch-card">
+      <div class="switch-icon">
+        <svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>
+      </div>
+      <h2>Switching Turns</h2>
+      <p>Pass the device to Player 2</p>
+      <div class="privacy-note">
+        <span>🔒</span>
+        <span><strong>Privacy Reminder:</strong> Make sure the previous player looks away before starting your turn. Your secret flag will be hidden by default.</span>
+      </div>
+      <button class="btn" onclick="startP2Selection()">Start Player 2's Turn →</button>
+    </div>
+  </div>
+  <footer>A fun educational game to learn world flags</footer>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN: P2 FLAG SELECTION                     -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="screen" id="screen-p2-select">
+  <div class="flag-select-wrap">
+    <div class="step-dots">
+      <div class="step-dot done"></div>
+      <div class="step-dot done"></div>
+      <div class="step-dot done"></div>
+    </div>
+    <div style="margin-bottom:6px"><span class="mode-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:2px"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>Private Selection</span></div>
+    <h2 class="setup-title">Player 2: Choose Your Secret Flag</h2>
+    <p class="setup-sub">Select a flag that Player 1 will try to guess. Keep it secret!</p>
+    <div class="flags-grid" id="p2-flags-grid"></div>
+    <button class="btn" id="p2-confirm-btn" onclick="confirmP2Selection()" disabled>Confirm Selection →</button>
+  </div>
+  <footer>A fun educational game to learn world flags</footer>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN: SWITCH TO GAME START                  -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="screen" id="screen-switch-start">
+  <div class="switch-wrap">
+    <div class="switch-card">
+      <div class="switch-icon">
+        <svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>
+      </div>
+      <h2>Both Players Ready!</h2>
+      <p>Pass the device to Player 1 to start the game</p>
+      <div class="privacy-note">
+        <span>🎮</span>
+        <span><strong>Game Rules:</strong> Each turn you can ask ONE yes/no question OR make ONE guess. If you guess wrong, you lose your turn. Use rollback if you clicked the wrong answer!</span>
+      </div>
+      <button class="btn" onclick="startGameBoard()">Start Player 1's Turn →</button>
+    </div>
+  </div>
+  <footer>A fun educational game to learn world flags</footer>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN: GAME BOARD (P1 or P2)                 -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="screen" id="screen-game">
+  <div id="online-bar" style="display:none" class="online-status-bar">
+    🌐 Online — Room: <span class="room-code-display" id="bar-room-code"></span>
+  </div>
+  <div class="game-wrap">
+    <!-- Player info -->
+    <div class="player-card">
+      <div class="player-card-title" id="board-player-title">Player 1's Board</div>
+      <div class="player-card-sub">Ask questions and eliminate flags to find your opponent's secret flag</div>
+      <div class="secret-flag-row">
+        <span class="secret-flag-label">YOUR SECRET FLAG</span>
+        <span class="secret-flag-value" id="secret-flag-display">Hidden</span>
+        <button class="secret-flag-toggle" id="secret-toggle-btn" onclick="toggleSecretFlag()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>
+        </button>
+      </div>
+
+      <!-- Turn indicator -->
+      <div class="turn-indicator" id="turn-indicator">🎯 Your turn — ask a question or make a guess!</div>
+
+      <!-- Active action: ASKING mode -->
+      <div id="action-panel-ask" class="turn-panel" style="display:none">
+        <div class="turn-panel-title">Ask a Yes/No Question</div>
+        <div class="turn-actions">
+          <textarea class="turn-input" id="question-input" rows="2" placeholder="e.g. Does the flag have red in it?"></textarea>
+          <div class="turn-btns">
+            <button class="btn btn-secondary" style="font-size:.82rem;padding:11px" onclick="switchToGuess()">💡 Guess Instead</button>
+            <button class="btn" style="font-size:.82rem;padding:11px" onclick="submitQuestion()">Send Question →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active action: GUESSING mode -->
+      <div id="action-panel-guess" class="turn-panel" style="display:none">
+        <div class="turn-panel-title">Make Your Guess</div>
+        <div class="guess-panel" style="background:none;border:none;padding:0;margin:0">
+          <p style="font-size:.82rem;color:var(--muted);margin-bottom:10px">⚠️ If you guess wrong, you <strong>lose your turn</strong>. Tap a flag below to guess.</p>
+          <div class="turn-btns">
+            <button class="btn btn-secondary" style="font-size:.82rem;padding:11px" onclick="switchToAsk()">← Ask Instead</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Waiting for opponent to answer -->
+      <div id="action-panel-waiting" style="display:none">
+        <div class="waiting-indicator">
+          <div class="pulse-dot"></div>
+          <div>
+            <div style="font-size:.85rem;font-weight:700">Waiting for opponent to answer...</div>
+            <div id="waiting-question-preview" style="font-size:.75rem;color:var(--muted);margin-top:3px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Answering opponent's question -->
+      <div id="action-panel-answer" class="answer-panel" style="display:none">
+        <div class="turn-panel-title" style="color:var(--accent)">Opponent's Question</div>
+        <div class="question-bubble">
+          <div class="question-from" id="answer-from-label">Player asks:</div>
+          <div id="answer-question-text"></div>
+        </div>
+        <div class="answer-btns">
+          <button class="answer-btn answer-btn-yes" onclick="submitAnswer(true)">✓ YES</button>
+          <button class="answer-btn answer-btn-no" onclick="submitAnswer(false)">✗ NO</button>
+        </div>
+      </div>
+
+      <!-- After answering: submit your own question -->
+      <div id="action-panel-post-answer" style="display:none">
+        <div class="turn-panel">
+          <div class="turn-panel-title">Now it's your turn! Ask a question or guess.</div>
+          <div class="turn-actions">
+            <textarea class="turn-input" id="post-answer-question-input" rows="2" placeholder="e.g. Does the flag have a cross?"></textarea>
+            <div class="turn-btns">
+              <button class="btn btn-secondary" style="font-size:.82rem;padding:11px" onclick="switchToGuessPostAnswer()">💡 Guess Instead</button>
+              <button class="btn" style="font-size:.82rem;padding:11px" onclick="submitPostAnswerQuestion()">Send Question →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rollback panel -->
+      <div id="rollback-panel" class="rollback-panel" style="display:none">
+        <h3>⏪ Rollback Requested</h3>
+        <p id="rollback-reason-display"></p>
+        <div class="rollback-accept-row">
+          <span class="player-label" id="rollback-p1-label">Player 1</span>
+          <div class="check-badge" id="rollback-p1-badge">?</div>
+        </div>
+        <div class="rollback-accept-row">
+          <span class="player-label" id="rollback-p2-label">Player 2</span>
+          <div class="check-badge" id="rollback-p2-badge">?</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-success btn-sm" id="rollback-accept-btn" onclick="acceptRollback()">Accept Rollback</button>
+          <button class="btn btn-danger btn-sm" onclick="declineRollback()">Decline</button>
+        </div>
+      </div>
+
+      <!-- Action used -->
+      <div id="action-used-banner" class="action-used" style="display:none">
+        ⚡ You've used your action this turn — end your turn or request a rollback.
+      </div>
+
+      <!-- End Turn row -->
+      <div class="end-turn-row" id="end-turn-row" style="display:none">
+        <button class="btn" onclick="endTurn()">End Turn →</button>
+      </div>
+
+      <!-- Rollback request button -->
+      <div id="rollback-request-area" style="margin-bottom:10px;display:none">
+        <button class="rollback-request-btn" onclick="openRollbackModal()">⏪ Request Rollback</button>
+      </div>
+    </div>
+
+    <!-- Question/Answer History -->
+    <div class="history-log" id="history-log" style="display:none">
+      <div style="padding:10px 14px;font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)">Game History</div>
+      <div id="history-items"></div>
+    </div>
+
+    <!-- The Flag Board -->
+    <div style="font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding:0 2px">Flags — tap to eliminate / guess</div>
+    <div class="board-grid" id="board-grid"></div>
+  </div>
+  <footer>A fun educational game to learn world flags</footer>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN: SWITCH TURNS DURING GAME              -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="screen" id="screen-switch-turn">
+  <div class="switch-wrap">
+    <div class="switch-card">
+      <div class="switch-icon">
+        <svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>
+      </div>
+      <h2 id="switch-turn-title">Switching to Player 2</h2>
+      <p id="switch-turn-sub">Pass the device to Player 2</p>
+      <div class="privacy-note">
+        <span>🔒</span>
+        <span>Make sure the previous player looks away. Your secret flag will be hidden by default.</span>
+      </div>
+      <button class="btn" id="switch-turn-btn" onclick="resumeGameBoard()">Start My Turn →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- SCREEN: GAME OVER                             -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="screen" id="screen-gameover">
+  <div class="gameover-wrap">
+    <div class="gameover-card">
+      <span class="trophy" id="gameover-trophy">🏆</span>
+      <h2 id="gameover-title">Player 1 Wins!</h2>
+      <p class="gameover-sub" id="gameover-sub">Correctly guessed the secret flag!</p>
+      <div class="gameover-secret">
+        <p>Secret flags revealed</p>
+        <div class="gameover-secrets">
+          <div class="secret-reveal">
+            <img id="gameover-p1-flag" src="" alt="">
+            <span id="gameover-p1-name"></span>
+            <small>Player 1</small>
+          </div>
+          <div class="secret-reveal">
+            <img id="gameover-p2-flag" src="" alt="">
+            <span id="gameover-p2-name"></span>
+            <small>Player 2</small>
+          </div>
+        </div>
+      </div>
+      <button class="btn" onclick="playAgain()">Play Again</button>
+      <button class="btn btn-secondary" style="margin-top:10px" onclick="goHome()">Back to Home</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- MODALS                                        -->
+<!-- ══════════════════════════════════════════════ -->
+
+<!-- Rollback request modal -->
+<div class="modal-overlay" id="modal-rollback">
+  <div class="modal-card">
+    <h3>⏪ Request a Rollback</h3>
+    <p>Explain why you want to undo the last action. Both players must agree.</p>
+    <textarea class="turn-input" id="rollback-reason-input" rows="3" placeholder="e.g. I accidentally clicked the wrong answer..." style="margin-bottom:14px"></textarea>
+    <div class="modal-btns">
+      <button class="btn btn-warning" onclick="submitRollbackRequest()">Send Rollback Request</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-rollback')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Guess confirmation modal -->
+<div class="modal-overlay" id="modal-guess">
+  <div class="modal-card">
+    <h3 id="modal-guess-title">Guess: Germany?</h3>
+    <img id="modal-guess-flag" src="" alt="" style="width:100%;border-radius:10px;margin:14px 0">
+    <p>Are you sure? If wrong, you <strong>lose your turn</strong>. If right, you <strong>win the game!</strong></p>
+    <div class="modal-btns">
+      <button class="btn btn-warning" onclick="confirmGuess()">Yes, I'm sure!</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-guess')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+// FLAGS DATA
+// ════════════════════════════════════════════════
+const ALL_FLAGS = [
+  { id: 'de', name: 'Germany',       img: 'https://flagcdn.com/w160/de.png' },
+  { id: 'br', name: 'Brazil',        img: 'https://flagcdn.com/w160/br.png' },
+  { id: 'tr', name: 'Turkey',        img: 'https://flagcdn.com/w160/tr.png' },
+  { id: 'in', name: 'India',         img: 'https://flagcdn.com/w160/in.png' },
+  { id: 'gb', name: 'United Kingdom',img: 'https://flagcdn.com/w160/gb.png' },
+  { id: 'gr', name: 'Greece',        img: 'https://flagcdn.com/w160/gr.png' },
+  { id: 'mx', name: 'Mexico',        img: 'https://flagcdn.com/w160/mx.png' },
+  { id: 'us', name: 'United States', img: 'https://flagcdn.com/w160/us.png' },
+  { id: 'nl', name: 'Netherlands',   img: 'https://flagcdn.com/w160/nl.png' },
+  { id: 'se', name: 'Sweden',        img: 'https://flagcdn.com/w160/se.png' },
+  { id: 'dk', name: 'Denmark',       img: 'https://flagcdn.com/w160/dk.png' },
+  { id: 'au', name: 'Australia',     img: 'https://flagcdn.com/w160/au.png' },
+  { id: 'it', name: 'Italy',         img: 'https://flagcdn.com/w160/it.png' },
+  { id: 'ca', name: 'Canada',        img: 'https://flagcdn.com/w160/ca.png' },
+  { id: 'za', name: 'South Africa',  img: 'https://flagcdn.com/w160/za.png' },
+  { id: 'ch', name: 'Switzerland',   img: 'https://flagcdn.com/w160/ch.png' },
+  { id: 'jp', name: 'Japan',         img: 'https://flagcdn.com/w160/jp.png' },
+  { id: 'kr', name: 'South Korea',   img: 'https://flagcdn.com/w160/kr.png' },
+  { id: 'fr', name: 'France',        img: 'https://flagcdn.com/w160/fr.png' },
+  { id: 'no', name: 'Norway',        img: 'https://flagcdn.com/w160/no.png' },
+  { id: 'ar', name: 'Argentina',     img: 'https://flagcdn.com/w160/ar.png' },
+  { id: 'es', name: 'Spain',         img: 'https://flagcdn.com/w160/es.png' },
+  { id: 'cn', name: 'China',         img: 'https://flagcdn.com/w160/cn.png' },
+  { id: 'pt', name: 'Portugal',      img: 'https://flagcdn.com/w160/pt.png' },
+];
+
+// ════════════════════════════════════════════════
+// GAME STATE
+// ════════════════════════════════════════════════
+let state = {
+  mode: 'local',          // 'local' | 'online'
+  boardSize: 0,           // 12 or 24
+  flags: [],              // active flags for this game
+  p1: { name: 'Player 1', secretFlag: null, eliminated: [], actionUsed: false },
+  p2: { name: 'Player 2', secretFlag: null, eliminated: [], actionUsed: false },
+  currentPlayer: 1,       // 1 or 2
+  phase: 'setup',         // setup|p1-select|p2-select|p1-turn|p2-turn|p1-answer|p2-answer
+  pendingQuestion: null,  // { from, text }
+  pendingGuess: null,     // { flagId }
+  history: [],            // [{type,from,text,answer}]
+  rollback: null,         // { requestedBy, reason, p1Accepted, p2Accepted, snapshot }
+  secretVisible: false,
+  // online
+  roomCode: '',
+  playerSlot: 0,          // 1 or 2 for online
+  socket: null,
+};
+
+let guessMode = false; // are we in guess-flag tap mode?
+let pendingGuessFlag = null;
+
+// ════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════
+function showToast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('active');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+function flagById(id) { return ALL_FLAGS.find(f => f.id === id); }
+function currentPlayerObj() { return state.currentPlayer === 1 ? state.p1 : state.p2; }
+function otherPlayerObj() { return state.currentPlayer === 1 ? state.p2 : state.p1; }
+
+// ════════════════════════════════════════════════
+// SETUP FLOW
+// ════════════════════════════════════════════════
+function selectMode(mode) {
+  state.mode = mode;
+  document.getElementById('mode-local').classList.toggle('selected', mode === 'local');
+  document.getElementById('mode-online').classList.toggle('selected', mode === 'online');
+  document.getElementById('online-setup').style.display = (mode === 'online') ? 'block' : 'none';
+}
+
+function goToSizeSelect() {
+  if (state.mode === 'online') {
+    const name = document.getElementById('player-name').value.trim();
+    const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+    if (!name) return showToast('Please enter your name');
+    if (!code || code.length < 3) return showToast('Please enter a room code (min 3 chars)');
+    state.p1.name = name;
+    state.roomCode = code;
+  }
+  showScreen('screen-size');
+}
+
+function selectSize(n) {
+  state.boardSize = n;
+  document.getElementById('size-12').classList.toggle('selected', n === 12);
+  document.getElementById('size-24').classList.toggle('selected', n === 24);
+  document.getElementById('start-game-btn').disabled = false;
+}
+
+function startGame() {
+  if (!state.boardSize) return showToast('Please select a board size');
+  state.flags = state.boardSize === 24 ? [...ALL_FLAGS] : ALL_FLAGS.slice(0, 12);
+  state.p1.eliminated = [];
+  state.p2.eliminated = [];
+  state.history = [];
+  state.rollback = null;
+
+  if (state.mode === 'online') {
+    initOnlineGame();
+  } else {
+    renderFlagGrid('p1-flags-grid', null, (flagId) => selectFlagP1(flagId));
+    showScreen('screen-p1-select');
+  }
+}
+
+// ════════════════════════════════════════════════
+// FLAG GRID RENDER
+// ════════════════════════════════════════════════
+function renderFlagGrid(containerId, selectedId, onClickFn) {
+  const grid = document.getElementById(containerId);
+  grid.innerHTML = state.flags.map(f => `
+    <div class="flag-card ${selectedId === f.id ? 'selected' : ''}" id="fc-${containerId}-${f.id}" onclick="(${onClickFn.toString()})('${f.id}')">
+      <div class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <img class="flag-img" src="${f.img}" alt="${f.name}" loading="lazy">
+      <div class="flag-name">${f.name}</div>
+    </div>
+  `).join('');
+}
+
+// ════════════════════════════════════════════════
+// SELECTION FLOW
+// ════════════════════════════════════════════════
+let p1SelectTemp = null;
+let p2SelectTemp = null;
+
+function selectFlagP1(id) {
+  p1SelectTemp = id;
+  document.querySelectorAll('#p1-flags-grid .flag-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`fc-p1-flags-grid-${id}`)?.classList.add('selected');
+  document.getElementById('p1-confirm-btn').disabled = false;
+}
+
+function selectFlagP2(id) {
+  p2SelectTemp = id;
+  document.querySelectorAll('#p2-flags-grid .flag-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(`fc-p2-flags-grid-${id}`)?.classList.add('selected');
+  document.getElementById('p2-confirm-btn').disabled = false;
+}
+
+function confirmP1Selection() {
+  if (!p1SelectTemp) return;
+  state.p1.secretFlag = p1SelectTemp;
+  showScreen('screen-switch-p2');
+}
+
+function startP2Selection() {
+  renderFlagGrid('p2-flags-grid', null, (flagId) => selectFlagP2(flagId));
+  showScreen('screen-p2-select');
+}
+
+function confirmP2Selection() {
+  if (!p2SelectTemp) return;
+  state.p2.secretFlag = p2SelectTemp;
+  showScreen('screen-switch-start');
+}
+
+function startGameBoard() {
+  state.currentPlayer = 1;
+  state.phase = 'p1-turn';
+  renderBoard();
+  showScreen('screen-game');
+}
+
+// ════════════════════════════════════════════════
+// GAME BOARD RENDER
+// ════════════════════════════════════════════════
+function renderBoard() {
+  const cur = currentPlayerObj();
+  const other = otherPlayerObj();
+  const isMyTurn = true; // always true when board is shown locally
+
+  // Title
+  document.getElementById('board-player-title').textContent =
+    `${cur.name}'s Board`;
+
+  // Secret flag
+  document.getElementById('secret-flag-display').textContent = 'Hidden';
+  state.secretVisible = false;
+  updateSecretToggleIcon();
+
+  // Turn indicator
+  const ti = document.getElementById('turn-indicator');
+  if (cur.actionUsed) {
+    ti.textContent = '✅ Action used — end your turn or request rollback';
+    ti.style.background = '#27AE60';
+  } else {
+    ti.textContent = `🎯 Your turn — ask or guess!`;
+    ti.style.background = 'var(--accent)';
+  }
+
+  // Action panels
+  showActionPanel(cur.actionUsed ? 'none' : 'ask');
+
+  // End turn row
+  document.getElementById('end-turn-row').style.display = cur.actionUsed ? 'flex' : 'none';
+  document.getElementById('action-used-banner').style.display = cur.actionUsed ? 'flex' : 'none';
+  document.getElementById('rollback-request-area').style.display =
+    (state.history.length > 0) ? 'block' : 'none';
+
+  // Board flags
+  renderBoardGrid();
+
+  // History
+  renderHistory();
+
+  guessMode = false;
+}
+
+function showActionPanel(which) {
+  ['ask','guess','waiting','answer','post-answer'].forEach(p => {
+    document.getElementById(`action-panel-${p}`).style.display = 'none';
+  });
+  if (which !== 'none') {
+    document.getElementById(`action-panel-${which}`).style.display = 'block';
+  }
+}
+
+function renderBoardGrid() {
+  const cur = currentPlayerObj();
+  const grid = document.getElementById('board-grid');
+  grid.innerHTML = state.flags.map(f => {
+    const elim = cur.eliminated.includes(f.id);
+    return `
+      <div class="board-flag ${elim ? 'eliminated' : ''}" onclick="onBoardFlagClick('${f.id}')">
+        <img class="flag-img" src="${f.img}" alt="${f.name}" loading="lazy">
+        <div class="flag-name">${f.name}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderHistory() {
+  const log = document.getElementById('history-log');
+  const items = document.getElementById('history-items');
+  if (state.history.length === 0) {
+    log.style.display = 'none';
+    return;
+  }
+  log.style.display = 'block';
+  items.innerHTML = state.history.slice().reverse().map(h => {
+    if (h.type === 'question') {
+      return `<div class="history-item">
+        <span class="history-icon">❓</span>
+        <div class="history-text">
+          <strong>${h.from}</strong> asked: "${h.text}"
+          ${h.answer !== undefined ? `→ <span class="history-answer ${h.answer ? 'yes' : 'no'}">${h.answer ? 'YES' : 'NO'}</span>` : '<span style="color:var(--muted)"> (pending...)</span>'}
+        </div>
+      </div>`;
+    } else if (h.type === 'guess') {
+      return `<div class="history-item">
+        <span class="history-icon">${h.correct ? '🏆' : '❌'}</span>
+        <div class="history-text">
+          <strong>${h.from}</strong> guessed <strong>${h.flagName}</strong> → <span class="history-answer ${h.correct ? 'yes' : 'no'}">${h.correct ? 'CORRECT!' : 'WRONG — lost turn'}</span>
+        </div>
+      </div>`;
+    }
+    return '';
+  }).join('');
+}
+
+// ════════════════════════════════════════════════
+// FLAG CLICK — eliminate or guess
+// ════════════════════════════════════════════════
+function onBoardFlagClick(flagId) {
+  const cur = currentPlayerObj();
+  if (guessMode) {
+    // Confirm guess
+    const f = flagById(flagId);
+    pendingGuessFlag = flagId;
+    document.getElementById('modal-guess-title').textContent = `Guess: ${f.name}?`;
+    document.getElementById('modal-guess-flag').src = f.img;
+    openModal('modal-guess');
+    return;
+  }
+  // Eliminate/restore
+  if (cur.eliminated.includes(flagId)) {
+    cur.eliminated = cur.eliminated.filter(id => id !== flagId);
+  } else {
+    cur.eliminated.push(flagId);
+  }
+  renderBoardGrid();
+}
+
+function confirmGuess() {
+  closeModal('modal-guess');
+  const cur = currentPlayerObj();
+  const other = otherPlayerObj();
+  const f = flagById(pendingGuessFlag);
+  const correct = pendingGuessFlag === other.secretFlag;
+
+  state.history.push({ type: 'guess', from: cur.name, flagId: pendingGuessFlag, flagName: f.name, correct });
+
+  if (correct) {
+    // WIN
+    endGame(state.currentPlayer);
+  } else {
+    showToast(`❌ Wrong! ${f.name} is not ${other.name}'s flag. You lose your turn.`);
+    cur.actionUsed = true;
+    guessMode = false;
+    // Auto end turn after wrong guess
+    setTimeout(() => endTurn(), 1200);
+  }
+  pendingGuessFlag = null;
+}
+
+// ════════════════════════════════════════════════
+// QUESTIONS
+// ════════════════════════════════════════════════
+function switchToGuess() {
+  guessMode = true;
+  showActionPanel('guess');
+  showToast('Tap a flag on the board to guess it!');
+}
+function switchToAsk() {
+  guessMode = false;
+  showActionPanel('ask');
+}
+function switchToGuessPostAnswer() {
+  guessMode = true;
+  showActionPanel('guess');
+  showToast('Tap a flag on the board to guess it!');
+}
+
+function submitQuestion() {
+  const text = document.getElementById('question-input').value.trim();
+  if (!text) return showToast('Please type a question first');
+  const cur = currentPlayerObj();
+  cur.actionUsed = true;
+
+  state.pendingQuestion = { from: cur.name, text };
+  state.history.push({ type: 'question', from: cur.name, text, answer: undefined });
+
+  if (state.mode === 'local') {
+    // Show waiting, then switch to other player to answer
+    showActionPanel('waiting');
+    document.getElementById('waiting-question-preview').textContent = `"${text}"`;
+    document.getElementById('end-turn-row').style.display = 'none';
+    document.getElementById('action-used-banner').style.display = 'none';
+    document.getElementById('rollback-request-area').style.display = 'none';
+    document.getElementById('question-input').value = '';
+
+    // Switch to opponent to answer
+    setTimeout(() => goToSwitchForAnswer(), 700);
+  } else {
+    emitQuestion(text);
+    document.getElementById('question-input').value = '';
+  }
+}
+
+function submitPostAnswerQuestion() {
+  const text = document.getElementById('post-answer-question-input').value.trim();
+  if (!text) return showToast('Please type a question first');
+  const cur = currentPlayerObj();
+  cur.actionUsed = true;
+
+  state.pendingQuestion = { from: cur.name, text };
+  state.history.push({ type: 'question', from: cur.name, text, answer: undefined });
+
+  if (state.mode === 'local') {
+    showActionPanel('none');
+    document.getElementById('end-turn-row').style.display = 'flex';
+    document.getElementById('action-used-banner').style.display = 'flex';
+    document.getElementById('rollback-request-area').style.display = 'block';
+    document.getElementById('post-answer-question-input').value = '';
+
+    setTimeout(() => goToSwitchForAnswer(), 700);
+  }
+}
+
+function goToSwitchForAnswer() {
+  const other = otherPlayerObj();
+  document.getElementById('switch-turn-title').textContent = `Pass to ${other.name}`;
+  document.getElementById('switch-turn-sub').textContent = `${other.name} needs to answer a question`;
+  document.getElementById('switch-turn-btn').textContent = `Answer as ${other.name} →`;
+  document.getElementById('switch-turn-btn').onclick = () => showAnswerPanel();
+  showScreen('screen-switch-turn');
+}
+
+function showAnswerPanel() {
+  // Switch current player temporarily to answer
+  const other = state.currentPlayer === 1 ? state.p2 : state.p1;
+  document.getElementById('board-player-title').textContent = `${other.name}'s Board`;
+
+  // Show opponent's secret flag hidden
+  document.getElementById('secret-flag-display').textContent = 'Hidden';
+  state.secretVisible = false;
+  updateSecretToggleIcon();
+
+  // Show answer panel
+  showActionPanel('answer');
+  document.getElementById('answer-from-label').textContent = `${state.pendingQuestion.from} asks:`;
+  document.getElementById('answer-question-text').textContent = state.pendingQuestion.text;
+
+  document.getElementById('end-turn-row').style.display = 'none';
+  document.getElementById('action-used-banner').style.display = 'none';
+  document.getElementById('rollback-request-area').style.display = 'none';
+
+  // Update board to other player's eliminations
+  const otherElims = other.eliminated;
+  renderBoardGridForPlayer(other);
+  renderHistory();
+
+  showScreen('screen-game');
+}
+
+function renderBoardGridForPlayer(playerObj) {
+  const grid = document.getElementById('board-grid');
+  grid.innerHTML = state.flags.map(f => {
+    const elim = playerObj.eliminated.includes(f.id);
+    return `
+      <div class="board-flag ${elim ? 'eliminated' : ''}" onclick="">
+        <img class="flag-img" src="${f.img}" alt="${f.name}" loading="lazy">
+        <div class="flag-name">${f.name}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function submitAnswer(answer) {
+  const other = state.currentPlayer === 1 ? state.p2 : state.p1;
+  // Update history
+  const qEntry = [...state.history].reverse().find(h => h.type === 'question' && h.answer === undefined);
+  if (qEntry) qEntry.answer = answer;
+
+  state.pendingQuestion = null;
+
+  if (state.mode === 'local') {
+    // Now show the answerer's own turn (they get to ask/guess now)
+    // Switch back to "other" player's full board for their question
+    showToast(`Answered ${answer ? 'YES' : 'NO'}! Now ask your own question.`);
+
+    // The "other" player (who just answered) gets to ask a question now
+    // Switch current player to the other
+    state.currentPlayer = state.currentPlayer === 1 ? 2 : 1;
+    const nowCurrent = currentPlayerObj();
+
+    document.getElementById('board-player-title').textContent = `${nowCurrent.name}'s Board`;
+
+    // Show post-answer question panel
+    showActionPanel('post-answer');
+    document.getElementById('end-turn-row').style.display = 'none';
+    document.getElementById('action-used-banner').style.display = 'none';
+    document.getElementById('rollback-request-area').style.display = state.history.length > 0 ? 'block' : 'none';
+    renderBoardGrid();
+    renderHistory();
+    updateSecretDisplay(nowCurrent);
+  } else {
+    emitAnswer(answer);
+  }
+}
+
+function updateSecretDisplay(playerObj) {
+  document.getElementById('secret-flag-display').textContent = 'Hidden';
+  state.secretVisible = false;
+  updateSecretToggleIcon();
+}
+
+// ════════════════════════════════════════════════
+// SECRET FLAG TOGGLE
+// ════════════════════════════════════════════════
+function toggleSecretFlag() {
+  state.secretVisible = !state.secretVisible;
+  const cur = currentPlayerObj();
+  if (state.secretVisible && cur.secretFlag) {
+    const f = flagById(cur.secretFlag);
+    document.getElementById('secret-flag-display').innerHTML =
+      `<img src="${f.img}" style="height:22px;border-radius:3px;vertical-align:middle;margin-right:5px">${f.name}`;
+  } else {
+    document.getElementById('secret-flag-display').textContent = 'Hidden';
+  }
+  updateSecretToggleIcon();
+}
+
+function updateSecretToggleIcon() {
+  const btn = document.getElementById('secret-toggle-btn');
+  btn.innerHTML = state.secretVisible
+    ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
+    : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>`;
+}
+
+// ════════════════════════════════════════════════
+// END TURN
+// ════════════════════════════════════════════════
+function endTurn() {
+  const cur = currentPlayerObj();
+  cur.actionUsed = false;
+
+  if (state.mode === 'local') {
+    // Switch player
+    const nextPlayer = state.currentPlayer === 1 ? 2 : 1;
+    const nextObj = nextPlayer === 1 ? state.p1 : state.p2;
+
+    document.getElementById('switch-turn-title').textContent = `Pass to ${nextObj.name}`;
+    document.getElementById('switch-turn-sub').textContent = `It's ${nextObj.name}'s turn to ask or guess!`;
+    document.getElementById('switch-turn-btn').textContent = `Start My Turn →`;
+    document.getElementById('switch-turn-btn').onclick = () => {
+      state.currentPlayer = nextPlayer;
+      renderBoard();
+      showScreen('screen-game');
+    };
+    showScreen('screen-switch-turn');
+  } else {
+    emitEndTurn();
+  }
+}
+
+function resumeGameBoard() {
+  renderBoard();
+  showScreen('screen-game');
+}
+
+// ════════════════════════════════════════════════
+// ROLLBACK
+// ════════════════════════════════════════════════
+function openRollbackModal() {
+  document.getElementById('rollback-reason-input').value = '';
+  openModal('modal-rollback');
+}
+
+function submitRollbackRequest() {
+  const reason = document.getElementById('rollback-reason-input').value.trim();
+  if (!reason) return showToast('Please give a reason');
+  closeModal('modal-rollback');
+
+  const cur = currentPlayerObj();
+  state.rollback = {
+    requestedBy: state.currentPlayer,
+    reason,
+    p1Accepted: state.currentPlayer === 1 ? true : null,
+    p2Accepted: state.currentPlayer === 2 ? true : null,
+    snapshot: {
+      history: JSON.parse(JSON.stringify(state.history.slice(0, -1))),
+      p1Eliminated: [...state.p1.eliminated],
+      p2Eliminated: [...state.p2.eliminated],
+    }
+  };
+
+  if (state.mode === 'local') {
+    // Need other player to accept — switch to them
+    const otherPlayer = state.currentPlayer === 1 ? 2 : 1;
+    const otherObj = otherPlayer === 1 ? state.p1 : state.p2;
+    document.getElementById('switch-turn-title').textContent = `Rollback Requested`;
+    document.getElementById('switch-turn-sub').textContent = `${cur.name} wants to undo. ${otherObj.name}, do you accept?`;
+    document.getElementById('switch-turn-btn').textContent = `View Rollback Request →`;
+    document.getElementById('switch-turn-btn').onclick = () => showRollbackPanel();
+    showScreen('screen-switch-turn');
+  } else {
+    emitRollbackRequest(reason);
+  }
+}
+
+function showRollbackPanel() {
+  const rb = state.rollback;
+  document.getElementById('rollback-panel').style.display = 'block';
+  document.getElementById('rollback-reason-display').textContent = `Reason: "${rb.reason}"`;
+  document.getElementById('rollback-p1-label').textContent = state.p1.name;
+  document.getElementById('rollback-p2-label').textContent = state.p2.name;
+  updateRollbackBadges();
+  showActionPanel('none');
+  document.getElementById('end-turn-row').style.display = 'none';
+  document.getElementById('action-used-banner').style.display = 'none';
+  document.getElementById('rollback-request-area').style.display = 'none';
+  showScreen('screen-game');
+}
+
+function updateRollbackBadges() {
+  const rb = state.rollback;
+  const p1b = document.getElementById('rollback-p1-badge');
+  const p2b = document.getElementById('rollback-p2-badge');
+  p1b.className = `check-badge ${rb.p1Accepted === true ? 'accepted' : 'pending'}`;
+  p1b.textContent = rb.p1Accepted === true ? '✓' : '?';
+  p2b.className = `check-badge ${rb.p2Accepted === true ? 'accepted' : 'pending'}`;
+  p2b.textContent = rb.p2Accepted === true ? '✓' : '?';
+}
+
+function acceptRollback() {
+  const otherPlayer = state.currentPlayer === 1 ? 2 : 1;
+  if (otherPlayer === 1) state.rollback.p1Accepted = true;
+  else state.rollback.p2Accepted = true;
+
+  if (state.rollback.p1Accepted && state.rollback.p2Accepted) {
+    // Apply rollback
+    applyRollback();
+  } else {
+    updateRollbackBadges();
+    // Switch back to requester
+    const reqPlayer = state.rollback.requestedBy;
+    const reqObj = reqPlayer === 1 ? state.p1 : state.p2;
+    document.getElementById('switch-turn-title').textContent = `Rollback Accepted!`;
+    document.getElementById('switch-turn-sub').textContent = `Both players agreed. Undoing last action.`;
+    document.getElementById('switch-turn-btn').textContent = `Continue →`;
+    document.getElementById('switch-turn-btn').onclick = () => applyRollback();
+    showScreen('screen-switch-turn');
+  }
+}
+
+function declineRollback() {
+  showToast('Rollback declined. Game continues!');
+  state.rollback = null;
+  document.getElementById('rollback-panel').style.display = 'none';
+  renderBoard();
+}
+
+function applyRollback() {
+  const snap = state.rollback.snapshot;
+  state.history = snap.history;
+  state.p1.eliminated = snap.p1Eliminated;
+  state.p2.eliminated = snap.p2Eliminated;
+  state.p1.actionUsed = false;
+  state.p2.actionUsed = false;
+  state.pendingQuestion = null;
+  state.rollback = null;
+  showToast('Rollback applied! Last action undone.');
+  document.getElementById('rollback-panel').style.display = 'none';
+  renderBoard();
+  showScreen('screen-game');
+}
+
+// ════════════════════════════════════════════════
+// GAME OVER
+// ════════════════════════════════════════════════
+function endGame(winnerPlayer) {
+  const winner = winnerPlayer === 1 ? state.p1 : state.p2;
+  const loser = winnerPlayer === 1 ? state.p2 : state.p1;
+
+  document.getElementById('gameover-title').textContent = `${winner.name} Wins! 🏆`;
+  document.getElementById('gameover-sub').textContent = `Correctly guessed ${loser.name}'s secret flag!`;
+  document.getElementById('gameover-trophy').textContent = '🏆';
+
+  const p1f = flagById(state.p1.secretFlag);
+  const p2f = flagById(state.p2.secretFlag);
+
+  document.getElementById('gameover-p1-flag').src = p1f ? p1f.img : '';
+  document.getElementById('gameover-p1-name').textContent = p1f ? p1f.name : '';
+  document.getElementById('gameover-p2-flag').src = p2f ? p2f.img : '';
+  document.getElementById('gameover-p2-name').textContent = p2f ? p2f.name : '';
+
+  showScreen('screen-gameover');
+}
+
+function playAgain() {
+  state.p1.secretFlag = null;
+  state.p2.secretFlag = null;
+  state.p1.eliminated = [];
+  state.p2.eliminated = [];
+  state.p1.actionUsed = false;
+  state.p2.actionUsed = false;
+  state.history = [];
+  state.rollback = null;
+  p1SelectTemp = null;
+  p2SelectTemp = null;
+
+  renderFlagGrid('p1-flags-grid', null, (flagId) => selectFlagP1(flagId));
+  document.getElementById('p1-confirm-btn').disabled = true;
+  showScreen('screen-p1-select');
+}
+
+function goHome() {
+  state = {
+    mode: 'local', boardSize: 0, flags: [],
+    p1: { name: 'Player 1', secretFlag: null, eliminated: [], actionUsed: false },
+    p2: { name: 'Player 2', secretFlag: null, eliminated: [], actionUsed: false },
+    currentPlayer: 1, phase: 'setup',
+    pendingQuestion: null, pendingGuess: null, history: [], rollback: null, secretVisible: false,
+    roomCode: '', playerSlot: 0, socket: null,
+  };
+  guessMode = false;
+  document.getElementById('size-12').classList.remove('selected');
+  document.getElementById('size-24').classList.remove('selected');
+  document.getElementById('mode-local').classList.add('selected');
+  document.getElementById('mode-online').classList.remove('selected');
+  document.getElementById('online-setup').style.display = 'none';
+  showScreen('screen-mode');
+}
+
+// ════════════════════════════════════════════════
+// ONLINE MULTIPLAYER (Socket.io)
+// ════════════════════════════════════════════════
+function initOnlineGame() {
+  // Try to connect to Socket.io server
+  if (typeof io === 'undefined') {
+    showToast('Socket.io not loaded — online mode unavailable');
+    // Fall back to showing board size screen error
+    return;
+  }
+
+// ── SERVER URL ────────────────────────────────────────────────────────────────
+// Change this to your Render URL, e.g. 'https://flag-guess-who.onrender.com'
+// Leave empty string '' if serving frontend and backend from the same Render app
+const RENDER_URL = 'https://flag-guess.onrender.com';
+// ─────────────────────────────────────────────────────────────────────────────
+const socket = io(RENDER_URL, { transports: ['websocket', 'polling'] });
+  state.socket = socket;
+
+  socket.emit('joinRoom', {
+    roomCode: state.roomCode,
+    playerName: state.p1.name,
+    boardSize: state.boardSize,
+  });
+
+  socket.on('assignSlot', ({ slot, opponent }) => {
+    state.playerSlot = slot;
+    if (slot === 1) {
+      state.p1.name = state.p1.name;
+      state.p2.name = opponent || 'Player 2';
+    } else {
+      state.p2.name = state.p1.name;
+      state.p1.name = opponent || 'Player 1';
+    }
+    document.getElementById('online-bar').style.display = 'block';
+    document.getElementById('bar-room-code').textContent = state.roomCode;
+
+    renderFlagGrid('p1-flags-grid', null, (flagId) => selectFlagP1(flagId));
+    document.getElementById('p1-select-title').textContent = `${state.playerSlot === 1 ? state.p1.name : state.p2.name}: Choose Your Secret Flag`;
+    showScreen('screen-p1-select');
+  });
+
+  socket.on('waitingForOpponent', () => {
+    document.getElementById('waiting-area').style.display = 'block';
+    document.getElementById('waiting-room-code').textContent = state.roomCode;
+    showToast('Waiting for opponent to join...');
+  });
+
+  socket.on('opponentReady', () => {
+    showToast('Opponent is ready! Game starting...');
+  });
+
+  socket.on('startGame', ({ startingPlayer }) => {
+    state.currentPlayer = startingPlayer;
+    renderBoard();
+    showScreen('screen-game');
+  });
+
+  socket.on('incomingQuestion', ({ from, text }) => {
+    state.pendingQuestion = { from, text };
+    document.getElementById('answer-from-label').textContent = `${from} asks:`;
+    document.getElementById('answer-question-text').textContent = text;
+    showActionPanel('answer');
+    state.history.push({ type: 'question', from, text, answer: undefined });
+    renderHistory();
+  });
+
+  socket.on('questionAnswered', ({ answer }) => {
+    const qEntry = [...state.history].reverse().find(h => h.type === 'question' && h.answer === undefined);
+    if (qEntry) qEntry.answer = answer;
+    renderHistory();
+    showToast(`Opponent answered: ${answer ? 'YES' : 'NO'}`);
+    // Now my turn to ask
+    showActionPanel('post-answer');
+    document.getElementById('end-turn-row').style.display = 'flex';
+    document.getElementById('rollback-request-area').style.display = 'block';
+  });
+
+  socket.on('opponentGuess', ({ flagId, flagName }) => {
+    const correct = flagId === (state.playerSlot === 1 ? state.p1.secretFlag : state.p2.secretFlag);
+    socket.emit('guessResult', { correct, flagId });
+    if (correct) {
+      showToast(`Opponent guessed your flag (${flagName})!`);
+      endGame(state.playerSlot === 1 ? 2 : 1);
+    } else {
+      showToast(`Opponent guessed ${flagName} — WRONG! Your turn!`);
+    }
+  });
+
+  socket.on('guessResult', ({ correct, flagId }) => {
+    const f = flagById(flagId);
+    if (correct) {
+      endGame(state.playerSlot);
+    } else {
+      showToast(`Wrong guess! ${f ? f.name : ''} is not their flag. Turn ends.`);
+      currentPlayerObj().actionUsed = true;
+      renderBoard();
+    }
+  });
+
+  socket.on('rollbackRequest', ({ reason, from }) => {
+    state.rollback = {
+      requestedBy: from,
+      reason,
+      p1Accepted: from === 1 ? true : null,
+      p2Accepted: from === 2 ? true : null,
+    };
+    showRollbackPanel();
+  });
+
+  socket.on('rollbackDecision', ({ accepted }) => {
+    if (accepted) {
+      applyRollback();
+    } else {
+      showToast('Rollback declined.');
+      state.rollback = null;
+      renderBoard();
+    }
+  });
+
+  socket.on('opponentDisconnected', () => {
+    showToast('Opponent disconnected!', 4000);
+  });
+}
+
+function emitQuestion(text) {
+  if (!state.socket) return;
+  state.socket.emit('askQuestion', { text });
+  showActionPanel('waiting');
+  document.getElementById('waiting-question-preview').textContent = `"${text}"`;
+}
+
+function emitAnswer(answer) {
+  if (!state.socket) return;
+  state.socket.emit('answerQuestion', { answer });
+}
+
+function emitEndTurn() {
+  if (!state.socket) return;
+  state.socket.emit('endTurn');
+}
+
+function emitRollbackRequest(reason) {
+  if (!state.socket) return;
+  state.socket.emit('rollbackRequest', { reason, from: state.playerSlot });
+}
+</script>
+</body>
+</html>
