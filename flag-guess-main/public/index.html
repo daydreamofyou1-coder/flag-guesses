@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Flag Guess Who</title>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <style>
 :root {
   --accent: #2626CC;
@@ -273,18 +274,46 @@ footer { text-align: center; padding: 24px; font-size: .75rem; color: var(--mute
           <label class="room-input-label">Your Name</label>
           <input class="room-input" id="player-name" placeholder="Enter your name..." maxlength="20">
         </div>
-        <div class="room-input-group">
-          <label class="room-input-label">Room Code (create or join)</label>
-          <input class="room-input" id="room-code-input" placeholder="e.g. TIGER88" maxlength="8" style="text-transform:uppercase">
+        <!-- Online mode type -->
+        <div style="display:flex;gap:10px;margin-top:4px;margin-bottom:4px">
+          <div class="mode-card selected" id="match-quick" onclick="selectMatchType('quick')" style="padding:12px 8px">
+            <div class="mode-icon" style="font-size:1.4rem">⚡</div>
+            <div class="mode-name" style="font-size:.82rem">Quick Match</div>
+            <div class="mode-desc">Auto-match with anyone</div>
+          </div>
+          <div class="mode-card" id="match-friend" onclick="selectMatchType('friend')" style="padding:12px 8px">
+            <div class="mode-icon" style="font-size:1.4rem">🔗</div>
+            <div class="mode-name" style="font-size:.82rem">Invite Friend</div>
+            <div class="mode-desc">Get a shareable link</div>
+          </div>
         </div>
-        <div class="room-info">💡 Share the same room code with your friend to play together.</div>
+        <!-- Friend code input (hidden by default) -->
+        <div id="friend-code-area" style="display:none">
+          <div class="room-input-group" style="margin-top:10px">
+            <label class="room-input-label">Friend's Invite Code (optional)</label>
+            <input class="room-input" id="room-code-input" placeholder="Paste invite code to join friend..." maxlength="10" style="text-transform:uppercase">
+          </div>
+          <div class="room-info">💡 Leave blank to create a new room and share your code with a friend.</div>
+        </div>
       </div>
+      <!-- Waiting states -->
       <div id="waiting-area" style="display:none">
         <div class="waiting-indicator">
           <div class="pulse-dot"></div>
-          <div>
-            <div style="font-size:.85rem;font-weight:700">Waiting for opponent...</div>
-            <div style="font-size:.75rem;color:var(--muted)">Room: <span id="waiting-room-code" style="font-weight:700;font-family:monospace"></span></div>
+          <div style="flex:1">
+            <div style="font-size:.85rem;font-weight:700" id="waiting-label">Finding an opponent...</div>
+            <div style="font-size:.75rem;color:var(--muted);margin-top:3px" id="waiting-sub"></div>
+          </div>
+        </div>
+        <!-- Invite link shown when hosting a friend room -->
+        <div id="invite-share-area" style="display:none;margin-top:12px">
+          <div class="room-info" style="background:#F0F0FF;border-color:#CCCCFF;color:#333">
+            <div style="font-size:.72rem;font-weight:700;color:var(--accent);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Your Invite Code</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span id="invite-code-display" style="font-family:monospace;font-size:1.3rem;font-weight:900;letter-spacing:.1em;color:var(--accent)"></span>
+              <button onclick="copyInviteCode()" class="btn btn-secondary" style="width:auto;padding:7px 14px;font-size:.78rem">Copy</button>
+            </div>
+            <div style="font-size:.72rem;color:var(--muted);margin-top:6px">Share this code with your friend so they can join.</div>
           </div>
         </div>
       </div>
@@ -664,6 +693,7 @@ let state = {
   secretVisible: false,
   // online
   roomCode: '',
+  matchType: 'quick',     // 'quick' | 'friend'
   playerSlot: 0,          // 1 or 2 for online
   socket: null,
 };
@@ -708,14 +738,23 @@ function selectMode(mode) {
   document.getElementById('online-setup').style.display = (mode === 'online') ? 'block' : 'none';
 }
 
+function selectMatchType(type) {
+  state.matchType = type;
+  document.getElementById('match-quick').classList.toggle('selected', type === 'quick');
+  document.getElementById('match-friend').classList.toggle('selected', type === 'friend');
+  document.getElementById('friend-code-area').style.display = type === 'friend' ? 'block' : 'none';
+}
+
+function copyInviteCode() {
+  const code = document.getElementById('invite-code-display').textContent;
+  navigator.clipboard.writeText(code).then(() => showToast('Invite code copied! ✓'));
+}
+
 function goToSizeSelect() {
   if (state.mode === 'online') {
     const name = document.getElementById('player-name').value.trim();
-    const code = document.getElementById('room-code-input').value.trim().toUpperCase();
     if (!name) return showToast('Please enter your name');
-    if (!code || code.length < 3) return showToast('Please enter a room code (min 3 chars)');
     state.p1.name = name;
-    state.roomCode = code;
   }
   showScreen('screen-size');
 }
@@ -1302,7 +1341,7 @@ function goHome() {
     p2: { name: 'Player 2', secretFlag: null, eliminated: [], actionUsed: false },
     currentPlayer: 1, phase: 'setup',
     pendingQuestion: null, pendingGuess: null, history: [], rollback: null, secretVisible: false,
-    roomCode: '', playerSlot: 0, socket: null,
+    roomCode: '', matchType: 'quick', playerSlot: 0, socket: null,
   };
   guessMode = false;
   document.getElementById('size-12').classList.remove('selected');
@@ -1317,47 +1356,98 @@ function goHome() {
 // ONLINE MULTIPLAYER (Socket.io)
 // ════════════════════════════════════════════════
 function initOnlineGame() {
-  // Try to connect to Socket.io server
   if (typeof io === 'undefined') {
-    showToast('Socket.io not loaded — online mode unavailable');
-    // Fall back to showing board size screen error
+    showToast('Connecting to server failed. Check your internet connection.');
     return;
   }
 
-// ── SERVER URL ────────────────────────────────────────────────────────────────
-// Change this to your Render URL, e.g. 'https://flag-guess-who.onrender.com'
-// Leave empty string '' if serving frontend and backend from the same Render app
-const RENDER_URL = 'https://guess-my-flag.onrender.com/';
-// ─────────────────────────────────────────────────────────────────────────────
-const socket = io(RENDER_URL, { transports: ['websocket', 'polling'] });
+  const RENDER_URL = 'https://guess-my-flag.onrender.com';
+  const socket = io(RENDER_URL, { transports: ['websocket', 'polling'] });
   state.socket = socket;
 
-  socket.emit('joinRoom', {
-    roomCode: state.roomCode,
-    playerName: state.p1.name,
-    boardSize: state.boardSize,
+  // Show waiting UI
+  document.getElementById('waiting-area').style.display = 'block';
+
+  socket.on('connect_error', () => {
+    showToast('Could not reach game server. Try again in a moment.', 4000);
   });
 
-  socket.on('assignSlot', ({ slot, opponent }) => {
+  if (state.matchType === 'quick') {
+    // Auto-matchmaking: join a random open room
+    document.getElementById('waiting-label').textContent = 'Finding an opponent...';
+    document.getElementById('waiting-sub').textContent = 'You will be matched automatically';
+    socket.emit('quickMatch', {
+      playerName: state.p1.name,
+      boardSize: state.boardSize,
+    });
+  } else {
+    // Friend mode
+    const friendCode = (document.getElementById('room-code-input')?.value || '').trim().toUpperCase();
+    if (friendCode) {
+      // Joining a friend's room
+      document.getElementById('waiting-label').textContent = 'Joining your friend\'s room...';
+      document.getElementById('waiting-sub').textContent = 'Code: ' + friendCode;
+      socket.emit('joinRoom', {
+        roomCode: friendCode,
+        playerName: state.p1.name,
+        boardSize: state.boardSize,
+      });
+    } else {
+      // Creating a new friend room — server will assign a code
+      document.getElementById('waiting-label').textContent = 'Creating a room for your friend...';
+      document.getElementById('waiting-sub').textContent = 'Share the code below!';
+      socket.emit('createFriendRoom', {
+        playerName: state.p1.name,
+        boardSize: state.boardSize,
+      });
+    }
+  }
+
+  // Server assigned us a room and slot
+  socket.on('roomCreated', ({ roomCode }) => {
+    state.roomCode = roomCode;
+    document.getElementById('invite-share-area').style.display = 'block';
+    document.getElementById('invite-code-display').textContent = roomCode;
+    document.getElementById('waiting-label').textContent = 'Waiting for your friend...';
+    document.getElementById('bar-room-code').textContent = roomCode;
+  });
+
+  socket.on('assignSlot', ({ slot, opponent, roomCode }) => {
     state.playerSlot = slot;
+    if (roomCode) state.roomCode = roomCode;
     if (slot === 1) {
-      state.p1.name = state.p1.name;
       state.p2.name = opponent || 'Player 2';
     } else {
-      state.p2.name = state.p1.name;
+      const myName = state.p1.name;
+      state.p2.name = myName;
       state.p1.name = opponent || 'Player 1';
     }
     document.getElementById('online-bar').style.display = 'block';
     document.getElementById('bar-room-code').textContent = state.roomCode;
-
     renderFlagGrid('p1-flags-grid', null, (flagId) => selectFlagP1(flagId));
-    document.getElementById('p1-select-title').textContent = `${state.playerSlot === 1 ? state.p1.name : state.p2.name}: Choose Your Secret Flag`;
+    document.getElementById('p1-select-title').textContent = `${slot === 1 ? state.p1.name : state.p2.name}: Choose Your Secret Flag`;
+    showScreen('screen-p1-select');
+  });
+
+  socket.on('matchFound', ({ roomCode, slot, opponent }) => {
+    state.roomCode = roomCode;
+    state.playerSlot = slot;
+    if (slot === 1) {
+      state.p2.name = opponent || 'Player 2';
+    } else {
+      const myName = state.p1.name;
+      state.p2.name = myName;
+      state.p1.name = opponent || 'Player 1';
+    }
+    document.getElementById('online-bar').style.display = 'block';
+    document.getElementById('bar-room-code').textContent = roomCode;
+    showToast('Opponent found! Game starting...');
+    renderFlagGrid('p1-flags-grid', null, (flagId) => selectFlagP1(flagId));
+    document.getElementById('p1-select-title').textContent = `${slot === 1 ? state.p1.name : state.p2.name}: Choose Your Secret Flag`;
     showScreen('screen-p1-select');
   });
 
   socket.on('waitingForOpponent', () => {
-    document.getElementById('waiting-area').style.display = 'block';
-    document.getElementById('waiting-room-code').textContent = state.roomCode;
     showToast('Waiting for opponent to join...');
   });
 
@@ -1461,4 +1551,4 @@ function emitRollbackRequest(reason) {
 }
 </script>
 </body>
-</html>
+  </html>
