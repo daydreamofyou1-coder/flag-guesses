@@ -735,7 +735,7 @@ let pendingRoomJoin = null;
 function connectLobby() {
   if (lobbySocket) return;
   if (typeof io === 'undefined') { showToast('Socket.io failed to load — refresh the page.'); return; }
-  const RENDER_URL = 'https://guess-my-flag.onrender.com';
+  const RENDER_URL = 'https://flag-guesses.onrender.com';
   lobbySocket = io(RENDER_URL, { transports: ['websocket', 'polling'] });
   showToast('Connecting to server...', 5000);
 
