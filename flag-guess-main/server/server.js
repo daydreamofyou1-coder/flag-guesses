@@ -170,15 +170,11 @@ io.on('connection', (socket) => {
     if (code) {
       socket.to(code).emit('opponentDisconnected');
       setTimeout(() => {
-        const gr = gameRooms.get(code);
-        if (gr && gr.players.every(p => !io.sockets.sockets.has(p.id))) {
-          gameRooms.delete(code);
-        }
-        if (roomNumber && lobbyRooms[roomNumber]) {
-          lobbyRooms[roomNumber].players = [];
-          broadcastRoomStatus();
-        }
-      }, 30_000);
+              const gr = gameRooms.get(code);
+              if (gr && gr.players.every(p => !io.sockets.sockets.has(p.id))) {
+                gameRooms.delete(code);
+              }
+            }, 30_000);
     }
 
     console.log(`${socket.data.playerName || socket.id} disconnected`);
