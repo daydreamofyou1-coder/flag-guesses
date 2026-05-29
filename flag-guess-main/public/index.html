@@ -632,7 +632,9 @@ function selectSize(n){
 }
 function startGame(){
   if(!state.boardSize)return showToast('Please select a board size');
-  state.flags=state.boardSize===24?[...ALL_FLAGS]:ALL_FLAGS.slice(0,12);
+  const pool=state.boardSize===24?[...ALL_FLAGS]:ALL_FLAGS.slice(0,12);
+  for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]]}
+  state.flags=pool;
   state.p1.eliminated=[];state.p2.eliminated=[];
   state.history=[];state.rollback=null;state.pendingQuestion=null;state.pendingAnswer=null;
   if(state.mode==='online'){
@@ -763,8 +765,9 @@ function renderHistory(){
   if(!state.history.length){log.style.display='none';return}
   log.style.display='block';
   items.innerHTML=state.history.slice().reverse().map(h=>{
-    if(h.type==='question')return`<div class="history-item"><span class="h-icon">❓</span><div class="h-text"><strong>${h.from}</strong> asked: "${h.text}"${h.answer!==undefined?` → <span class="h-ans ${h.answer?'yes':'no'}">${h.answer?'YES':'NO'}</span>`:'<span style="opacity:.5"> (pending...)</span>'}</div></div>`;
-    if(h.type==='guess')return`<div class="history-item"><span class="h-icon">${h.correct?'🏆':'❌'}</span><div class="h-text"><strong>${h.from}</strong> guessed <strong>${h.flagName}</strong> → <span class="h-ans ${h.correct?'yes':'no'}">${h.correct?'CORRECT!':'WRONG'}</span></div></div>`;
+    const pc=h.player===2?'var(--accent2)':'var(--accent)';
+    if(h.type==='question')return`<div class="history-item"><span class="h-icon">❓</span><div class="h-text"><strong style="color:${pc}">${h.from}</strong> asked: "${h.text}"${h.answer!==undefined?` → <span class="h-ans ${h.answer?'yes':'no'}">${h.answer?'YES':'NO'}</span>`:'<span style="opacity:.5"> (pending...)</span>'}</div></div>`;
+    if(h.type==='guess')return`<div class="history-item"><span class="h-icon">${h.correct?'🏆':'❌'}</span><div class="h-text"><strong style="color:${pc}">${h.from}</strong> guessed <strong>${h.flagName}</strong> → <span class="h-ans ${h.correct?'yes':'no'}">${h.correct?'CORRECT!':'WRONG'}</span></div></div>`;
     return'';
   }).join('');
 }
@@ -820,7 +823,7 @@ function confirmGuess(){
   }
   const cur=currentPlayerObj(),other=otherPlayerObj();
   const correct=pendingGuessFlag===other.secretFlag;
-  state.history.push({type:'guess',from:cur.name,flagId:pendingGuessFlag,flagName:f.name,correct});
+  state.history.push({type:'guess',from:cur.name,flagId:pendingGuessFlag,flagName:f.name,correct,player:state.currentPlayer});
   if(correct){endGame(state.currentPlayer);}
   else{
     showToast('❌ Wrong! '+f.name+' is not their flag.');
@@ -841,7 +844,7 @@ function submitQuestion(){
   const cur=currentPlayerObj();
   cur.actionUsed=true;
   state.pendingQuestion={from:cur.name,text};
-  state.history.push({type:'question',from:cur.name,text,answer:undefined});
+  state.history.push({type:'question',from:cur.name,text,answer:undefined,player:state.currentPlayer});
 
   if(state.mode==='online'){
     state.socket.emit('askQuestion',{text});
@@ -1098,7 +1101,7 @@ function initOnlineGame(){
   });
   socket.on('incomingQuestion',({from,text})=>{
     state.pendingQuestion={from,text};
-    state.history.push({type:'question',from,text,answer:undefined});
+    state.history.push({type:'question',from,text,answer:undefined,player:state.currentPlayer});
     document.getElementById('answer-from-label').textContent=from+' asks:';
     document.getElementById('answer-question-text').textContent=text;
     const tb=document.getElementById('turn-bar');
