@@ -159,8 +159,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .h-ans.no{color:var(--danger)}
 .board-label{font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;padding:0 2px}
 .board-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
-.board-flag{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:6px 4px 8px;cursor:pointer;transition:.15s;text-align:center;position:relative}
-.board-flag:hover{border-color:rgba(124,111,255,0.35);transform:translateY(-1px)}
+.board-flag{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:6px 4px 8px;cursor:pointer;transition:.15s;text-align:center;position:relative;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.board-flag:hover{border-color:rgba(124,111,255,0.35)}
+.board-flag:active{opacity:.7}
 .board-flag.eliminated{opacity:.18}
 .board-flag.eliminated::after{content:'✕';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:var(--danger);font-weight:900;background:rgba(10,10,15,0.5);border-radius:var(--radius-sm);opacity:1}
 .board-flag .flag-name{font-size:.64rem;color:var(--muted)}
@@ -741,13 +742,20 @@ function showAnswerResultPanel(pendingAns){
 
 function renderBoardGrid(){
   const me=state.mode==='online'?myObj():currentPlayerObj();
-  document.getElementById('board-grid').innerHTML=state.flags.map(f=>{
+  const grid=document.getElementById('board-grid');
+  grid.innerHTML=state.flags.map(f=>{
     const elim=me.eliminated.includes(f.id);
-    return`<div class="board-flag${elim?' eliminated':''}" onclick="onBoardFlagClick('${f.id}')">
-      <img class="flag-img" src="${f.img}" alt="${f.name}" loading="lazy">
+    return`<div class="board-flag${elim?' eliminated':''}" data-flag="${f.id}">
+      <img class="flag-img" src="${f.img}" alt="${f.name}" loading="lazy" draggable="false">
       <div class="flag-name">${f.name}</div>
     </div>`;
   }).join('');
+  if(grid._th)grid.removeEventListener('touchend',grid._th);
+  if(grid._ch)grid.removeEventListener('click',grid._ch);
+  grid._th=e=>{const el=e.target.closest('[data-flag]');if(!el)return;e.preventDefault();onBoardFlagClick(el.dataset.flag)};
+  grid._ch=e=>{const el=e.target.closest('[data-flag]');if(el)onBoardFlagClick(el.dataset.flag)};
+  grid.addEventListener('touchend',grid._th,{passive:false});
+  grid.addEventListener('click',grid._ch);
 }
 
 function renderHistory(){
