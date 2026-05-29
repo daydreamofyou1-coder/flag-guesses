@@ -749,72 +749,122 @@ function goToSizeSelect() {
 
 // ─── LOBBY ─────────────────────────────────────
 let lobbySocket = null;
+let pendingRoomJoin = null; // { roomNumber, playerName } — queued if socket not yet connected
 
 function connectLobby() {
-  if (lobbySocket && lobbySocket.connected) { fetchRoomStatus(); return; }
-  if (typeof io === 'undefined') { showToast('Could not connect to server.'); return; }
+  if (lobbySocket) return; // already connecting or connected
+  if (typeof io === 'undefined') { showToast('Socket.io failed to load — refresh the page.'); return; }
 
   const RENDER_URL = 'https://guess-my-flag.onrender.com';
   lobbySocket = io(RENDER_URL, { transports: ['websocket', 'polling'] });
 
+  // Show a "waking up" note since Render free tier cold-starts
+  showToast('Connecting to server... (may take ~30s on first load)', 5000);
+
   lobbySocket.on('connect', () => {
-    fetchRoomStatus();
+    showToast('Connected! ✓');
+    lobbySocket.emit('getRoomStatus');
+    // If player already clicked a room before we connected, send it now
+    if (pendingRoomJoin) {
+      lobbySocket.emit('joinLobbyRoom', pendingRoomJoin);
+      pendingRoomJoin = null;
+    }
   });
+
   lobbySocket.on('connect_error', () => {
-    showToast('Server is waking up, please wait a moment...', 4000);
+    showToast('Server still waking up, retrying...', 3000);
   });
+
   lobbySocket.on('roomStatus', ({ rooms }) => {
     rooms.forEach(({ roomNumber, count }) => {
-      const card = document.getElementById('room-card-' + roomNumber);
+      const card   = document.getElementById('room-card-'   + roomNumber);
       const status = document.getElementById('room-status-' + roomNumber);
-      const badge = document.getElementById('room-badge-' + roomNumber);
+      const badge  = document.getElementById('room-badge-'  + roomNumber);
       if (!card) return;
       status.textContent = count + ' / 2 players';
       card.classList.toggle('full', count >= 2);
       badge.textContent = count >= 2 ? 'Full' : 'Join';
     });
   });
-  lobbySocket.on('matchFound', ({ roomCode, slot, opponentName }) => {
-    state.roomCode = roomCode;
-    state.playerSlot = slot;
-    state.socket = lobbySocket;
-    if (slot === 1) {
-      state.p2.name = opponentName || 'Player 2';
-    } else {
-      const myName = state.p1.name;
-      state.p1.name = opponentName || 'Player 1';
-      state.p2.name = myName;
-    }
-    document.getElementById('online-bar').style.display = 'block';
-    document.getElementById('bar-room-code').textContent = 'Room ' + state.joinedRoom;
-    // Go straight to board size, then flag select
-    showScreen('screen-size');
-  });
+
   lobbySocket.on('waitingForOpponent', () => {
     document.getElementById('waiting-area').style.display = 'block';
     document.getElementById('waiting-label').textContent = 'Waiting for an opponent...';
     document.getElementById('waiting-sub').textContent = 'Room ' + state.joinedRoom + ' — 1 / 2 players';
     document.getElementById('room-list').style.display = 'none';
   });
+
+  lobbySocket.on('matchFound', ({ roomCode, slot, opponentName }) => {
+    state.roomCode   = roomCode;
+    state.playerSlot = slot;
+    state.socket     = lobbySocket;
+
+    if (slot === 1) {
+      state.p2.name = opponentName || 'Player 2';
+    } else {
+      const myName  = state.p1.name;
+      state.p1.name = opponentName || 'Player 1';
+      state.p2.name = myName;
+    }
+
+    document.getElementById('online-bar').style.display = 'block';
+    document.getElementById('bar-room-code').textContent = 'Room ' + state.joinedRoom;
+
+    // Set up ALL game listeners NOW, before showing flag select
+    initOnlineGame();
+
+    // Both players pick flags — board size was already chosen
+    state.flags = state.boardSize === 24 ? [...ALL_FLAGS] : ALL_FLAGS.slice(0, 12);
+    state.p1.eliminated = [];
+    state.p2.eliminated = [];
+    state.history       = [];
+    state.rollback      = null;
+
+    renderFlagGrid('p1-flags-grid', null, (flagId) => selectFlagP1Online(flagId));
+    document.getElementById('p1-select-title').textContent =
+      (slot === 1 ? state.p1.name : state.p2.name) + ': Choose Your Secret Flag';
+    showScreen('screen-p1-select');
+  });
+
   lobbySocket.on('joinError', ({ message }) => {
     showToast(message);
+    // Re-show room list so they can pick again
+    document.getElementById('waiting-area').style.display = 'none';
+    document.getElementById('room-list').style.display = 'flex';
   });
 }
 
 function fetchRoomStatus() {
-  if (lobbySocket) lobbySocket.emit('getRoomStatus');
+  if (lobbySocket && lobbySocket.connected) lobbySocket.emit('getRoomStatus');
 }
 
 function joinLobbyRoom(roomNumber) {
   const name = document.getElementById('player-name').value.trim();
   if (!name) return showToast('Please enter your name first');
-  if (!lobbySocket || !lobbySocket.connected) return showToast('Connecting to server...');
+
   const card = document.getElementById('room-card-' + roomNumber);
   if (card.classList.contains('full')) return showToast('That room is full, pick another');
 
-  state.p1.name = name;
+  state.p1.name    = name;
   state.joinedRoom = roomNumber;
+
+  if (!lobbySocket || !lobbySocket.connected) {
+    // Queue the join — will fire once connected
+    pendingRoomJoin = { roomNumber, playerName: name };
+    showToast('Connecting... you will join Room ' + roomNumber + ' automatically.');
+    if (!lobbySocket) connectLobby();
+    return;
+  }
+
   lobbySocket.emit('joinLobbyRoom', { roomNumber, playerName: name });
+}
+
+// Online flag confirm — sends confirmFlag to server instead of local flow
+function selectFlagP1Online(id) {
+  p1SelectTemp = id;
+  document.querySelectorAll('#p1-flags-grid .flag-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('fc-p1-flags-grid-' + id)?.classList.add('selected');
+  document.getElementById('p1-confirm-btn').disabled = false;
 }
 
 function selectSize(n) {
@@ -826,15 +876,20 @@ function selectSize(n) {
 
 function startGame() {
   if (!state.boardSize) return showToast('Please select a board size');
+
+  if (state.mode === 'online') {
+    // Board size chosen — now go back to lobby to wait/join
+    showScreen('screen-mode');
+    return;
+  }
+
   state.flags = state.boardSize === 24 ? [...ALL_FLAGS] : ALL_FLAGS.slice(0, 12);
   state.p1.eliminated = [];
   state.p2.eliminated = [];
   state.history = [];
   state.rollback = null;
 
-  if (state.mode === 'online') {
-    initOnlineGame();
-  } else {
+  if (false) {
     renderFlagGrid('p1-flags-grid', null, (flagId) => selectFlagP1(flagId));
     showScreen('screen-p1-select');
   }
@@ -876,6 +931,18 @@ function selectFlagP2(id) {
 
 function confirmP1Selection() {
   if (!p1SelectTemp) return;
+  if (state.mode === 'online') {
+    // Send flag to server and wait for startGame
+    const myFlag = p1SelectTemp;
+    if (state.playerSlot === 1) state.p1.secretFlag = myFlag;
+    else state.p2.secretFlag = myFlag;
+    state.socket.emit('confirmFlag', { flagId: myFlag });
+    // Show waiting screen
+    document.getElementById('p1-confirm-btn').disabled = true;
+    document.getElementById('p1-confirm-btn').textContent = 'Waiting for opponent to pick...';
+    showToast('Flag chosen! Waiting for opponent...');
+    return;
+  }
   state.p1.secretFlag = p1SelectTemp;
   showScreen('screen-switch-p2');
 }
