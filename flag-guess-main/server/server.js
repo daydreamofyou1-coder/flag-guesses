@@ -11,22 +11,19 @@ const io = new Server(server, {
   cors: { origin: FRONTEND_URL, methods: ['GET', 'POST'] },
 });
 
-// ── Fixed lobby rooms (1, 2, 3) ──────────────────────────────────────────────
-// lobbyRooms[n] = { players: [{id, name, slot}], gameStarted: bool }
+// ── Fixed lobby rooms 1, 2, 3 ────────────────────────────────────────────────
 const lobbyRooms = {
   1: { players: [], gameStarted: false },
   2: { players: [], gameStarted: false },
   3: { players: [], gameStarted: false },
 };
 
-// Active game rooms keyed by roomCode (same as "ROOM1", "ROOM2", "ROOM3")
 const gameRooms = new Map();
 
 function getRoomStatus() {
   return Object.entries(lobbyRooms).map(([num, r]) => ({
     roomNumber: Number(num),
     count: r.players.length,
-    full: r.players.length >= 2,
   }));
 }
 
@@ -34,20 +31,17 @@ function broadcastRoomStatus() {
   io.emit('roomStatus', { rooms: getRoomStatus() });
 }
 
-// Health check
 app.use(cors());
-app.get('/',    (_, res) => res.json({ status: 'ok', rooms: getRoomStatus() }));
-app.get('/ping',(_, res) => res.send('pong'));
+app.get('/',     (_, res) => res.json({ status: 'ok', rooms: getRoomStatus() }));
+app.get('/ping', (_, res) => res.send('pong'));
 
 io.on('connection', (socket) => {
   console.log('connected:', socket.id);
 
-  // ── Lobby status request ─────────────────────────────────────────────────
   socket.on('getRoomStatus', () => {
     socket.emit('roomStatus', { rooms: getRoomStatus() });
   });
 
-  // ── Join a lobby room ────────────────────────────────────────────────────
   socket.on('joinLobbyRoom', ({ roomNumber, playerName }) => {
     const room = lobbyRooms[roomNumber];
     if (!room) return socket.emit('joinError', { message: 'Room not found.' });
@@ -66,15 +60,12 @@ io.on('connection', (socket) => {
     broadcastRoomStatus();
 
     if (room.players.length === 1) {
-      // Waiting for second player
       socket.emit('waitingForOpponent');
       console.log(`${playerName} waiting in Room ${roomNumber}`);
     } else {
-      // Both players ready — start!
       const p1 = room.players[0];
       const p2 = room.players[1];
 
-      // Initialise game room
       gameRooms.set(roomCode, {
         code: roomCode,
         players: [
@@ -85,31 +76,25 @@ io.on('connection', (socket) => {
         history: [],
       });
 
-      // Notify both players
       io.to(p1.id).emit('matchFound', { roomCode, slot: 1, opponentName: p2.name });
       io.to(p2.id).emit('matchFound', { roomCode, slot: 2, opponentName: p1.name });
-
-      console.log(`Room ${roomNumber}: ${p1.name} vs ${p2.name} — game starting!`);
+      console.log(`Room ${roomNumber}: ${p1.name} vs ${p2.name} — game on!`);
     }
   });
 
-  // ── Confirm secret flag ──────────────────────────────────────────────────
   socket.on('confirmFlag', ({ flagId }) => {
     const code = socket.data.roomCode;
     const room = gameRooms.get(code);
     if (!room) return;
     const player = room.players.find(p => p.id === socket.id);
     if (!player) return;
-
     player.secretFlag = flagId;
     player.ready = true;
-
     if (room.players.every(p => p.ready)) {
       io.to(code).emit('startGame', { startingPlayer: 1 });
     }
   });
 
-  // ── Ask question ─────────────────────────────────────────────────────────
   socket.on('askQuestion', ({ text }) => {
     const code = socket.data.roomCode;
     const room = gameRooms.get(code);
@@ -133,7 +118,6 @@ io.on('connection', (socket) => {
     socket.emit('yourTurnToAsk');
   });
 
-  // ── Guess ────────────────────────────────────────────────────────────────
   socket.on('makeGuess', ({ flagId }) => {
     const code = socket.data.roomCode;
     const room = gameRooms.get(code);
@@ -153,7 +137,6 @@ io.on('connection', (socket) => {
     io.to(guesser.id).emit('guessResult', { correct, flagId });
   });
 
-  // ── End turn ─────────────────────────────────────────────────────────────
   socket.on('endTurn', () => {
     const code = socket.data.roomCode;
     const room = gameRooms.get(code);
@@ -162,7 +145,6 @@ io.on('connection', (socket) => {
     io.to(code).emit('turnChanged', { currentPlayer: room.currentPlayer });
   });
 
-  // ── Rollback ─────────────────────────────────────────────────────────────
   socket.on('rollbackRequest', ({ reason, from }) => {
     const code = socket.data.roomCode;
     const opponent = gameRooms.get(code)?.players.find(p => p.id !== socket.id);
@@ -176,30 +158,24 @@ io.on('connection', (socket) => {
     socket.emit('rollbackDecision', { accepted });
   });
 
-  // ── Disconnect ────────────────────────────────────────────────────────────
   socket.on('disconnect', () => {
     const roomNumber = socket.data.roomNumber;
     const code = socket.data.roomCode;
 
-    // Clean lobby room
     if (roomNumber && lobbyRooms[roomNumber]) {
       lobbyRooms[roomNumber].players = lobbyRooms[roomNumber].players.filter(p => p.id !== socket.id);
       broadcastRoomStatus();
     }
 
-    // Notify opponent in game
     if (code) {
       socket.to(code).emit('opponentDisconnected');
-      // Clean game room after grace period
       setTimeout(() => {
         const gr = gameRooms.get(code);
         if (gr && gr.players.every(p => !io.sockets.sockets.has(p.id))) {
           gameRooms.delete(code);
         }
-        // Also reset lobby room so others can join
         if (roomNumber && lobbyRooms[roomNumber]) {
           lobbyRooms[roomNumber].players = [];
-          lobbyRooms[roomNumber].gameStarted = false;
           broadcastRoomStatus();
         }
       }, 30_000);
