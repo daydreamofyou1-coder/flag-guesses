@@ -5,502 +5,831 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Flag Guess Who</title>
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --accent: #2626CC;
-  --accent-light: #4444EE;
-  --bg: #F5F5F7;
-  --card: #FFFFFF;
-  --border: #E0E0E0;
-  --text: #1A1A2E;
-  --muted: #666;
-  --danger: #E74C3C;
-  --success: #27AE60;
-  --warning: #F39C12;
-  --radius: 16px;
+  --bg: #0a0a0f;
+  --surface: #13131a;
+  --surface2: #1c1c26;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #f0f0f8;
+  --muted: #7070a0;
+  --accent: #7c6fff;
+  --accent2: #ff6fa0;
+  --accent3: #6fffd4;
+  --success: #2ecc71;
+  --danger: #ff4d6d;
+  --warning: #ffb830;
+  --radius: 18px;
   --radius-sm: 10px;
+  --radius-xs: 6px;
+  --font: 'Outfit', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --glow: 0 0 40px rgba(124,111,255,0.15);
+  --glow-sm: 0 0 16px rgba(124,111,255,0.2);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124,111,255,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 90% 80%, rgba(255,111,160,0.06) 0%, transparent 50%);
+}
 
-/* ── HEADER  ── */
-.header { background: white; border-bottom: 1px solid var(--border); padding: 0 20px; height: 60px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 100; }
-.header-logo { width: 36px; height: 36px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-.header-logo svg { width: 20px; height: 20px; fill: white; }
-.header h1 { font-size: 1.1rem; font-weight: 700; }
-.header-sub { font-size: .7rem; color: var(--muted); margin-top: 1px; }
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-/* ── SCREEN SYSTEM ── */
-.screen { display: none; min-height: calc(100vh - 60px); }
+/* ── HEADER ── */
+.header {
+  background: rgba(10,10,15,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-logo {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  box-shadow: var(--glow-sm);
+  flex-shrink: 0;
+}
+.header-title { font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; }
+.header-sub { font-size: .68rem; color: var(--muted); }
+
+/* ── SCREENS ── */
+.screen { display: none; min-height: calc(100vh - 56px); }
 .screen.active { display: block; }
 
-/* ── SETUP SCREEN ── */
-.setup-wrap { max-width: 480px; margin: 0 auto; padding: 32px 20px; }
-.step-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 28px; }
-.step-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); transition: .3s; }
-.step-dot.active { background: var(--accent); transform: scale(1.2); }
-.step-dot.done { background: var(--accent); opacity: .5; }
+/* ── WRAP ── */
+.wrap { max-width: 460px; margin: 0 auto; padding: 28px 18px; }
 
-.mode-badge { display: inline-flex; align-items: center; gap: 6px; background: #F0F0FF; border: 1px solid #CCCCFF; border-radius: 100px; padding: 5px 14px; font-size: .75rem; font-weight: 600; color: var(--accent); margin-bottom: 14px; }
-
-.setup-title { font-size: 1.7rem; font-weight: 800; margin-bottom: 8px; }
-.setup-sub { color: var(--muted); font-size: .9rem; margin-bottom: 28px; }
-
-/* Board size cards */
-.size-options { display: flex; flex-direction: column; gap: 14px; margin-bottom: 28px; }
-.size-card { background: white; border: 2px solid var(--border); border-radius: var(--radius); padding: 20px; cursor: pointer; transition: .2s; }
-.size-card:hover { border-color: var(--accent); }
-.size-card.selected { border-color: var(--accent); background: #F0F0FF; }
-.size-card .size-icon { width: 44px; height: 44px; background: #F0F0FF; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; font-size: 1.3rem; }
-.size-card .size-num { font-size: 1.3rem; font-weight: 800; }
-.size-card .size-num span { font-size: .9rem; font-weight: 500; color: var(--muted); }
-.size-card .size-desc { font-size: .8rem; color: var(--muted); margin-top: 3px; }
-
-/* Mode selector */
-.mode-options { display: flex; gap: 10px; margin-bottom: 28px; }
-.mode-card { flex: 1; background: white; border: 2px solid var(--border); border-radius: var(--radius); padding: 16px; cursor: pointer; transition: .2s; text-align: center; }
-.mode-card:hover { border-color: var(--accent); }
-.mode-card.selected { border-color: var(--accent); background: #F0F0FF; }
-.mode-card .mode-icon { font-size: 2rem; margin-bottom: 8px; }
-.mode-card .mode-name { font-size: .9rem; font-weight: 700; }
-.mode-card .mode-desc { font-size: .72rem; color: var(--muted); margin-top: 3px; }
-
-/* Online room setup */
-.room-setup { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
-.room-input { width: 100%; padding: 12px 16px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: .95rem; outline: none; transition: .2s; font-family: inherit; }
-.room-input:focus { border-color: var(--accent); }
-.room-input-label { font-size: .75rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; display: block; }
-.room-input-group { margin-bottom: 14px; }
-.room-info { background: #FFF8E1; border: 1px solid #FFD54F; border-radius: var(--radius-sm); padding: 12px 14px; font-size: .8rem; color: #7B5500; margin-top: 10px; }
-.waiting-indicator { display: flex; align-items: center; gap: 10px; background: #F0F0FF; border: 1px solid #CCCCFF; border-radius: var(--radius-sm); padding: 14px 16px; margin-top: 12px; }
-.pulse-dot { width: 10px; height: 10px; background: var(--accent); border-radius: 50%; animation: pulse 1.4s ease infinite; flex-shrink: 0; }
-@keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.4);opacity:.6} }
-
-/* Primary button */
-.btn { width: 100%; padding: 16px; background: var(--accent); color: white; border: none; border-radius: var(--radius); font-size: 1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: .2s; font-family: inherit; }
-.btn:hover { background: var(--accent-light); }
-.btn:active { transform: scale(.98); }
-.btn:disabled { opacity: .5; cursor: not-allowed; }
-.btn-secondary { background: white; color: var(--text); border: 2px solid var(--border); }
-.btn-secondary:hover { background: var(--bg); border-color: var(--accent); }
-.btn-danger { background: var(--danger); }
-.btn-danger:hover { background: #c0392b; }
-.btn-success { background: var(--success); }
-.btn-success:hover { background: #219a52; }
-.btn-warning { background: var(--warning); }
-.btn-sm { width: auto; padding: 10px 20px; font-size: .85rem; }
-
-/* ── FLAG SELECTION ── */
-.flag-select-wrap { max-width: 480px; margin: 0 auto; padding: 24px 16px; }
-.flags-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
-.flag-card { background: white; border: 2px solid var(--border); border-radius: var(--radius-sm); padding: 8px 4px 10px; cursor: pointer; transition: .2s; text-align: center; position: relative; }
-.flag-card:hover { border-color: #AAAAFF; transform: translateY(-2px); }
-.flag-card.selected { border-color: var(--accent); background: #F0F0FF; }
-.flag-card .check { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; background: var(--accent); border-radius: 50%; display: none; align-items: center; justify-content: center; }
-.flag-card.selected .check { display: flex; }
-.flag-card .check svg { width: 12px; height: 12px; fill: white; }
-.flag-img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 6px; margin-bottom: 6px; display: block; }
-.flag-name { font-size: .72rem; font-weight: 600; color: var(--text); }
-
-/* ── SWITCH TURNS ── */
-.switch-wrap { max-width: 480px; margin: 0 auto; padding: 40px 20px; display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 60px); }
-.switch-card { background: white; border: 1px solid var(--border); border-radius: 24px; padding: 40px 28px; text-align: center; width: 100%; }
-.switch-icon { width: 80px; height: 80px; background: #F0F0FF; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
-.switch-icon svg { width: 36px; height: 36px; stroke: var(--accent); fill: none; stroke-width: 2; }
-.switch-card h2 { font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; }
-.switch-card p { color: var(--muted); margin-bottom: 24px; }
-.privacy-note { background: #F5F5F5; border-radius: var(--radius-sm); padding: 14px; font-size: .8rem; color: var(--muted); display: flex; gap: 8px; align-items: flex-start; text-align: left; margin-bottom: 24px; }
-
-/* ── GAME BOARD ── */
-.game-wrap { max-width: 480px; margin: 0 auto; padding: 16px; }
-.player-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; }
-.player-card-title { font-size: 1rem; font-weight: 800; margin-bottom: 4px; }
-.player-card-sub { font-size: .78rem; color: var(--muted); margin-bottom: 14px; }
-.secret-flag-row { display: flex; align-items: center; gap: 10px; background: #F5F5F7; border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 14px; }
-.secret-flag-label { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); flex: 1; }
-.secret-flag-value { font-size: .85rem; font-weight: 600; }
-.secret-flag-toggle { background: none; border: none; cursor: pointer; padding: 4px; opacity: .5; }
-
-/* Turn action panel */
-.turn-panel { background: #F5F5F7; border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px; }
-.turn-panel-title { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 10px; }
-.turn-actions { display: flex; flex-direction: column; gap: 8px; }
-.turn-input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: .9rem; outline: none; transition: .2s; font-family: inherit; background: white; resize: none; }
-.turn-input:focus { border-color: var(--accent); }
-.turn-btns { display: flex; gap: 8px; }
-.turn-btns .btn { font-size: .85rem; padding: 12px; }
-
-/* Answer panel */
-.answer-panel { background: #EEF0FF; border: 1.5px solid #CCCCFF; border-radius: var(--radius); padding: 18px; margin-bottom: 14px; }
-.question-bubble { background: white; border-radius: var(--radius-sm); padding: 14px; margin-bottom: 14px; font-size: .9rem; line-height: 1.5; border-left: 3px solid var(--accent); }
-.question-from { font-size: .7rem; font-weight: 700; color: var(--accent); margin-bottom: 6px; }
-.answer-btns { display: flex; gap: 10px; }
-.answer-btn { flex: 1; padding: 14px; border: none; border-radius: var(--radius-sm); font-size: 1rem; font-weight: 800; cursor: pointer; transition: .2s; font-family: inherit; }
-.answer-btn-yes { background: var(--success); color: white; }
-.answer-btn-no { background: var(--danger); color: white; }
-.answer-btn:hover { opacity: .85; }
-.answer-btn:active { transform: scale(.97); }
-
-/* Guess panel */
-.guess-panel { background: #FFF3E0; border: 1.5px solid #FFB74D; border-radius: var(--radius); padding: 18px; margin-bottom: 14px; }
-.guess-panel-title { font-size: .75rem; font-weight: 700; color: #7B4500; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .06em; }
-
-/* Rollback */
-.rollback-panel { background: #FFF8E1; border: 1.5px solid var(--warning); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; }
-.rollback-panel h3 { font-size: .9rem; font-weight: 700; margin-bottom: 8px; }
-.rollback-panel p { font-size: .82rem; color: var(--muted); margin-bottom: 14px; }
-.rollback-accept-row { display: flex; gap: 8px; align-items: center; padding: 10px; background: white; border-radius: var(--radius-sm); margin-bottom: 8px; font-size: .82rem; }
-.rollback-accept-row .player-label { font-weight: 700; flex: 1; }
-.check-badge { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; }
-.check-badge.accepted { background: var(--success); color: white; }
-.check-badge.pending { background: var(--border); color: var(--muted); }
-
-/* History log */
-.history-log { background: white; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 14px; max-height: 160px; overflow-y: auto; }
-.history-item { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: .78rem; display: flex; gap: 8px; align-items: flex-start; }
-.history-item:last-child { border-bottom: none; }
-.history-icon { flex-shrink: 0; font-size: .9rem; }
-.history-text { color: var(--muted); line-height: 1.4; }
-.history-text strong { color: var(--text); }
-.history-answer { font-weight: 700; }
-.history-answer.yes { color: var(--success); }
-.history-answer.no { color: var(--danger); }
-
-/* Board flags */
-.board-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
-.board-flag { background: white; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 6px 4px 8px; cursor: pointer; transition: .2s; text-align: center; position: relative; }
-.board-flag:hover { border-color: #AAAAFF; }
-.board-flag.eliminated { opacity: .25; }
-.board-flag.eliminated::after { content: '✕'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: var(--danger); font-weight: 900; background: rgba(255,255,255,.6); border-radius: var(--radius-sm); }
-.board-flag .flag-name { font-size: .68rem; }
-
-/* End turn btn row */
-.end-turn-row { display: flex; gap: 10px; margin-bottom: 16px; }
-.end-turn-row .btn { font-size: .85rem; padding: 13px; }
-
-/* Rollback request btn */
-.rollback-request-btn { display: flex; align-items: center; gap: 6px; background: none; border: 1.5px solid var(--warning); color: var(--warning); border-radius: var(--radius-sm); padding: 8px 14px; font-size: .78rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: .2s; }
-.rollback-request-btn:hover { background: #FFF8E1; }
-
-/* ── GAME OVER ── */
-.gameover-wrap { max-width: 480px; margin: 0 auto; padding: 40px 20px; display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 60px); }
-.gameover-card { background: white; border: 1px solid var(--border); border-radius: 24px; padding: 40px 28px; text-align: center; width: 100%; }
-.trophy { font-size: 4rem; margin-bottom: 16px; display: block; }
-.gameover-card h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; }
-.winner-flag { width: 80px; border-radius: 8px; margin: 16px auto; display: block; }
-.gameover-sub { color: var(--muted); margin-bottom: 28px; }
-.gameover-secret { background: #F5F5F7; border-radius: var(--radius-sm); padding: 16px; margin-bottom: 24px; }
-.gameover-secret p { font-size: .78rem; color: var(--muted); margin-bottom: 8px; }
-.gameover-secrets { display: flex; gap: 16px; justify-content: center; }
-.secret-reveal { text-align: center; }
-.secret-reveal img { width: 56px; border-radius: 6px; margin-bottom: 6px; display: block; }
-.secret-reveal span { font-size: .72rem; font-weight: 700; display: block; }
-.secret-reveal small { font-size: .65rem; color: var(--muted); }
-
-/* ── ONLINE STATUS ── */
-.online-badge { position: fixed; bottom: 16px; right: 16px; background: white; border: 1px solid var(--border); border-radius: 100px; padding: 8px 14px; font-size: .75rem; font-weight: 600; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 12px rgba(0,0,0,.1); z-index: 50; }
-.online-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
-
-/* ── NOTIFICATION TOAST ── */
-#toast { position: fixed; top: 76px; left: 50%; transform: translateX(-50%) translateY(-20px); background: rgba(26,26,46,.95); color: white; padding: 10px 20px; border-radius: 100px; font-size: .82rem; font-weight: 600; z-index: 999; opacity: 0; transition: .3s; pointer-events: none; white-space: nowrap; }
+/* ── TOAST ── */
+#toast {
+  position: fixed; top: 68px; left: 50%;
+  transform: translateX(-50%) translateY(-12px);
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 9px 18px;
+  border-radius: 100px;
+  font-size: .8rem; font-weight: 600;
+  z-index: 999; opacity: 0; transition: .25s;
+  pointer-events: none; white-space: nowrap;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* ── MODAL ── */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; display: flex; align-items: flex-end; justify-content: center; opacity: 0; pointer-events: none; transition: .3s; }
-.modal-overlay.active { opacity: 1; pointer-events: all; }
-.modal-card { background: white; border-radius: 24px 24px 0 0; padding: 28px 24px 40px; width: 100%; max-width: 480px; transform: translateY(40px); transition: .3s; }
-.modal-overlay.active .modal-card { transform: translateY(0); }
-.modal-card h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 8px; }
-.modal-card p { font-size: .85rem; color: var(--muted); margin-bottom: 18px; }
-.modal-btns { display: flex; flex-direction: column; gap: 10px; }
+/* ── BUTTONS ── */
+.btn {
+  width: 100%; padding: 15px;
+  background: linear-gradient(135deg, var(--accent), #5a4fff);
+  color: white; border: none;
+  border-radius: var(--radius-sm);
+  font-size: .95rem; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: .15s; font-family: var(--font);
+  letter-spacing: -0.01em;
+  box-shadow: 0 4px 20px rgba(124,111,255,0.3);
+}
+.btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.btn:active { transform: scale(.98) translateY(0); }
+.btn:disabled { opacity: .35; cursor: not-allowed; transform: none; filter: none; box-shadow: none; }
+.btn-ghost {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  box-shadow: none;
+}
+.btn-ghost:hover { background: var(--surface); border-color: var(--accent); box-shadow: none; }
+.btn-danger { background: linear-gradient(135deg, var(--danger), #c0392b); box-shadow: 0 4px 20px rgba(255,77,109,0.3); }
+.btn-success { background: linear-gradient(135deg, var(--success), #1a9e50); box-shadow: 0 4px 20px rgba(46,204,113,0.3); }
+.btn-warning { background: linear-gradient(135deg, var(--warning), #e0951a); box-shadow: 0 4px 20px rgba(255,184,48,0.3); }
+.btn-sm { width: auto; padding: 9px 18px; font-size: .82rem; }
 
-/* ── ONLINE GAME STATUS ── */
-.online-status-bar { background: var(--accent); color: white; text-align: center; padding: 8px; font-size: .78rem; font-weight: 600; }
-.room-code-display { font-family: monospace; font-size: 1.1rem; font-weight: 900; letter-spacing: .15em; background: rgba(255,255,255,.2); padding: 2px 8px; border-radius: 6px; }
+/* ── SCREEN: HOME ── */
+.home-hero {
+  text-align: center;
+  padding: 36px 0 28px;
+}
+.home-flag-emoji {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  display: block;
+  filter: drop-shadow(0 0 20px rgba(124,111,255,0.4));
+}
+.home-title {
+  font-size: 2.2rem; font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #fff 30%, var(--accent));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.home-sub { font-size: .88rem; color: var(--muted); margin-bottom: 32px; }
+
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+.mode-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 14px;
+  cursor: pointer; transition: .2s; text-align: center;
+}
+.mode-card:hover { border-color: var(--accent); background: var(--surface2); }
+.mode-card.selected {
+  border-color: var(--accent);
+  background: rgba(124,111,255,0.08);
+  box-shadow: var(--glow-sm);
+}
+.mode-icon { font-size: 1.8rem; margin-bottom: 8px; display: block; }
+.mode-name { font-size: .9rem; font-weight: 700; margin-bottom: 2px; }
+.mode-desc { font-size: .7rem; color: var(--muted); }
+
+/* ── ONLINE SETUP ── */
+.online-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.field-label {
+  font-size: .68rem; font-weight: 700;
+  color: var(--muted); text-transform: uppercase;
+  letter-spacing: .1em; margin-bottom: 7px; display: block;
+}
+.field-input {
+  width: 100%; padding: 11px 14px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: .92rem; outline: none;
+  transition: .2s; font-family: var(--font);
+  color: var(--text);
+}
+.field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,111,255,0.1); }
+.field-input::placeholder { color: var(--muted); }
+
+.rooms-label {
+  font-size: .68rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .1em;
+  margin-bottom: 10px;
+}
+.room-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  cursor: pointer; transition: .2s;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.room-card:hover { border-color: var(--accent); background: var(--surface2); }
+.room-card.full { opacity: .4; cursor: not-allowed; }
+.room-card-info { display: flex; flex-direction: column; gap: 2px; }
+.room-card-name { font-size: .9rem; font-weight: 700; }
+.room-card-count { font-size: .72rem; color: var(--muted); font-family: var(--mono); }
+.room-pill {
+  background: rgba(124,111,255,0.15);
+  color: var(--accent);
+  border: 1px solid rgba(124,111,255,0.3);
+  border-radius: 100px; padding: 4px 12px;
+  font-size: .72rem; font-weight: 700;
+}
+.room-card.full .room-pill { background: rgba(255,255,255,0.05); color: var(--muted); border-color: var(--border); }
+
+.waiting-box {
+  background: rgba(124,111,255,0.07);
+  border: 1px solid rgba(124,111,255,0.2);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 4px;
+}
+.pulse-ring {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+  animation: pulse-ring 1.5s ease-in-out infinite;
+}
+@keyframes pulse-ring {
+  0%,100% { box-shadow: 0 0 0 0 rgba(124,111,255,.6); transform: scale(1); }
+  50% { box-shadow: 0 0 0 6px rgba(124,111,255,0); transform: scale(1.1); }
+}
+.waiting-text { font-size: .84rem; font-weight: 600; }
+.waiting-sub { font-size: .72rem; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+
+/* ── SCREEN: SIZE ── */
+.size-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 20px;
+  cursor: pointer; transition: .2s;
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 16px;
+}
+.size-card:hover { border-color: var(--accent); }
+.size-card.selected { border-color: var(--accent); background: rgba(124,111,255,0.08); box-shadow: var(--glow-sm); }
+.size-card-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: rgba(124,111,255,0.12);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; flex-shrink: 0;
+}
+.size-card.selected .size-card-icon { background: rgba(124,111,255,0.2); }
+.size-card-num { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.03em; line-height: 1; }
+.size-card-num span { font-size: .85rem; font-weight: 500; color: var(--muted); }
+.size-card-desc { font-size: .75rem; color: var(--muted); margin-top: 3px; }
+
+.online-size-note {
+  background: rgba(124,111,255,0.08);
+  border: 1px solid rgba(124,111,255,0.2);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  font-size: .8rem; color: var(--accent); font-weight: 600;
+  margin-bottom: 16px; display: none;
+}
+
+/* ── SCREEN: FLAG SELECT ── */
+.screen-title {
+  font-size: 1.5rem; font-weight: 900;
+  letter-spacing: -0.03em; margin-bottom: 4px;
+}
+.screen-sub { font-size: .83rem; color: var(--muted); margin-bottom: 20px; }
+.secret-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(255,111,160,0.1);
+  border: 1px solid rgba(255,111,160,0.25);
+  border-radius: 100px; padding: 4px 12px;
+  font-size: .7rem; font-weight: 700; color: var(--accent2);
+  margin-bottom: 12px;
+}
+
+.flags-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 9px; margin-bottom: 20px;
+}
+.flag-card {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 5px 9px;
+  cursor: pointer; transition: .15s; text-align: center; position: relative;
+  overflow: hidden;
+}
+.flag-card::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(124,111,255,0.08), transparent);
+  opacity: 0; transition: .15s;
+}
+.flag-card:hover { border-color: rgba(124,111,255,0.4); transform: translateY(-2px); }
+.flag-card:hover::before { opacity: 1; }
+.flag-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(124,111,255,0.2); }
+.flag-card.selected::before { opacity: 1; }
+.flag-check {
+  position: absolute; top: 5px; right: 5px;
+  width: 20px; height: 20px;
+  background: var(--accent);
+  border-radius: 50%;
+  display: none; align-items: center; justify-content: center;
+}
+.flag-card.selected .flag-check { display: flex; }
+.flag-check svg { width: 11px; height: 11px; }
+.flag-img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 5px; margin-bottom: 5px; display: block; }
+.flag-name { font-size: .66rem; font-weight: 600; color: var(--muted); }
+.flag-card.selected .flag-name { color: var(--text); }
+
+/* ── SWITCH SCREEN ── */
+.switch-wrap {
+  display: flex; align-items: center; justify-content: center;
+  min-height: calc(100vh - 56px); padding: 24px 18px;
+}
+.switch-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px; padding: 36px 28px;
+  text-align: center; width: 100%; max-width: 420px;
+}
+.switch-glyph {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: rgba(124,111,255,0.1);
+  border: 1px solid rgba(124,111,255,0.2);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 1.8rem;
+}
+.switch-card h2 { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 6px; }
+.switch-card p { font-size: .85rem; color: var(--muted); margin-bottom: 20px; }
+.privacy-box {
+  background: var(--surface2); border-radius: var(--radius-sm);
+  padding: 12px 14px; font-size: .78rem; color: var(--muted);
+  display: flex; gap: 8px; align-items: flex-start;
+  text-align: left; margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+/* ── GAME SCREEN ── */
+.online-bar {
+  background: linear-gradient(90deg, rgba(124,111,255,0.15), rgba(255,111,160,0.1));
+  border-bottom: 1px solid rgba(124,111,255,0.2);
+  padding: 8px 18px; font-size: .75rem; font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+  display: none;
+}
+.online-bar-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent3); flex-shrink: 0; }
+.room-chip {
+  font-family: var(--mono); font-size: .72rem; font-weight: 500;
+  background: rgba(124,111,255,0.15); border: 1px solid rgba(124,111,255,0.25);
+  border-radius: 100px; padding: 2px 9px; color: var(--accent);
+}
+
+.game-wrap { max-width: 460px; margin: 0 auto; padding: 14px 16px; }
+
+.player-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+  margin-bottom: 14px;
+  position: relative; overflow: hidden;
+}
+.player-panel::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  opacity: 0; transition: .3s;
+}
+.player-panel.my-turn::before { opacity: 1; }
+.player-panel.my-turn { border-color: rgba(124,111,255,0.2); }
+
+.panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.panel-title { font-size: .92rem; font-weight: 700; }
+
+/* Secret flag row */
+.secret-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface2); border-radius: var(--radius-xs);
+  padding: 9px 12px; margin-bottom: 12px;
+  border: 1px solid var(--border);
+}
+.secret-label { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); flex: 1; }
+.secret-value { font-size: .82rem; font-weight: 600; }
+.secret-toggle { background: none; border: none; cursor: pointer; padding: 3px; color: var(--muted); transition: .15s; }
+.secret-toggle:hover { color: var(--text); }
 
 /* Turn indicator */
-.turn-indicator { background: var(--accent); color: white; border-radius: var(--radius-sm); padding: 10px 14px; font-size: .82rem; font-weight: 700; text-align: center; margin-bottom: 14px; }
-.turn-indicator.other { background: #F5F5F7; color: var(--muted); }
+.turn-bar {
+  border-radius: var(--radius-xs); padding: 9px 12px;
+  font-size: .8rem; font-weight: 700; text-align: center;
+  margin-bottom: 12px; transition: .3s;
+}
+.turn-bar.active { background: rgba(124,111,255,0.12); color: var(--accent); border: 1px solid rgba(124,111,255,0.2); }
+.turn-bar.waiting { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.turn-bar.success-bar { background: rgba(46,204,113,0.1); color: var(--success); border: 1px solid rgba(46,204,113,0.2); }
 
-/* Action used indicator */
-.action-used { display: flex; align-items: center; gap: 6px; background: #FFF3E0; border: 1px solid #FFB74D; border-radius: var(--radius-sm); padding: 8px 12px; font-size: .78rem; color: #7B4500; font-weight: 600; margin-bottom: 10px; }
+/* Action panels */
+.action-panel { border-radius: var(--radius-sm); padding: 14px; margin-bottom: 12px; }
+.action-panel.ask-panel { background: rgba(124,111,255,0.06); border: 1px solid rgba(124,111,255,0.15); }
+.action-panel.answer-panel { background: rgba(255,111,160,0.06); border: 1px solid rgba(255,111,160,0.2); }
+.action-panel.guess-panel { background: rgba(255,184,48,0.06); border: 1px solid rgba(255,184,48,0.2); }
+.action-panel.waiting-panel { background: var(--surface2); border: 1px solid var(--border); }
 
-.room-card { background: white; border: 2px solid var(--border); border-radius: var(--radius); padding: 16px 18px; cursor: pointer; transition: .2s; display: flex; align-items: center; justify-content: space-between; }
-.room-card:hover { border-color: var(--accent); background: #F8F8FF; }
-.room-card.full { opacity: .5; cursor: not-allowed; }
-.room-card-left { display: flex; flex-direction: column; gap: 3px; }
-.room-card-name { font-size: .95rem; font-weight: 800; }
-.room-card-status { font-size: .75rem; color: var(--muted); }
-.room-card-badge { background: var(--accent); color: white; border-radius: 100px; padding: 5px 14px; font-size: .75rem; font-weight: 700; }
-.room-card.full .room-card-badge { background: var(--border); color: var(--muted); }
-footer { text-align: center; padding: 24px; font-size: .75rem; color: var(--muted); }
+.panel-label {
+  font-size: .65rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--muted); margin-bottom: 10px;
+}
+.ask-panel .panel-label { color: var(--accent); }
+.answer-panel .panel-label { color: var(--accent2); }
+.guess-panel .panel-label { color: var(--warning); }
+
+.question-bubble {
+  background: var(--surface2); border-radius: var(--radius-xs);
+  padding: 12px; margin-bottom: 12px;
+  font-size: .88rem; line-height: 1.5;
+  border-left: 2px solid var(--accent2);
+}
+.q-from { font-size: .68rem; font-weight: 700; color: var(--accent2); margin-bottom: 5px; }
+
+.answer-btns { display: flex; gap: 8px; }
+.answer-btn {
+  flex: 1; padding: 13px;
+  border: none; border-radius: var(--radius-sm);
+  font-size: 1rem; font-weight: 800;
+  cursor: pointer; transition: .15s; font-family: var(--font);
+}
+.answer-btn:active { transform: scale(.97); }
+.yes-btn { background: rgba(46,204,113,0.15); color: var(--success); border: 1.5px solid rgba(46,204,113,0.3); }
+.yes-btn:hover { background: rgba(46,204,113,0.25); }
+.no-btn { background: rgba(255,77,109,0.12); color: var(--danger); border: 1.5px solid rgba(255,77,109,0.25); }
+.no-btn:hover { background: rgba(255,77,109,0.22); }
+
+.textarea-field {
+  width: 100%; padding: 10px 13px;
+  background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); font-size: .88rem;
+  outline: none; transition: .2s;
+  font-family: var(--font); color: var(--text); resize: none;
+  margin-bottom: 9px;
+}
+.textarea-field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,111,255,0.08); }
+.textarea-field::placeholder { color: var(--muted); }
+
+.action-row { display: flex; gap: 8px; }
+.action-row .btn { font-size: .82rem; padding: 11px; }
+
+.waiting-msg { font-size: .84rem; font-weight: 600; }
+.waiting-msg-sub { font-size: .72rem; color: var(--muted); margin-top: 2px; font-style: italic; }
+
+.action-used-notice {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(255,184,48,0.08);
+  border: 1px solid rgba(255,184,48,0.2);
+  border-radius: var(--radius-xs); padding: 8px 12px;
+  font-size: .76rem; color: var(--warning); font-weight: 600;
+  margin-bottom: 10px;
+}
+
+/* History */
+.history-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+  max-height: 170px; overflow-y: auto;
+  display: none;
+}
+.history-head {
+  padding: 9px 14px;
+  font-size: .65rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .1em;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--surface);
+}
+.history-item {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: .76rem; display: flex; gap: 8px; align-items: flex-start;
+}
+.history-item:last-child { border-bottom: none; }
+.h-icon { flex-shrink: 0; font-size: .85rem; margin-top: 1px; }
+.h-text { color: var(--muted); line-height: 1.4; }
+.h-text strong { color: var(--text); }
+.h-ans { font-weight: 700; }
+.h-ans.yes { color: var(--success); }
+.h-ans.no { color: var(--danger); }
+
+/* Board grid */
+.board-label {
+  font-size: .65rem; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .1em;
+  margin-bottom: 8px; padding: 0 2px;
+}
+.board-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; margin-bottom: 16px;
+}
+.board-flag {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 4px 8px;
+  cursor: pointer; transition: .15s; text-align: center; position: relative;
+}
+.board-flag:hover { border-color: rgba(124,111,255,0.35); transform: translateY(-1px); }
+.board-flag.eliminated { opacity: .18; }
+.board-flag.eliminated::after {
+  content: '✕'; position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem; color: var(--danger); font-weight: 900;
+  background: rgba(10,10,15,0.5); border-radius: var(--radius-sm);
+  opacity: 1;
+}
+.board-flag .flag-name { font-size: .64rem; color: var(--muted); }
+
+.end-turn-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.end-turn-row .btn { font-size: .84rem; padding: 12px; }
+
+.rollback-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: none; border: 1px solid rgba(255,184,48,0.25);
+  color: var(--warning); border-radius: var(--radius-xs);
+  padding: 7px 13px; font-size: .74rem; font-weight: 700;
+  cursor: pointer; font-family: var(--font); transition: .15s;
+  margin-bottom: 12px;
+}
+.rollback-btn:hover { background: rgba(255,184,48,0.08); }
+
+/* Rollback panel */
+.rollback-panel {
+  background: rgba(255,184,48,0.06);
+  border: 1px solid rgba(255,184,48,0.2);
+  border-radius: var(--radius-sm); padding: 16px;
+  margin-bottom: 12px;
+}
+.rollback-panel h3 { font-size: .88rem; font-weight: 700; margin-bottom: 6px; }
+.rollback-panel p { font-size: .78rem; color: var(--muted); margin-bottom: 12px; }
+.rb-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 12px; background: var(--surface2);
+  border-radius: var(--radius-xs); margin-bottom: 6px;
+  font-size: .8rem;
+}
+.rb-name { flex: 1; font-weight: 600; }
+.rb-badge {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: .7rem;
+}
+.rb-badge.accepted { background: rgba(46,204,113,0.2); color: var(--success); }
+.rb-badge.pending  { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+.rb-btns { display: flex; gap: 8px; margin-top: 10px; }
+
+/* Game over */
+.gameover-wrap {
+  display: flex; align-items: center; justify-content: center;
+  min-height: calc(100vh - 56px); padding: 24px 18px;
+}
+.gameover-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px; padding: 40px 28px;
+  text-align: center; width: 100%; max-width: 420px;
+  position: relative; overflow: hidden;
+}
+.gameover-card::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(124,111,255,0.12) 0%, transparent 60%);
+}
+.trophy { font-size: 3.5rem; display: block; margin-bottom: 12px; }
+.gameover-title { font-size: 1.8rem; font-weight: 900; letter-spacing: -0.04em; margin-bottom: 6px; }
+.gameover-sub { color: var(--muted); margin-bottom: 22px; font-size: .85rem; }
+.gameover-reveals {
+  background: var(--surface2); border-radius: var(--radius-sm);
+  padding: 16px; margin-bottom: 22px;
+  border: 1px solid var(--border);
+}
+.gameover-reveals-label { font-size: .68rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 14px; }
+.reveal-row { display: flex; gap: 16px; justify-content: center; }
+.reveal-item { text-align: center; }
+.reveal-item img { width: 60px; border-radius: 6px; margin-bottom: 5px; display: block; }
+.reveal-item span { font-size: .72rem; font-weight: 700; display: block; }
+.reveal-item small { font-size: .63rem; color: var(--muted); }
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none; transition: .25s;
+}
+.modal-overlay.active { opacity: 1; pointer-events: all; }
+.modal-card {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 22px 22px 0 0;
+  padding: 26px 22px 36px;
+  width: 100%; max-width: 460px;
+  transform: translateY(30px); transition: .25s;
+}
+.modal-overlay.active .modal-card { transform: translateY(0); }
+.modal-card h3 { font-size: 1.05rem; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.02em; }
+.modal-card p { font-size: .83rem; color: var(--muted); margin-bottom: 16px; }
+.modal-btns { display: flex; flex-direction: column; gap: 9px; }
+.modal-flag-img { width: 100%; border-radius: 10px; margin: 12px 0; border: 1px solid var(--border); }
+
+footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--muted); }
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
 <header class="header">
-  <div class="header-logo">
-    <svg viewBox="0 0 24 24"><path d="M4 4h16v12H4V4zm0 0l8 7 8-7"/></svg>
-  </div>
+  <div class="header-logo">🚩</div>
   <div>
-    <div class="header h1" style="font-size:1.05rem;font-weight:700">Flag Guess Who</div>
-    <div class="header-sub">A fun educational game to learn world flags</div>
+    <div class="header-title">Flag Guess Who</div>
+    <div class="header-sub">Guess your opponent's secret flag</div>
   </div>
 </header>
 
 <div id="toast"></div>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- SCREEN 1: HOME / LOBBY                        -->
-<!-- ══════════════════════════════════════════════ -->
+<!-- ══ SCREEN: HOME ══ -->
 <div class="screen active" id="screen-mode">
-  <div class="setup-wrap">
-    <h2 class="setup-title" style="margin-bottom:6px">Flag Guess Who</h2>
-    <p class="setup-sub" style="margin-bottom:24px">How do you want to play?</p>
+  <div class="wrap">
+    <div class="home-hero">
+      <span class="home-flag-emoji">🌍</span>
+      <h1 class="home-title">Flag Guess Who</h1>
+      <p class="home-sub">A strategic flag guessing game.<br>Outwit your opponent, reveal their secret flag.</p>
+    </div>
 
-    <div class="mode-options" style="margin-bottom:28px">
+    <div class="mode-grid">
       <div class="mode-card selected" id="mode-local" onclick="selectMode('local')">
-        <div class="mode-icon">🏠</div>
+        <span class="mode-icon">🏠</span>
         <div class="mode-name">Local</div>
-        <div class="mode-desc">Pass the device between players</div>
+        <div class="mode-desc">Pass the device</div>
       </div>
       <div class="mode-card" id="mode-online" onclick="selectMode('online')">
-        <div class="mode-icon">🌐</div>
+        <span class="mode-icon">🌐</span>
         <div class="mode-name">Online</div>
-        <div class="mode-desc">Play over the internet</div>
+        <div class="mode-desc">Play over internet</div>
       </div>
     </div>
 
     <div id="online-setup" style="display:none">
-      <div class="room-setup" style="margin-bottom:16px">
-        <div class="room-input-group">
-          <label class="room-input-label">Your Name</label>
-          <input class="room-input" id="player-name" placeholder="Enter your name..." maxlength="20">
-        </div>
+      <div class="online-box" style="margin-bottom:14px">
+        <label class="field-label">Your Name</label>
+        <input class="field-input" id="player-name" placeholder="Enter your name..." maxlength="20">
       </div>
-      <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Pick a Room</div>
-      <div id="room-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+      <div class="rooms-label">Pick a Room</div>
+      <div id="room-list">
         <div class="room-card" id="room-card-1" onclick="joinLobbyRoom(1)">
-          <div class="room-card-left"><div class="room-card-name">Room 1</div><div class="room-card-status" id="room-status-1">0 / 2 players</div></div>
-          <div class="room-card-badge" id="room-badge-1">Join</div>
+          <div class="room-card-info">
+            <div class="room-card-name">Room 1</div>
+            <div class="room-card-count" id="room-status-1">0 / 2 players</div>
+          </div>
+          <div class="room-pill" id="room-badge-1">Join</div>
         </div>
         <div class="room-card" id="room-card-2" onclick="joinLobbyRoom(2)">
-          <div class="room-card-left"><div class="room-card-name">Room 2</div><div class="room-card-status" id="room-status-2">0 / 2 players</div></div>
-          <div class="room-card-badge" id="room-badge-2">Join</div>
+          <div class="room-card-info">
+            <div class="room-card-name">Room 2</div>
+            <div class="room-card-count" id="room-status-2">0 / 2 players</div>
+          </div>
+          <div class="room-pill" id="room-badge-2">Join</div>
         </div>
         <div class="room-card" id="room-card-3" onclick="joinLobbyRoom(3)">
-          <div class="room-card-left"><div class="room-card-name">Room 3</div><div class="room-card-status" id="room-status-3">0 / 2 players</div></div>
-          <div class="room-card-badge" id="room-badge-3">Join</div>
+          <div class="room-card-info">
+            <div class="room-card-name">Room 3</div>
+            <div class="room-card-count" id="room-status-3">0 / 2 players</div>
+          </div>
+          <div class="room-pill" id="room-badge-3">Join</div>
         </div>
       </div>
-      <div id="waiting-area" style="display:none">
-        <div class="waiting-indicator">
-          <div class="pulse-dot"></div>
+      <div id="waiting-area" style="display:none;margin-top:10px">
+        <div class="waiting-box">
+          <div class="pulse-ring"></div>
           <div>
-            <div style="font-size:.85rem;font-weight:700" id="waiting-label">Waiting for opponent...</div>
-            <div style="font-size:.75rem;color:var(--muted);margin-top:2px" id="waiting-sub"></div>
+            <div class="waiting-text" id="waiting-label">Waiting for opponent...</div>
+            <div class="waiting-sub" id="waiting-sub"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <button class="btn" id="local-continue-btn" onclick="goToSizeSelect()">Continue →</button>
+    <button class="btn" id="local-continue-btn" onclick="goToSizeSelect()" style="margin-top:8px">Continue →</button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- SCREEN 2: BOARD SIZE                          -->
-<!-- ══════════════════════════════════════════════ -->
+<!-- ══ SCREEN: SIZE ══ -->
 <div class="screen" id="screen-size">
-  <div class="setup-wrap">
-    <div class="step-dots">
-      <div class="step-dot done"></div>
-      <div class="step-dot active"></div>
-      <div class="step-dot"></div>
-    </div>
-    <h2 class="setup-title">Choose Board Size</h2>
-    <p class="setup-sub">Select how many flags you want to play with</p>
-    <div id="online-size-note" style="display:none;background:#F0F0FF;border:1px solid #CCCCFF;border-radius:var(--radius-sm);padding:12px 14px;font-size:.82rem;color:var(--accent);font-weight:600;margin-bottom:16px">
-      🌐 Both players choose their own size — pick and confirm!
-    </div>
-    <div class="size-options">
-      <div class="size-card" id="size-12" onclick="selectSize(12)">
-        <div class="size-icon">⊞</div>
-        <div class="size-num">12 <span>Flags</span></div>
-        <div class="size-desc">Quick game, perfect for beginners</div>
-      </div>
-      <div class="size-card" id="size-24" onclick="selectSize(24)">
-        <div class="size-icon">⊞</div>
-        <div class="size-num">24 <span>Flags</span></div>
-        <div class="size-desc">Full experience with more challenge</div>
+  <div class="wrap">
+    <div class="online-size-note" id="online-size-note">🌐 Pick your board size, then choose your secret flag!</div>
+    <h2 class="screen-title" style="margin-bottom:4px">Board Size</h2>
+    <p class="screen-sub">How many flags do you want to play with?</p>
+    <div id="size-12" class="size-card" onclick="selectSize(12)">
+      <div class="size-card-icon">⚡</div>
+      <div>
+        <div class="size-card-num">12 <span>Flags</span></div>
+        <div class="size-card-desc">Quick game · ~10 minutes</div>
       </div>
     </div>
-    <button class="btn" id="start-game-btn" onclick="startGame()" disabled>Choose a size first</button>
+    <div id="size-24" class="size-card" onclick="selectSize(24)">
+      <div class="size-card-icon">🌍</div>
+      <div>
+        <div class="size-card-num">24 <span>Flags</span></div>
+        <div class="size-card-desc">Full experience · ~20 minutes</div>
+      </div>
+    </div>
+    <button class="btn" id="start-game-btn" onclick="startGame()" disabled style="margin-top:6px">Choose a size first</button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- SCREEN 3: P1 FLAG SELECTION                   -->
-<!-- ══════════════════════════════════════════════ -->
+<!-- ══ SCREEN: FLAG SELECT (P1 / Online) ══ -->
 <div class="screen" id="screen-p1-select">
-  <div class="flag-select-wrap">
-    <div class="step-dots">
-      <div class="step-dot done"></div>
-      <div class="step-dot done"></div>
-      <div class="step-dot active"></div>
-    </div>
-    <div style="margin-bottom:6px"><span class="mode-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:2px"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>Private Selection</span></div>
-    <h2 class="setup-title" id="p1-select-title">Player 1: Choose Your Secret Flag</h2>
-    <p class="setup-sub">Select a flag that Player 2 will try to guess. Keep it secret!</p>
+  <div class="wrap">
+    <span class="secret-badge">🔒 Private Selection</span>
+    <h2 class="screen-title" id="p1-select-title">Player 1: Pick Your Flag</h2>
+    <p class="screen-sub">Your opponent will try to guess this. Keep it secret!</p>
     <div class="flags-grid" id="p1-flags-grid"></div>
     <button class="btn" id="p1-confirm-btn" onclick="confirmP1Selection()" disabled>Confirm Selection →</button>
   </div>
-  <footer>A fun educational game to learn world flags</footer>
+  <footer>Flag Guess Who · Educational Flag Game</footer>
 </div>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- SCREEN: SWITCH TO P2                          -->
-<!-- ══════════════════════════════════════════════ -->
+<!-- ══ SCREEN: SWITCH TO P2 ══ -->
 <div class="screen" id="screen-switch-p2">
   <div class="switch-wrap">
     <div class="switch-card">
-      <div class="switch-icon">
-        <svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>
-      </div>
-      <h2>Switching Turns</h2>
-      <p>Pass the device to Player 2</p>
-      <div class="privacy-note">
-        <span>🔒</span>
-        <span><strong>Privacy Reminder:</strong> Make sure the previous player looks away before starting your turn. Your secret flag will be hidden by default.</span>
-      </div>
+      <div class="switch-glyph">🔄</div>
+      <h2>Pass to Player 2</h2>
+      <p>Hand the device to Player 2 now</p>
+      <div class="privacy-box"><span>🔒</span><span><strong style="color:var(--text)">Privacy:</strong> Make sure Player 1 looks away before Player 2 picks their flag.</span></div>
       <button class="btn" onclick="startP2Selection()">Start Player 2's Turn →</button>
     </div>
   </div>
-  <footer>A fun educational game to learn world flags</footer>
 </div>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- SCREEN: P2 FLAG SELECTION                     -->
-<!-- ══════════════════════════════════════════════ -->
+<!-- ══ SCREEN: FLAG SELECT (P2) ══ -->
 <div class="screen" id="screen-p2-select">
-  <div class="flag-select-wrap">
-    <div class="step-dots">
-      <div class="step-dot done"></div>
-      <div class="step-dot done"></div>
-      <div class="step-dot done"></div>
-    </div>
-    <div style="margin-bottom:6px"><span class="mode-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:2px"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>Private Selection</span></div>
-    <h2 class="setup-title">Player 2: Choose Your Secret Flag</h2>
-    <p class="setup-sub">Select a flag that Player 1 will try to guess. Keep it secret!</p>
+  <div class="wrap">
+    <span class="secret-badge">🔒 Private Selection</span>
+    <h2 class="screen-title">Player 2: Pick Your Flag</h2>
+    <p class="screen-sub">Your opponent will try to guess this. Keep it secret!</p>
     <div class="flags-grid" id="p2-flags-grid"></div>
     <button class="btn" id="p2-confirm-btn" onclick="confirmP2Selection()" disabled>Confirm Selection →</button>
   </div>
-  <footer>A fun educational game to learn world flags</footer>
+  <footer>Flag Guess Who · Educational Flag Game</footer>
 </div>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- SCREEN: SWITCH TO GAME START                  -->
-<!-- ══════════════════════════════════════════════ -->
+<!-- ══ SCREEN: GAME START ══ -->
 <div class="screen" id="screen-switch-start">
   <div class="switch-wrap">
     <div class="switch-card">
-      <div class="switch-icon">
-        <svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>
-      </div>
+      <div class="switch-glyph">🎮</div>
       <h2>Both Players Ready!</h2>
-      <p>Pass the device to Player 1 to start the game</p>
-      <div class="privacy-note">
-        <span>🎮</span>
-        <span><strong>Game Rules:</strong> Each turn you can ask ONE yes/no question OR make ONE guess. If you guess wrong, you lose your turn. Use rollback if you clicked the wrong answer!</span>
-      </div>
-      <button class="btn" onclick="startGameBoard()">Start Player 1's Turn →</button>
+      <p>Pass to Player 1 to start the game</p>
+      <div class="privacy-box"><span>🎯</span><span><strong style="color:var(--text)">Rules:</strong> Each turn: ask ONE yes/no question OR make ONE guess. Wrong guess = lose your turn.</span></div>
+      <button class="btn" onclick="startGameBoard()">Start Game! →</button>
     </div>
   </div>
-  <footer>A fun educational game to learn world flags</footer>
 </div>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- SCREEN: GAME BOARD (P1 or P2)                 -->
-<!-- ══════════════════════════════════════════════ -->
+<!-- ══ SCREEN: GAME BOARD ══ -->
 <div class="screen" id="screen-game">
-  <div id="online-bar" style="display:none" class="online-status-bar">
-    🌐 Online — Room: <span class="room-code-display" id="bar-room-code"></span>
+  <div class="online-bar" id="online-bar">
+    <div class="online-bar-dot"></div>
+    <span>Online</span>
+    <span class="room-chip" id="bar-room-code"></span>
   </div>
   <div class="game-wrap">
-    <!-- Player info -->
-    <div class="player-card">
-      <div class="player-card-title" id="board-player-title">Player 1's Board</div>
-      <div class="player-card-sub">Ask questions and eliminate flags to find your opponent's secret flag</div>
-      <div class="secret-flag-row">
-        <span class="secret-flag-label">YOUR SECRET FLAG</span>
-        <span class="secret-flag-value" id="secret-flag-display">Hidden</span>
-        <button class="secret-flag-toggle" id="secret-toggle-btn" onclick="toggleSecretFlag()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>
+    <div class="player-panel" id="player-panel">
+      <div class="panel-header">
+        <span class="panel-title" id="board-player-title">Player 1's Board</span>
+      </div>
+
+      <div class="secret-row">
+        <span class="secret-label">Your Secret Flag</span>
+        <span class="secret-value" id="secret-flag-display">Hidden</span>
+        <button class="secret-toggle" id="secret-toggle-btn" onclick="toggleSecretFlag()">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>
         </button>
       </div>
 
-      <!-- Turn indicator -->
-      <div class="turn-indicator" id="turn-indicator">🎯 Your turn — ask a question or make a guess!</div>
+      <div class="turn-bar active" id="turn-bar">🎯 Your turn — ask or guess!</div>
 
-      <!-- Active action: ASKING mode -->
-      <div id="action-panel-ask" class="turn-panel" style="display:none">
-        <div class="turn-panel-title">Ask a Yes/No Question</div>
-        <div class="turn-actions">
-          <textarea class="turn-input" id="question-input" rows="2" placeholder="e.g. Does the flag have red in it?"></textarea>
-          <div class="turn-btns">
-            <button class="btn btn-secondary" style="font-size:.82rem;padding:11px" onclick="switchToGuess()">💡 Guess Instead</button>
-            <button class="btn" style="font-size:.82rem;padding:11px" onclick="submitQuestion()">Send Question →</button>
-          </div>
+      <!-- Ask panel -->
+      <div id="action-panel-ask" class="action-panel ask-panel" style="display:none">
+        <div class="panel-label">Ask a Yes / No Question</div>
+        <textarea class="textarea-field" id="question-input" rows="2" placeholder="e.g. Does the flag have red in it?"></textarea>
+        <div class="action-row">
+          <button class="btn btn-ghost" style="font-size:.8rem;padding:10px" onclick="switchToGuess()">💡 Guess Instead</button>
+          <button class="btn" style="font-size:.8rem;padding:10px" onclick="submitQuestion()">Send →</button>
         </div>
       </div>
 
-      <!-- Active action: GUESSING mode -->
-      <div id="action-panel-guess" class="turn-panel" style="display:none">
-        <div class="turn-panel-title">Make Your Guess</div>
-        <div class="guess-panel" style="background:none;border:none;padding:0;margin:0">
-          <p style="font-size:.82rem;color:var(--muted);margin-bottom:10px">⚠️ If you guess wrong, you <strong>lose your turn</strong>. Tap a flag below to guess.</p>
-          <div class="turn-btns">
-            <button class="btn btn-secondary" style="font-size:.82rem;padding:11px" onclick="switchToAsk()">← Ask Instead</button>
-          </div>
-        </div>
+      <!-- Guess panel -->
+      <div id="action-panel-guess" class="action-panel guess-panel" style="display:none">
+        <div class="panel-label">Make Your Guess</div>
+        <p style="font-size:.8rem;color:var(--muted);margin-bottom:10px">⚠️ Wrong guess = <strong style="color:var(--text)">lose your turn</strong>. Tap a flag below.</p>
+        <button class="btn btn-ghost" style="font-size:.8rem;padding:10px" onclick="switchToAsk()">← Ask Instead</button>
       </div>
 
-      <!-- Waiting for opponent to answer -->
-      <div id="action-panel-waiting" style="display:none">
-        <div class="waiting-indicator">
-          <div class="pulse-dot"></div>
+      <!-- Waiting panel -->
+      <div id="action-panel-waiting" class="action-panel waiting-panel" style="display:none">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="pulse-ring"></div>
           <div>
-            <div style="font-size:.85rem;font-weight:700">Waiting for opponent to answer...</div>
-            <div id="waiting-question-preview" style="font-size:.75rem;color:var(--muted);margin-top:3px"></div>
+            <div class="waiting-msg">Waiting for opponent to answer...</div>
+            <div class="waiting-msg-sub" id="waiting-question-preview"></div>
           </div>
         </div>
       </div>
 
-      <!-- Answering opponent's question -->
-      <div id="action-panel-answer" class="answer-panel" style="display:none">
-        <div class="turn-panel-title" style="color:var(--accent)">Opponent's Question</div>
+      <!-- Answer panel -->
+      <div id="action-panel-answer" class="action-panel answer-panel" style="display:none">
+        <div class="panel-label">Opponent's Question</div>
         <div class="question-bubble">
-          <div class="question-from" id="answer-from-label">Player asks:</div>
+          <div class="q-from" id="answer-from-label">Opponent asks:</div>
           <div id="answer-question-text"></div>
         </div>
         <div class="answer-btns">
-          <button class="answer-btn answer-btn-yes" onclick="submitAnswer(true)">✓ YES</button>
-          <button class="answer-btn answer-btn-no" onclick="submitAnswer(false)">✗ NO</button>
-        </div>
-      </div>
-
-      <!-- After answering: submit your own question -->
-      <div id="action-panel-post-answer" style="display:none">
-        <div class="turn-panel">
-          <div class="turn-panel-title">Now it's your turn! Ask a question or guess.</div>
-          <div class="turn-actions">
-            <textarea class="turn-input" id="post-answer-question-input" rows="2" placeholder="e.g. Does the flag have a cross?"></textarea>
-            <div class="turn-btns">
-              <button class="btn btn-secondary" style="font-size:.82rem;padding:11px" onclick="switchToGuessPostAnswer()">💡 Guess Instead</button>
-              <button class="btn" style="font-size:.82rem;padding:11px" onclick="submitPostAnswerQuestion()">Send Question →</button>
-            </div>
-          </div>
+          <button class="answer-btn yes-btn" onclick="submitAnswer(true)">✓ YES</button>
+          <button class="answer-btn no-btn" onclick="submitAnswer(false)">✗ NO</button>
         </div>
       </div>
 
@@ -508,215 +837,166 @@ footer { text-align: center; padding: 24px; font-size: .75rem; color: var(--mute
       <div id="rollback-panel" class="rollback-panel" style="display:none">
         <h3>⏪ Rollback Requested</h3>
         <p id="rollback-reason-display"></p>
-        <div class="rollback-accept-row">
-          <span class="player-label" id="rollback-p1-label">Player 1</span>
-          <div class="check-badge" id="rollback-p1-badge">?</div>
-        </div>
-        <div class="rollback-accept-row">
-          <span class="player-label" id="rollback-p2-label">Player 2</span>
-          <div class="check-badge" id="rollback-p2-badge">?</div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <button class="btn btn-success btn-sm" id="rollback-accept-btn" onclick="acceptRollback()">Accept Rollback</button>
+        <div class="rb-row"><span class="rb-name" id="rb-p1-name">Player 1</span><div class="rb-badge pending" id="rb-p1-badge">?</div></div>
+        <div class="rb-row"><span class="rb-name" id="rb-p2-name">Player 2</span><div class="rb-badge pending" id="rb-p2-badge">?</div></div>
+        <div class="rb-btns">
+          <button class="btn btn-success btn-sm" onclick="acceptRollback()">Accept</button>
           <button class="btn btn-danger btn-sm" onclick="declineRollback()">Decline</button>
         </div>
       </div>
 
-      <!-- Action used -->
-      <div id="action-used-banner" class="action-used" style="display:none">
-        ⚡ You've used your action this turn — end your turn or request a rollback.
-      </div>
+      <div id="action-used-notice" class="action-used-notice" style="display:none">⚡ Action used — end your turn or request a rollback</div>
 
-      <!-- End Turn row -->
       <div class="end-turn-row" id="end-turn-row" style="display:none">
         <button class="btn" onclick="endTurn()">End Turn →</button>
       </div>
 
-      <!-- Rollback request button -->
-      <div id="rollback-request-area" style="margin-bottom:10px;display:none">
-        <button class="rollback-request-btn" onclick="openRollbackModal()">⏪ Request Rollback</button>
+      <div id="rollback-request-area" style="display:none">
+        <button class="rollback-btn" onclick="openRollbackModal()">⏪ Request Rollback</button>
       </div>
     </div>
 
-    <!-- Question/Answer History -->
-    <div class="history-log" id="history-log" style="display:none">
-      <div style="padding:10px 14px;font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)">Game History</div>
+    <div class="history-wrap" id="history-log">
+      <div class="history-head">Game History</div>
       <div id="history-items"></div>
     </div>
 
-    <!-- The Flag Board -->
-    <div style="font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding:0 2px">Flags — tap to eliminate / guess</div>
+    <div class="board-label">Flags — tap to eliminate · tap again to restore</div>
     <div class="board-grid" id="board-grid"></div>
   </div>
-  <footer>A fun educational game to learn world flags</footer>
+  <footer>Flag Guess Who · Educational Flag Game</footer>
 </div>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- SCREEN: SWITCH TURNS DURING GAME              -->
-<!-- ══════════════════════════════════════════════ -->
+<!-- ══ SCREEN: SWITCH TURNS ══ -->
 <div class="screen" id="screen-switch-turn">
   <div class="switch-wrap">
     <div class="switch-card">
-      <div class="switch-icon">
-        <svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>
-      </div>
-      <h2 id="switch-turn-title">Switching to Player 2</h2>
-      <p id="switch-turn-sub">Pass the device to Player 2</p>
-      <div class="privacy-note">
-        <span>🔒</span>
-        <span>Make sure the previous player looks away. Your secret flag will be hidden by default.</span>
-      </div>
+      <div class="switch-glyph">🔄</div>
+      <h2 id="switch-turn-title">Switching Turns</h2>
+      <p id="switch-turn-sub">Pass the device</p>
+      <div class="privacy-box"><span>🔒</span><span>Make sure the previous player looks away first.</span></div>
       <button class="btn" id="switch-turn-btn" onclick="resumeGameBoard()">Start My Turn →</button>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- SCREEN: GAME OVER                             -->
-<!-- ══════════════════════════════════════════════ -->
+<!-- ══ SCREEN: GAME OVER ══ -->
 <div class="screen" id="screen-gameover">
   <div class="gameover-wrap">
     <div class="gameover-card">
       <span class="trophy" id="gameover-trophy">🏆</span>
-      <h2 id="gameover-title">Player 1 Wins!</h2>
+      <h2 class="gameover-title" id="gameover-title">Player 1 Wins!</h2>
       <p class="gameover-sub" id="gameover-sub">Correctly guessed the secret flag!</p>
-      <div class="gameover-secret">
-        <p>Secret flags revealed</p>
-        <div class="gameover-secrets">
-          <div class="secret-reveal">
-            <img id="gameover-p1-flag" src="" alt="">
-            <span id="gameover-p1-name"></span>
-            <small>Player 1</small>
-          </div>
-          <div class="secret-reveal">
-            <img id="gameover-p2-flag" src="" alt="">
-            <span id="gameover-p2-name"></span>
-            <small>Player 2</small>
-          </div>
+      <div class="gameover-reveals">
+        <div class="gameover-reveals-label">Secret Flags Revealed</div>
+        <div class="reveal-row">
+          <div class="reveal-item"><img id="go-p1-flag" src="" alt=""><span id="go-p1-name"></span><small>Player 1</small></div>
+          <div class="reveal-item"><img id="go-p2-flag" src="" alt=""><span id="go-p2-name"></span><small>Player 2</small></div>
         </div>
       </div>
       <button class="btn" onclick="playAgain()">Play Again</button>
-      <button class="btn btn-secondary" style="margin-top:10px" onclick="goHome()">Back to Home</button>
+      <button class="btn btn-ghost" style="margin-top:9px" onclick="goHome()">Back to Home</button>
     </div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════ -->
-<!-- MODALS                                        -->
-<!-- ══════════════════════════════════════════════ -->
-
-<!-- Rollback request modal -->
+<!-- ══ MODAL: ROLLBACK ══ -->
 <div class="modal-overlay" id="modal-rollback">
   <div class="modal-card">
-    <h3>⏪ Request a Rollback</h3>
-    <p>Explain why you want to undo the last action. Both players must agree.</p>
-    <textarea class="turn-input" id="rollback-reason-input" rows="3" placeholder="e.g. I accidentally clicked the wrong answer..." style="margin-bottom:14px"></textarea>
+    <h3>⏪ Request Rollback</h3>
+    <p>Explain the mistake. Both players must agree to undo.</p>
+    <textarea class="textarea-field" id="rollback-reason-input" rows="3" placeholder="e.g. I accidentally clicked the wrong answer..."></textarea>
     <div class="modal-btns">
-      <button class="btn btn-warning" onclick="submitRollbackRequest()">Send Rollback Request</button>
-      <button class="btn btn-secondary" onclick="closeModal('modal-rollback')">Cancel</button>
+      <button class="btn btn-warning" onclick="submitRollbackRequest()">Send Request</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-rollback')">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- Guess confirmation modal -->
+<!-- ══ MODAL: GUESS CONFIRM ══ -->
 <div class="modal-overlay" id="modal-guess">
   <div class="modal-card">
     <h3 id="modal-guess-title">Guess: Germany?</h3>
-    <img id="modal-guess-flag" src="" alt="" style="width:100%;border-radius:10px;margin:14px 0">
-    <p>Are you sure? If wrong, you <strong>lose your turn</strong>. If right, you <strong>win the game!</strong></p>
+    <img id="modal-guess-flag" class="modal-flag-img" src="" alt="">
+    <p>Wrong guess = <strong style="color:var(--text)">lose your turn</strong>. Correct = <strong style="color:var(--accent3)">you win!</strong></p>
     <div class="modal-btns">
       <button class="btn btn-warning" onclick="confirmGuess()">Yes, I'm sure!</button>
-      <button class="btn btn-secondary" onclick="closeModal('modal-guess')">Cancel</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-guess')">Cancel</button>
     </div>
   </div>
 </div>
 
 <script>
-// ════════════════════════════════════════════════
-// FLAGS DATA
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// FLAGS
+// ══════════════════════════════════════════════
 const ALL_FLAGS = [
-  { id: 'de', name: 'Germany',       img: 'https://flagcdn.com/w160/de.png' },
-  { id: 'br', name: 'Brazil',        img: 'https://flagcdn.com/w160/br.png' },
-  { id: 'tr', name: 'Turkey',        img: 'https://flagcdn.com/w160/tr.png' },
-  { id: 'in', name: 'India',         img: 'https://flagcdn.com/w160/in.png' },
-  { id: 'gb', name: 'United Kingdom',img: 'https://flagcdn.com/w160/gb.png' },
-  { id: 'gr', name: 'Greece',        img: 'https://flagcdn.com/w160/gr.png' },
-  { id: 'mx', name: 'Mexico',        img: 'https://flagcdn.com/w160/mx.png' },
-  { id: 'us', name: 'United States', img: 'https://flagcdn.com/w160/us.png' },
-  { id: 'nl', name: 'Netherlands',   img: 'https://flagcdn.com/w160/nl.png' },
-  { id: 'se', name: 'Sweden',        img: 'https://flagcdn.com/w160/se.png' },
-  { id: 'dk', name: 'Denmark',       img: 'https://flagcdn.com/w160/dk.png' },
-  { id: 'au', name: 'Australia',     img: 'https://flagcdn.com/w160/au.png' },
-  { id: 'it', name: 'Italy',         img: 'https://flagcdn.com/w160/it.png' },
-  { id: 'ca', name: 'Canada',        img: 'https://flagcdn.com/w160/ca.png' },
-  { id: 'za', name: 'South Africa',  img: 'https://flagcdn.com/w160/za.png' },
-  { id: 'ch', name: 'Switzerland',   img: 'https://flagcdn.com/w160/ch.png' },
-  { id: 'jp', name: 'Japan',         img: 'https://flagcdn.com/w160/jp.png' },
-  { id: 'kr', name: 'South Korea',   img: 'https://flagcdn.com/w160/kr.png' },
-  { id: 'fr', name: 'France',        img: 'https://flagcdn.com/w160/fr.png' },
-  { id: 'no', name: 'Norway',        img: 'https://flagcdn.com/w160/no.png' },
-  { id: 'ar', name: 'Argentina',     img: 'https://flagcdn.com/w160/ar.png' },
-  { id: 'es', name: 'Spain',         img: 'https://flagcdn.com/w160/es.png' },
-  { id: 'cn', name: 'China',         img: 'https://flagcdn.com/w160/cn.png' },
-  { id: 'pt', name: 'Portugal',      img: 'https://flagcdn.com/w160/pt.png' },
+  { id:'de', name:'Germany',        img:'https://flagcdn.com/w160/de.png' },
+  { id:'br', name:'Brazil',         img:'https://flagcdn.com/w160/br.png' },
+  { id:'tr', name:'Turkey',         img:'https://flagcdn.com/w160/tr.png' },
+  { id:'in', name:'India',          img:'https://flagcdn.com/w160/in.png' },
+  { id:'gb', name:'United Kingdom', img:'https://flagcdn.com/w160/gb.png' },
+  { id:'gr', name:'Greece',         img:'https://flagcdn.com/w160/gr.png' },
+  { id:'mx', name:'Mexico',         img:'https://flagcdn.com/w160/mx.png' },
+  { id:'us', name:'United States',  img:'https://flagcdn.com/w160/us.png' },
+  { id:'nl', name:'Netherlands',    img:'https://flagcdn.com/w160/nl.png' },
+  { id:'se', name:'Sweden',         img:'https://flagcdn.com/w160/se.png' },
+  { id:'dk', name:'Denmark',        img:'https://flagcdn.com/w160/dk.png' },
+  { id:'au', name:'Australia',      img:'https://flagcdn.com/w160/au.png' },
+  { id:'it', name:'Italy',          img:'https://flagcdn.com/w160/it.png' },
+  { id:'ca', name:'Canada',         img:'https://flagcdn.com/w160/ca.png' },
+  { id:'za', name:'South Africa',   img:'https://flagcdn.com/w160/za.png' },
+  { id:'ch', name:'Switzerland',    img:'https://flagcdn.com/w160/ch.png' },
+  { id:'jp', name:'Japan',          img:'https://flagcdn.com/w160/jp.png' },
+  { id:'kr', name:'South Korea',    img:'https://flagcdn.com/w160/kr.png' },
+  { id:'fr', name:'France',         img:'https://flagcdn.com/w160/fr.png' },
+  { id:'no', name:'Norway',         img:'https://flagcdn.com/w160/no.png' },
+  { id:'ar', name:'Argentina',      img:'https://flagcdn.com/w160/ar.png' },
+  { id:'es', name:'Spain',          img:'https://flagcdn.com/w160/es.png' },
+  { id:'cn', name:'China',          img:'https://flagcdn.com/w160/cn.png' },
+  { id:'pt', name:'Portugal',       img:'https://flagcdn.com/w160/pt.png' },
 ];
 
-// ════════════════════════════════════════════════
-// GAME STATE
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
 let state = {
-  mode: 'local',          // 'local' | 'online'
-  boardSize: 0,           // 12 or 24
-  flags: [],              // active flags for this game
+  mode: 'local', boardSize: 0, flags: [],
   p1: { name: 'Player 1', secretFlag: null, eliminated: [], actionUsed: false },
   p2: { name: 'Player 2', secretFlag: null, eliminated: [], actionUsed: false },
-  currentPlayer: 1,       // 1 or 2
-  phase: 'setup',         // setup|p1-select|p2-select|p1-turn|p2-turn|p1-answer|p2-answer
-  pendingQuestion: null,  // { from, text }
-  pendingGuess: null,     // { flagId }
-  history: [],            // [{type,from,text,answer}]
-  rollback: null,         // { requestedBy, reason, p1Accepted, p2Accepted, snapshot }
+  currentPlayer: 1,
+  pendingQuestion: null, history: [], rollback: null,
   secretVisible: false,
-  // online
-  roomCode: '',
-  playerSlot: 0,          // 1 or 2 for online
-  socket: null,
+  roomCode: '', joinedRoom: 0, playerSlot: 0, socket: null,
 };
+let guessMode = false, pendingGuessFlag = null;
+let p1SelectTemp = null, p2SelectTemp = null;
 
-let guessMode = false; // are we in guess-flag tap mode?
-let pendingGuessFlag = null;
-
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 // UTILS
-// ════════════════════════════════════════════════
-function showToast(msg, dur=2500) {
+// ══════════════════════════════════════════════
+function showToast(msg, dur=2800) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), dur);
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), dur);
 }
-
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0, 0);
 }
-
-function openModal(id) {
-  document.getElementById(id).classList.add('active');
-}
-function closeModal(id) {
-  document.getElementById(id).classList.remove('active');
-}
-
-function flagById(id) { return ALL_FLAGS.find(f => f.id === id); }
+function openModal(id)  { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+function flagById(id)   { return ALL_FLAGS.find(f => f.id === id); }
+function myObj()        { return state.playerSlot === 2 ? state.p2 : state.p1; }  // online: who am I
 function currentPlayerObj() { return state.currentPlayer === 1 ? state.p1 : state.p2; }
-function otherPlayerObj() { return state.currentPlayer === 1 ? state.p2 : state.p1; }
+function otherPlayerObj()   { return state.currentPlayer === 1 ? state.p2 : state.p1; }
+function isMyTurnOnline()   { return state.playerSlot === state.currentPlayer; }
 
-// ════════════════════════════════════════════════
-// SETUP FLOW
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// SETUP
+// ══════════════════════════════════════════════
 function selectMode(mode) {
   state.mode = mode;
   document.getElementById('mode-local').classList.toggle('selected', mode === 'local');
@@ -725,26 +1005,27 @@ function selectMode(mode) {
   document.getElementById('local-continue-btn').style.display = mode === 'local' ? 'flex' : 'none';
   if (mode === 'online') connectLobby();
 }
-
 function goToSizeSelect() { showScreen('screen-size'); }
 
-// ─── LOBBY ─────────────────────────────────────
-let lobbySocket = null;
-let pendingRoomJoin = null;
+// ══════════════════════════════════════════════
+// LOBBY
+// ══════════════════════════════════════════════
+let lobbySocket = null, pendingRoomJoin = null;
 
 function connectLobby() {
   if (lobbySocket) return;
-  if (typeof io === 'undefined') { showToast('Socket.io failed to load — refresh the page.'); return; }
+  if (typeof io === 'undefined') { showToast('Socket.io failed — refresh page'); return; }
   const RENDER_URL = 'https://flag-guesses.onrender.com';
   lobbySocket = io(RENDER_URL, { transports: ['websocket', 'polling'] });
   showToast('Connecting to server...', 5000);
 
   lobbySocket.on('connect', () => {
-    showToast('Connected! ✓');
+    showToast('Connected ✓');
     lobbySocket.emit('getRoomStatus');
     if (pendingRoomJoin) { lobbySocket.emit('joinLobbyRoom', pendingRoomJoin); pendingRoomJoin = null; }
   });
-  lobbySocket.on('connect_error', () => { showToast('Server waking up, retrying...', 3000); });
+  lobbySocket.on('connect_error', () => showToast('Server waking up, retrying...', 3000));
+
   lobbySocket.on('roomStatus', ({ rooms }) => {
     rooms.forEach(({ roomNumber, count }) => {
       const card   = document.getElementById('room-card-'   + roomNumber);
@@ -756,54 +1037,60 @@ function connectLobby() {
       badge.textContent = count >= 2 ? 'Full' : 'Join';
     });
   });
+
   lobbySocket.on('waitingForOpponent', () => {
     document.getElementById('waiting-area').style.display = 'block';
     document.getElementById('waiting-label').textContent = 'Waiting for an opponent...';
-    document.getElementById('waiting-sub').textContent = 'Room ' + state.joinedRoom + ' — 1 / 2 players';
+    document.getElementById('waiting-sub').textContent = 'Room ' + state.joinedRoom + ' · 1 / 2 players';
     document.getElementById('room-list').style.display = 'none';
   });
+
   lobbySocket.on('matchFound', ({ roomCode, slot, opponentName }) => {
     state.roomCode = roomCode; state.playerSlot = slot; state.socket = lobbySocket;
     if (slot === 1) { state.p2.name = opponentName || 'Player 2'; }
     else { const n = state.p1.name; state.p1.name = opponentName || 'Player 1'; state.p2.name = n; }
-    document.getElementById('online-bar').style.display = 'block';
+    document.getElementById('online-bar').style.display = 'flex';
     document.getElementById('bar-room-code').textContent = 'Room ' + state.joinedRoom;
     document.getElementById('online-size-note').style.display = 'block';
-    document.getElementById('start-game-btn').textContent = 'Confirm Size & Pick Flag →';
+    document.getElementById('start-game-btn').textContent = 'Confirm & Pick Flag →';
     document.getElementById('start-game-btn').disabled = true;
     document.getElementById('size-12').classList.remove('selected');
     document.getElementById('size-24').classList.remove('selected');
     state.boardSize = 0;
     showScreen('screen-size');
   });
+
   lobbySocket.on('joinError', ({ message }) => {
     showToast(message);
     document.getElementById('waiting-area').style.display = 'none';
-    document.getElementById('room-list').style.display = 'flex';
+    document.getElementById('room-list').style.display = 'block';
   });
 }
 
 function joinLobbyRoom(roomNumber) {
   const name = document.getElementById('player-name').value.trim();
-  if (!name) return showToast('Please enter your name first');
-  if (document.getElementById('room-card-' + roomNumber).classList.contains('full')) return showToast('That room is full!');
+  if (!name) return showToast('Enter your name first!');
+  if (document.getElementById('room-card-' + roomNumber).classList.contains('full')) return showToast('Room is full!');
   state.p1.name = name; state.joinedRoom = roomNumber;
   if (!lobbySocket || !lobbySocket.connected) {
     pendingRoomJoin = { roomNumber, playerName: name };
-    showToast('Connecting... joining Room ' + roomNumber + ' automatically.');
+    showToast('Connecting... will join Room ' + roomNumber + ' automatically');
     if (!lobbySocket) connectLobby();
     return;
   }
   lobbySocket.emit('joinLobbyRoom', { roomNumber, playerName: name });
 }
 
+// ══════════════════════════════════════════════
+// SIZE + START
+// ══════════════════════════════════════════════
 function selectSize(n) {
   state.boardSize = n;
   document.getElementById('size-12').classList.toggle('selected', n === 12);
   document.getElementById('size-24').classList.toggle('selected', n === 24);
   const btn = document.getElementById('start-game-btn');
   btn.disabled = false;
-  btn.textContent = state.mode === 'online' ? 'Confirm Size & Pick Flag →' : 'Start Game →';
+  btn.textContent = state.mode === 'online' ? 'Confirm & Pick Flag →' : 'Start Game →';
 }
 
 function startGame() {
@@ -816,34 +1103,31 @@ function startGame() {
     initOnlineGame();
     renderFlagGrid('p1-flags-grid', null, id => onlineFlagClick(id));
     const myName = state.playerSlot === 1 ? state.p1.name : state.p2.name;
-    document.getElementById('p1-select-title').textContent = myName + ': Choose Your Secret Flag';
+    document.getElementById('p1-select-title').textContent = myName + ': Pick Your Secret Flag';
     document.getElementById('p1-confirm-btn').disabled = true;
     document.getElementById('p1-confirm-btn').textContent = 'Confirm Selection →';
     showScreen('screen-p1-select');
-    return;
+  } else {
+    renderFlagGrid('p1-flags-grid', null, id => selectFlagP1(id));
+    showScreen('screen-p1-select');
   }
-  renderFlagGrid('p1-flags-grid', null, id => selectFlagP1(id));
-  showScreen('screen-p1-select');
 }
 
-// ════════════════════════════════════════════════
-// FLAG GRID RENDER
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// FLAG GRID
+// ══════════════════════════════════════════════
 function renderFlagGrid(containerId, selectedId, onClickFn) {
   document.getElementById(containerId).innerHTML = state.flags.map(f => `
-    <div class="flag-card ${selectedId === f.id ? 'selected' : ''}" id="fc-${containerId}-${f.id}" onclick="(${onClickFn.toString()})('${f.id}')">
-      <div class="check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div class="flag-card ${selectedId===f.id?'selected':''}" id="fc-${containerId}-${f.id}" onclick="(${onClickFn.toString()})('${f.id}')">
+      <div class="flag-check"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
       <img class="flag-img" src="${f.img}" alt="${f.name}" loading="lazy">
       <div class="flag-name">${f.name}</div>
     </div>`).join('');
 }
 
-// ════════════════════════════════════════════════
-// SELECTION FLOW
-// ════════════════════════════════════════════════
-let p1SelectTemp = null;
-let p2SelectTemp = null;
-
+// ══════════════════════════════════════════════
+// SELECTION
+// ══════════════════════════════════════════════
 function selectFlagP1(id) {
   p1SelectTemp = id;
   document.querySelectorAll('#p1-flags-grid .flag-card').forEach(c => c.classList.remove('selected'));
@@ -866,6 +1150,7 @@ function onlineFlagClick(id) {
 function confirmP1Selection() {
   if (!p1SelectTemp) return;
   if (state.mode === 'online') {
+    // FIX: save to the correct player slot
     if (state.playerSlot === 1) state.p1.secretFlag = p1SelectTemp;
     else state.p2.secretFlag = p1SelectTemp;
     state.socket.emit('confirmFlag', { flagId: p1SelectTemp });
@@ -892,40 +1177,51 @@ function startGameBoard() {
   showScreen('screen-game');
 }
 
-// ════════════════════════════════════════════════
-// GAME BOARD
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// BOARD
+// ══════════════════════════════════════════════
 function renderBoard() {
   const cur = currentPlayerObj();
   document.getElementById('board-player-title').textContent = cur.name + "'s Board";
   document.getElementById('secret-flag-display').textContent = 'Hidden';
   state.secretVisible = false;
-  updateSecretToggleIcon();
-  const ti = document.getElementById('turn-indicator');
-  if (cur.actionUsed) { ti.textContent = '✅ Action used — end your turn'; ti.style.background = '#27AE60'; }
-  else { ti.textContent = '🎯 Your turn — ask or guess!'; ti.style.background = 'var(--accent)'; }
+  updateSecretIcon();
+
+  const tb = document.getElementById('turn-bar');
+  const panel = document.getElementById('player-panel');
+  if (cur.actionUsed) {
+    tb.textContent = '✅ Action used — end your turn';
+    tb.className = 'turn-bar success-bar';
+    panel.classList.add('my-turn');
+  } else {
+    tb.textContent = '🎯 Your turn — ask a question or guess!';
+    tb.className = 'turn-bar active';
+    panel.classList.add('my-turn');
+  }
+
   showActionPanel(cur.actionUsed ? 'none' : 'ask');
   document.getElementById('end-turn-row').style.display = cur.actionUsed ? 'flex' : 'none';
-  document.getElementById('action-used-banner').style.display = cur.actionUsed ? 'flex' : 'none';
+  document.getElementById('action-used-notice').style.display = cur.actionUsed ? 'flex' : 'none';
   document.getElementById('rollback-request-area').style.display = state.history.length > 0 ? 'block' : 'none';
   document.getElementById('rollback-panel').style.display = 'none';
   renderBoardGrid(); renderHistory(); guessMode = false;
 }
 
 function showActionPanel(which) {
-  ['ask','guess','waiting','answer','post-answer'].forEach(p => {
+  ['ask','guess','waiting','answer'].forEach(p => {
     document.getElementById('action-panel-' + p).style.display = 'none';
   });
   if (which !== 'none') document.getElementById('action-panel-' + which).style.display = 'block';
 }
 
 function renderBoardGrid() {
-  const cur = currentPlayerObj();
+  const cur = state.mode === 'online' ? myObj() : currentPlayerObj();
   document.getElementById('board-grid').innerHTML = state.flags.map(f => {
     const elim = cur.eliminated.includes(f.id);
-    return `<div class="board-flag ${elim ? 'eliminated' : ''}" onclick="onBoardFlagClick('${f.id}')">
+    return `<div class="board-flag${elim?' eliminated':''}" onclick="onBoardFlagClick('${f.id}')">
       <img class="flag-img" src="${f.img}" alt="${f.name}" loading="lazy">
-      <div class="flag-name">${f.name}</div></div>`;
+      <div class="flag-name">${f.name}</div>
+    </div>`;
   }).join('');
 }
 
@@ -935,21 +1231,52 @@ function renderHistory() {
   if (!state.history.length) { log.style.display = 'none'; return; }
   log.style.display = 'block';
   items.innerHTML = state.history.slice().reverse().map(h => {
-    if (h.type === 'question') return `<div class="history-item"><span class="history-icon">❓</span>
-      <div class="history-text"><strong>${h.from}</strong> asked: "${h.text}"
-        ${h.answer !== undefined ? ` → <span class="history-answer ${h.answer?'yes':'no'}">${h.answer?'YES':'NO'}</span>` : ' <span style="color:var(--muted)">(pending...)</span>'}
+    if (h.type === 'question') return `<div class="history-item">
+      <span class="h-icon">❓</span>
+      <div class="h-text"><strong>${h.from}</strong> asked: "${h.text}"
+        ${h.answer!==undefined ? ` → <span class="h-ans ${h.answer?'yes':'no'}">${h.answer?'YES':'NO'}</span>` : ' <span style="opacity:.5">(pending...)</span>'}
       </div></div>`;
-    if (h.type === 'guess') return `<div class="history-item"><span class="history-icon">${h.correct?'🏆':'❌'}</span>
-      <div class="history-text"><strong>${h.from}</strong> guessed <strong>${h.flagName}</strong>
-        → <span class="history-answer ${h.correct?'yes':'no'}">${h.correct?'CORRECT!':'WRONG'}</span>
+    if (h.type === 'guess') return `<div class="history-item">
+      <span class="h-icon">${h.correct?'🏆':'❌'}</span>
+      <div class="h-text"><strong>${h.from}</strong> guessed <strong>${h.flagName}</strong>
+        → <span class="h-ans ${h.correct?'yes':'no'}">${h.correct?'CORRECT!':'WRONG'}</span>
       </div></div>`;
     return '';
   }).join('');
 }
 
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// SECRET FLAG — FIX: use playerSlot for online
+// ══════════════════════════════════════════════
+function getMySecretFlag() {
+  if (state.mode === 'online') {
+    return state.playerSlot === 1 ? state.p1.secretFlag : state.p2.secretFlag;
+  }
+  return currentPlayerObj().secretFlag;
+}
+
+function toggleSecretFlag() {
+  state.secretVisible = !state.secretVisible;
+  const flagId = getMySecretFlag();
+  if (state.secretVisible && flagId) {
+    const f = flagById(flagId);
+    document.getElementById('secret-flag-display').innerHTML =
+      `<img src="${f.img}" style="height:20px;border-radius:3px;vertical-align:middle;margin-right:5px">${f.name}`;
+  } else {
+    document.getElementById('secret-flag-display').textContent = 'Hidden';
+  }
+  updateSecretIcon();
+}
+
+function updateSecretIcon() {
+  document.getElementById('secret-toggle-btn').innerHTML = state.secretVisible
+    ? `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
+    : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>`;
+}
+
+// ══════════════════════════════════════════════
 // FLAG CLICK
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 function onBoardFlagClick(flagId) {
   if (guessMode) {
     const f = flagById(flagId);
@@ -959,9 +1286,11 @@ function onBoardFlagClick(flagId) {
     openModal('modal-guess');
     return;
   }
-  const cur = currentPlayerObj();
-  if (cur.eliminated.includes(flagId)) cur.eliminated = cur.eliminated.filter(id => id !== flagId);
-  else cur.eliminated.push(flagId);
+  // Online: only allow eliminations when it's your turn
+  if (state.mode === 'online' && !isMyTurnOnline()) return;
+  const me = state.mode === 'online' ? myObj() : currentPlayerObj();
+  if (me.eliminated.includes(flagId)) me.eliminated = me.eliminated.filter(id => id !== flagId);
+  else me.eliminated.push(flagId);
   renderBoardGrid();
 }
 
@@ -977,7 +1306,7 @@ function confirmGuess() {
   }
   const cur = currentPlayerObj(), other = otherPlayerObj();
   const correct = pendingGuessFlag === other.secretFlag;
-  state.history.push({ type: 'guess', from: cur.name, flagId: pendingGuessFlag, flagName: f.name, correct });
+  state.history.push({ type:'guess', from:cur.name, flagId:pendingGuessFlag, flagName:f.name, correct });
   if (correct) { endGame(state.currentPlayer); }
   else {
     showToast('❌ Wrong! ' + f.name + ' is not their flag.');
@@ -987,54 +1316,42 @@ function confirmGuess() {
   pendingGuessFlag = null;
 }
 
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 // QUESTIONS
-// ════════════════════════════════════════════════
-function switchToGuess() { guessMode = true; showActionPanel('guess'); showToast('Tap a flag to guess!'); }
+// ══════════════════════════════════════════════
+function switchToGuess() { guessMode = true; showActionPanel('guess'); showToast('Tap a flag below to guess it!'); }
 function switchToAsk()   { guessMode = false; showActionPanel('ask'); }
-function switchToGuessPostAnswer() { guessMode = true; showActionPanel('guess'); showToast('Tap a flag to guess!'); }
 
 function submitQuestion() {
   const text = document.getElementById('question-input').value.trim();
-  if (!text) return showToast('Please type a question first');
+  if (!text) return showToast('Type a question first');
   document.getElementById('question-input').value = '';
   const cur = currentPlayerObj();
   cur.actionUsed = true;
   state.pendingQuestion = { from: cur.name, text };
-  state.history.push({ type: 'question', from: cur.name, text, answer: undefined });
-  if (state.mode === 'local') {
-    showActionPanel('waiting');
-    document.getElementById('waiting-question-preview').textContent = '"' + text + '"';
-    document.getElementById('end-turn-row').style.display = 'none';
-    document.getElementById('action-used-banner').style.display = 'none';
-    document.getElementById('rollback-request-area').style.display = 'none';
-    setTimeout(() => goToSwitchForAnswer(), 600);
-  } else {
+  state.history.push({ type:'question', from:cur.name, text, answer:undefined });
+
+  if (state.mode === 'online') {
     state.socket.emit('askQuestion', { text });
     showActionPanel('waiting');
     document.getElementById('waiting-question-preview').textContent = '"' + text + '"';
     document.getElementById('end-turn-row').style.display = 'none';
-    document.getElementById('action-used-banner').style.display = 'none';
+    document.getElementById('action-used-notice').style.display = 'none';
     document.getElementById('rollback-request-area').style.display = 'none';
+  } else {
+    showActionPanel('waiting');
+    document.getElementById('waiting-question-preview').textContent = '"' + text + '"';
+    document.getElementById('end-turn-row').style.display = 'none';
+    document.getElementById('action-used-notice').style.display = 'none';
+    document.getElementById('rollback-request-area').style.display = 'none';
+    setTimeout(() => goToSwitchForAnswer(), 600);
   }
-}
-
-function submitPostAnswerQuestion() {
-  // Not used in online mode — kept for local
-  const text = document.getElementById('post-answer-question-input').value.trim();
-  if (!text) return showToast('Please type a question first');
-  document.getElementById('post-answer-question-input').value = '';
-  const cur = currentPlayerObj();
-  cur.actionUsed = true;
-  state.pendingQuestion = { from: cur.name, text };
-  state.history.push({ type: 'question', from: cur.name, text, answer: undefined });
-  setTimeout(() => goToSwitchForAnswer(), 600);
 }
 
 function goToSwitchForAnswer() {
   const other = otherPlayerObj();
   document.getElementById('switch-turn-title').textContent = 'Pass to ' + other.name;
-  document.getElementById('switch-turn-sub').textContent   = other.name + ' needs to answer';
+  document.getElementById('switch-turn-sub').textContent   = other.name + ' needs to answer a question';
   document.getElementById('switch-turn-btn').textContent   = 'Answer as ' + other.name + ' →';
   document.getElementById('switch-turn-btn').onclick = () => showAnswerPanel();
   showScreen('screen-switch-turn');
@@ -1044,12 +1361,15 @@ function showAnswerPanel() {
   const other = state.currentPlayer === 1 ? state.p2 : state.p1;
   document.getElementById('board-player-title').textContent = other.name + "'s Board";
   document.getElementById('secret-flag-display').textContent = 'Hidden';
-  state.secretVisible = false; updateSecretToggleIcon();
+  state.secretVisible = false; updateSecretIcon();
+  document.getElementById('turn-bar').textContent = '❓ Answer your opponent\'s question';
+  document.getElementById('turn-bar').className = 'turn-bar waiting';
+  document.getElementById('player-panel').classList.remove('my-turn');
   showActionPanel('answer');
   document.getElementById('answer-from-label').textContent    = state.pendingQuestion.from + ' asks:';
   document.getElementById('answer-question-text').textContent = state.pendingQuestion.text;
   document.getElementById('end-turn-row').style.display = 'none';
-  document.getElementById('action-used-banner').style.display = 'none';
+  document.getElementById('action-used-notice').style.display = 'none';
   document.getElementById('rollback-request-area').style.display = 'none';
   renderBoardGridForPlayer(other); renderHistory();
   showScreen('screen-game');
@@ -1058,88 +1378,91 @@ function showAnswerPanel() {
 function renderBoardGridForPlayer(playerObj) {
   document.getElementById('board-grid').innerHTML = state.flags.map(f => {
     const elim = playerObj.eliminated.includes(f.id);
-    return `<div class="board-flag ${elim ? 'eliminated' : ''}">
+    return `<div class="board-flag${elim?' eliminated':''}">
       <img class="flag-img" src="${f.img}" alt="${f.name}" loading="lazy">
-      <div class="flag-name">${f.name}</div></div>`;
+      <div class="flag-name">${f.name}</div>
+    </div>`;
   }).join('');
 }
 
 function submitAnswer(answer) {
-  const qEntry = [...state.history].reverse().find(h => h.type === 'question' && h.answer === undefined);
-  if (qEntry) qEntry.answer = answer;
+  const q = [...state.history].reverse().find(h => h.type==='question' && h.answer===undefined);
+  if (q) q.answer = answer;
   state.pendingQuestion = null;
+
   if (state.mode === 'online') {
     state.socket.emit('answerQuestion', { answer });
-    showToast('Answered ' + (answer ? 'YES ✓' : 'NO ✗') + '! Waiting for your turn...');
-    // Show neutral waiting state — server will send yourTurnToAsk when it's our turn
-    const ti = document.getElementById('turn-indicator');
-    ti.textContent = '⏳ Waiting...'; ti.style.background = '#999';
+    const tb = document.getElementById('turn-bar');
+    tb.textContent = '⏳ Waiting for opponent\'s next move...';
+    tb.className = 'turn-bar waiting';
+    document.getElementById('player-panel').classList.remove('my-turn');
     showActionPanel('none');
     renderHistory();
     return;
   }
+
+  // Local: switch to other player's turn
   state.currentPlayer = state.currentPlayer === 1 ? 2 : 1;
   const now = currentPlayerObj();
-  showToast('Answered ' + (answer ? 'YES' : 'NO') + '! Now ask your question.');
+  showToast('Answered ' + (answer ? 'YES ✓' : 'NO ✗') + '! Now ask your question.');
   document.getElementById('board-player-title').textContent = now.name + "'s Board";
   document.getElementById('secret-flag-display').textContent = 'Hidden';
-  state.secretVisible = false; updateSecretToggleIcon();
+  state.secretVisible = false; updateSecretIcon();
+  const tb = document.getElementById('turn-bar');
+  tb.textContent = '🎯 Your turn — ask or guess!';
+  tb.className = 'turn-bar active';
+  document.getElementById('player-panel').classList.add('my-turn');
   showActionPanel('ask');
   document.getElementById('end-turn-row').style.display = 'none';
-  document.getElementById('action-used-banner').style.display = 'none';
+  document.getElementById('action-used-notice').style.display = 'none';
   document.getElementById('rollback-request-area').style.display = state.history.length > 0 ? 'block' : 'none';
   renderBoardGrid(); renderHistory();
 }
 
-// ════════════════════════════════════════════════
-// SECRET FLAG TOGGLE
-// ════════════════════════════════════════════════
-function toggleSecretFlag() {
-  state.secretVisible = !state.secretVisible;
-  const cur = currentPlayerObj();
-  if (state.secretVisible && cur.secretFlag) {
-    const f = flagById(cur.secretFlag);
-    document.getElementById('secret-flag-display').innerHTML =
-      '<img src="' + f.img + '" style="height:22px;border-radius:3px;vertical-align:middle;margin-right:5px">' + f.name;
-  } else {
-    document.getElementById('secret-flag-display').textContent = 'Hidden';
-  }
-  updateSecretToggleIcon();
-}
-function updateSecretToggleIcon() {
-  document.getElementById('secret-toggle-btn').innerHTML = state.secretVisible
-    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
-    : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>';
-}
-
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 // END TURN
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 function endTurn() {
   currentPlayerObj().actionUsed = false;
   if (state.mode === 'online') {
     state.socket.emit('endTurn');
-    const ti = document.getElementById('turn-indicator');
-    ti.textContent = '⏳ Waiting for opponent...'; ti.style.background = '#999';
-    showActionPanel('none');
-    document.getElementById('end-turn-row').style.display = 'none';
-    document.getElementById('action-used-banner').style.display = 'none';
-    document.getElementById('rollback-request-area').style.display = 'none';
+    setWaitingState('⏳ Opponent\'s turn — hang tight...');
     return;
   }
-  const nextPlayer = state.currentPlayer === 1 ? 2 : 1;
-  const nextObj    = nextPlayer === 1 ? state.p1 : state.p2;
+  const next = state.currentPlayer === 1 ? 2 : 1;
+  const nextObj = next === 1 ? state.p1 : state.p2;
   document.getElementById('switch-turn-title').textContent = 'Pass to ' + nextObj.name;
   document.getElementById('switch-turn-sub').textContent   = "It's " + nextObj.name + "'s turn!";
   document.getElementById('switch-turn-btn').textContent   = 'Start My Turn →';
-  document.getElementById('switch-turn-btn').onclick = () => { state.currentPlayer = nextPlayer; renderBoard(); showScreen('screen-game'); };
+  document.getElementById('switch-turn-btn').onclick = () => { state.currentPlayer = next; renderBoard(); showScreen('screen-game'); };
   showScreen('screen-switch-turn');
 }
+
+function setWaitingState(msg) {
+  const tb = document.getElementById('turn-bar');
+  tb.textContent = msg; tb.className = 'turn-bar waiting';
+  document.getElementById('player-panel').classList.remove('my-turn');
+  showActionPanel('none');
+  document.getElementById('end-turn-row').style.display = 'none';
+  document.getElementById('action-used-notice').style.display = 'none';
+  document.getElementById('rollback-request-area').style.display = 'none';
+}
+
+function setMyTurnState() {
+  const tb = document.getElementById('turn-bar');
+  tb.textContent = '🎯 Your turn — ask or guess!'; tb.className = 'turn-bar active';
+  document.getElementById('player-panel').classList.add('my-turn');
+  showActionPanel('ask');
+  document.getElementById('end-turn-row').style.display = 'none';
+  document.getElementById('action-used-notice').style.display = 'none';
+  document.getElementById('rollback-request-area').style.display = state.history.length > 0 ? 'block' : 'none';
+}
+
 function resumeGameBoard() { renderBoard(); showScreen('screen-game'); }
 
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 // ROLLBACK
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 function openRollbackModal() { document.getElementById('rollback-reason-input').value = ''; openModal('modal-rollback'); }
 function submitRollbackRequest() {
   const reason = document.getElementById('rollback-reason-input').value.trim();
@@ -1147,17 +1470,15 @@ function submitRollbackRequest() {
   closeModal('modal-rollback');
   state.rollback = {
     requestedBy: state.currentPlayer, reason,
-    p1Accepted: state.currentPlayer === 1 ? true : null,
-    p2Accepted: state.currentPlayer === 2 ? true : null,
-    snapshot: { history: JSON.parse(JSON.stringify(state.history.slice(0,-1))), p1Eliminated: [...state.p1.eliminated], p2Eliminated: [...state.p2.eliminated] }
+    p1Accepted: state.currentPlayer===1?true:null,
+    p2Accepted: state.currentPlayer===2?true:null,
+    snapshot: { history:JSON.parse(JSON.stringify(state.history.slice(0,-1))), p1Eliminated:[...state.p1.eliminated], p2Eliminated:[...state.p2.eliminated] }
   };
   if (state.mode === 'online') { state.socket.emit('rollbackRequest', { reason, from: state.playerSlot }); return; }
-  const otherPlayer = state.currentPlayer === 1 ? 2 : 1;
-  const otherObj = otherPlayer === 1 ? state.p1 : state.p2;
-  const cur = currentPlayerObj();
+  const other = state.currentPlayer===1?state.p2:state.p1, cur = currentPlayerObj();
   document.getElementById('switch-turn-title').textContent = 'Rollback Requested';
-  document.getElementById('switch-turn-sub').textContent   = cur.name + ' wants to undo. ' + otherObj.name + ', do you accept?';
-  document.getElementById('switch-turn-btn').textContent   = 'View Rollback Request →';
+  document.getElementById('switch-turn-sub').textContent   = cur.name + ' wants to undo. ' + other.name + ', do you accept?';
+  document.getElementById('switch-turn-btn').textContent   = 'View Request →';
   document.getElementById('switch-turn-btn').onclick = () => showRollbackPanel();
   showScreen('screen-switch-turn');
 }
@@ -1165,30 +1486,26 @@ function showRollbackPanel() {
   const rb = state.rollback;
   document.getElementById('rollback-panel').style.display = 'block';
   document.getElementById('rollback-reason-display').textContent = 'Reason: "' + rb.reason + '"';
-  document.getElementById('rollback-p1-label').textContent = state.p1.name;
-  document.getElementById('rollback-p2-label').textContent = state.p2.name;
-  updateRollbackBadges();
-  showActionPanel('none');
+  document.getElementById('rb-p1-name').textContent = state.p1.name;
+  document.getElementById('rb-p2-name').textContent = state.p2.name;
+  updateRbBadges(); showActionPanel('none');
   document.getElementById('end-turn-row').style.display = 'none';
-  document.getElementById('action-used-banner').style.display = 'none';
+  document.getElementById('action-used-notice').style.display = 'none';
   document.getElementById('rollback-request-area').style.display = 'none';
   showScreen('screen-game');
 }
-function updateRollbackBadges() {
+function updateRbBadges() {
   const rb = state.rollback;
-  const p1b = document.getElementById('rollback-p1-badge');
-  const p2b = document.getElementById('rollback-p2-badge');
-  p1b.className = 'check-badge ' + (rb.p1Accepted === true ? 'accepted' : 'pending');
-  p1b.textContent = rb.p1Accepted === true ? '✓' : '?';
-  p2b.className = 'check-badge ' + (rb.p2Accepted === true ? 'accepted' : 'pending');
-  p2b.textContent = rb.p2Accepted === true ? '✓' : '?';
+  const p1b = document.getElementById('rb-p1-badge'), p2b = document.getElementById('rb-p2-badge');
+  p1b.className = 'rb-badge ' + (rb.p1Accepted===true?'accepted':'pending'); p1b.textContent = rb.p1Accepted===true?'✓':'?';
+  p2b.className = 'rb-badge ' + (rb.p2Accepted===true?'accepted':'pending'); p2b.textContent = rb.p2Accepted===true?'✓':'?';
 }
 function acceptRollback() {
-  const other = state.currentPlayer === 1 ? 2 : 1;
-  if (other === 1) state.rollback.p1Accepted = true; else state.rollback.p2Accepted = true;
+  const other = state.currentPlayer===1?2:1;
+  if (other===1) state.rollback.p1Accepted=true; else state.rollback.p2Accepted=true;
   if (state.rollback.p1Accepted && state.rollback.p2Accepted) { applyRollback(); return; }
-  updateRollbackBadges();
-  document.getElementById('switch-turn-title').textContent = 'Rollback Accepted!';
+  updateRbBadges();
+  document.getElementById('switch-turn-title').textContent = 'Rollback Accepted';
   document.getElementById('switch-turn-sub').textContent   = 'Both agreed. Undoing last action.';
   document.getElementById('switch-turn-btn').textContent   = 'Continue →';
   document.getElementById('switch-turn-btn').onclick = () => applyRollback();
@@ -1201,181 +1518,159 @@ function declineRollback() {
 }
 function applyRollback() {
   const s = state.rollback.snapshot;
-  state.history = s.history; state.p1.eliminated = s.p1Eliminated; state.p2.eliminated = s.p2Eliminated;
-  state.p1.actionUsed = false; state.p2.actionUsed = false;
-  state.pendingQuestion = null; state.rollback = null;
+  state.history=s.history; state.p1.eliminated=s.p1Eliminated; state.p2.eliminated=s.p2Eliminated;
+  state.p1.actionUsed=false; state.p2.actionUsed=false;
+  state.pendingQuestion=null; state.rollback=null;
   showToast('Rollback applied!');
-  document.getElementById('rollback-panel').style.display = 'none';
+  document.getElementById('rollback-panel').style.display='none';
   renderBoard(); showScreen('screen-game');
 }
 
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 // GAME OVER
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 function endGame(winnerPlayer) {
-  const winner = winnerPlayer === 1 ? state.p1 : state.p2;
-  const loser  = winnerPlayer === 1 ? state.p2 : state.p1;
+  const winner = winnerPlayer===1?state.p1:state.p2, loser = winnerPlayer===1?state.p2:state.p1;
   document.getElementById('gameover-title').textContent = winner.name + ' Wins! 🏆';
-  document.getElementById('gameover-sub').textContent   = 'Correctly guessed ' + loser.name + "'s secret flag!";
-  document.getElementById('gameover-trophy').textContent = '🏆';
-  const p1f = flagById(state.p1.secretFlag), p2f = flagById(state.p2.secretFlag);
-  document.getElementById('gameover-p1-flag').src = p1f ? p1f.img : '';
-  document.getElementById('gameover-p1-name').textContent = p1f ? p1f.name : '';
-  document.getElementById('gameover-p2-flag').src = p2f ? p2f.img : '';
-  document.getElementById('gameover-p2-name').textContent = p2f ? p2f.name : '';
+  document.getElementById('gameover-sub').textContent   = 'Correctly guessed ' + loser.name + "'s flag!";
+  const p1f=flagById(state.p1.secretFlag), p2f=flagById(state.p2.secretFlag);
+  document.getElementById('go-p1-flag').src=p1f?p1f.img:''; document.getElementById('go-p1-name').textContent=p1f?p1f.name:'';
+  document.getElementById('go-p2-flag').src=p2f?p2f.img:''; document.getElementById('go-p2-name').textContent=p2f?p2f.name:'';
   showScreen('screen-gameover');
 }
 
 function playAgain() {
-  state.p1 = {...state.p1, secretFlag: null, eliminated: [], actionUsed: false};
-  state.p2 = {...state.p2, secretFlag: null, eliminated: [], actionUsed: false};
-  state.history = []; state.rollback = null;
-  p1SelectTemp = null; p2SelectTemp = null;
-  if (state.mode === 'online') {
-    document.getElementById('online-size-note').style.display = 'block';
-    document.getElementById('start-game-btn').disabled = true;
-    document.getElementById('start-game-btn').textContent = 'Confirm Size & Pick Flag →';
+  state.p1={...state.p1,secretFlag:null,eliminated:[],actionUsed:false};
+  state.p2={...state.p2,secretFlag:null,eliminated:[],actionUsed:false};
+  state.history=[]; state.rollback=null; p1SelectTemp=null; p2SelectTemp=null;
+  if (state.mode==='online') {
+    document.getElementById('online-size-note').style.display='block';
+    document.getElementById('start-game-btn').disabled=true;
+    document.getElementById('start-game-btn').textContent='Confirm & Pick Flag →';
     document.getElementById('size-12').classList.remove('selected');
     document.getElementById('size-24').classList.remove('selected');
-    state.boardSize = 0; showScreen('screen-size'); return;
+    state.boardSize=0; showScreen('screen-size'); return;
   }
-  renderFlagGrid('p1-flags-grid', null, id => selectFlagP1(id));
-  document.getElementById('p1-confirm-btn').disabled = true;
-  document.getElementById('p1-confirm-btn').textContent = 'Confirm Selection →';
+  renderFlagGrid('p1-flags-grid', null, id=>selectFlagP1(id));
+  document.getElementById('p1-confirm-btn').disabled=true;
+  document.getElementById('p1-confirm-btn').textContent='Confirm Selection →';
   showScreen('screen-p1-select');
 }
 
 function goHome() {
-  if (lobbySocket) { lobbySocket.disconnect(); lobbySocket = null; }
-  pendingRoomJoin = null;
-  state = {
-    mode: 'local', boardSize: 0, flags: [],
-    p1: { name: 'Player 1', secretFlag: null, eliminated: [], actionUsed: false },
-    p2: { name: 'Player 2', secretFlag: null, eliminated: [], actionUsed: false },
-    currentPlayer: 1, phase: 'setup',
-    pendingQuestion: null, pendingGuess: null, history: [], rollback: null, secretVisible: false,
-    roomCode: '', joinedRoom: 0, playerSlot: 0, socket: null,
-  };
-  guessMode = false;
+  if (lobbySocket) { lobbySocket.disconnect(); lobbySocket=null; }
+  pendingRoomJoin=null;
+  state={mode:'local',boardSize:0,flags:[],
+    p1:{name:'Player 1',secretFlag:null,eliminated:[],actionUsed:false},
+    p2:{name:'Player 2',secretFlag:null,eliminated:[],actionUsed:false},
+    currentPlayer:1,pendingQuestion:null,history:[],rollback:null,secretVisible:false,
+    roomCode:'',joinedRoom:0,playerSlot:0,socket:null};
+  guessMode=false;
   document.getElementById('size-12').classList.remove('selected');
   document.getElementById('size-24').classList.remove('selected');
-  document.getElementById('start-game-btn').disabled = true;
-  document.getElementById('start-game-btn').textContent = 'Choose a size first';
-  document.getElementById('online-size-note').style.display = 'none';
+  document.getElementById('start-game-btn').disabled=true;
+  document.getElementById('start-game-btn').textContent='Choose a size first';
+  document.getElementById('online-size-note').style.display='none';
   document.getElementById('mode-local').classList.add('selected');
   document.getElementById('mode-online').classList.remove('selected');
-  document.getElementById('online-setup').style.display = 'none';
-  document.getElementById('local-continue-btn').style.display = 'flex';
-  document.getElementById('waiting-area').style.display = 'none';
-  document.getElementById('room-list').style.display = 'flex';
+  document.getElementById('online-setup').style.display='none';
+  document.getElementById('local-continue-btn').style.display='flex';
+  document.getElementById('waiting-area').style.display='none';
+  document.getElementById('room-list').style.display='block';
+  document.getElementById('online-bar').style.display='none';
   showScreen('screen-mode');
 }
 
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 // ONLINE SOCKET LISTENERS
-// ════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 function initOnlineGame() {
   const socket = lobbySocket;
   if (!socket) return;
   state.socket = socket;
-  socket.off('startGame'); socket.off('incomingQuestion'); socket.off('questionAnswered');
-  socket.off('yourTurnToAsk'); socket.off('opponentGuess'); socket.off('guessResult');
-  socket.off('turnChanged'); socket.off('rollbackRequest'); socket.off('rollbackDecision');
-  socket.off('opponentDisconnected');
+
+  const evts = ['startGame','incomingQuestion','questionAnswered','yourTurnToAsk','opponentGuess','guessResult','turnChanged','rollbackRequest','rollbackDecision','opponentDisconnected'];
+  evts.forEach(e => socket.off(e));
 
   socket.on('startGame', ({ startingPlayer }) => {
     state.currentPlayer = startingPlayer;
-    renderBoard();
-    if (state.playerSlot !== startingPlayer) {
-      const ti = document.getElementById('turn-indicator');
-      ti.textContent = '⏳ Opponent goes first — wait for their question...';
-      ti.style.background = '#999';
-      showActionPanel('none');
-    }
+    // Set board player title to MY name always in online
+    const myName = state.playerSlot===1 ? state.p1.name : state.p2.name;
+    document.getElementById('board-player-title').textContent = myName + "'s Board";
+    document.getElementById('secret-flag-display').textContent = 'Hidden';
+    state.secretVisible = false; updateSecretIcon();
+    if (isMyTurnOnline()) { setMyTurnState(); }
+    else { setWaitingState('⏳ Opponent goes first — wait for their question...'); }
+    renderBoardGrid(); renderHistory();
     showScreen('screen-game');
   });
 
   socket.on('incomingQuestion', ({ from, text }) => {
     state.pendingQuestion = { from, text };
-    state.history.push({ type: 'question', from, text, answer: undefined });
+    state.history.push({ type:'question', from, text, answer:undefined });
     document.getElementById('answer-from-label').textContent    = from + ' asks:';
     document.getElementById('answer-question-text').textContent = text;
-    document.getElementById('board-player-title').textContent   = (state.playerSlot === 1 ? state.p1.name : state.p2.name) + "'s Board";
+    const tb = document.getElementById('turn-bar');
+    tb.textContent = '❓ Answer your opponent\'s question'; tb.className = 'turn-bar waiting';
+    document.getElementById('player-panel').classList.remove('my-turn');
     showActionPanel('answer');
-    document.getElementById('end-turn-row').style.display = 'none';
-    document.getElementById('action-used-banner').style.display = 'none';
-    document.getElementById('rollback-request-area').style.display = 'none';
+    document.getElementById('end-turn-row').style.display='none';
+    document.getElementById('action-used-notice').style.display='none';
+    document.getElementById('rollback-request-area').style.display='none';
     renderHistory();
   });
 
   socket.on('questionAnswered', ({ answer }) => {
-    const q = [...state.history].reverse().find(h => h.type === 'question' && h.answer === undefined);
+    const q = [...state.history].reverse().find(h => h.type==='question' && h.answer===undefined);
     if (q) q.answer = answer;
     renderHistory();
-    showToast('Answered: ' + (answer ? 'YES ✓' : 'NO ✗') + ' — now your turn!');
-    currentPlayerObj().actionUsed = false;
-    const ti = document.getElementById('turn-indicator');
-    ti.textContent = '🎯 Your turn — ask or guess!'; ti.style.background = 'var(--accent)';
-    showActionPanel('ask');
-    document.getElementById('rollback-request-area').style.display = state.history.length > 0 ? 'block' : 'none';
+    showToast('Answered: ' + (answer?'YES ✓':'NO ✗') + ' — your turn!');
+    setMyTurnState();
   });
 
   socket.on('yourTurnToAsk', () => {
-    currentPlayerObj().actionUsed = false;
-    const ti = document.getElementById('turn-indicator');
-    ti.textContent = '🎯 Your turn — ask or guess!'; ti.style.background = 'var(--accent)';
-    showActionPanel('ask');
-    document.getElementById('rollback-request-area').style.display = state.history.length > 0 ? 'block' : 'none';
+    setMyTurnState();
   });
 
   socket.on('opponentGuess', ({ flagId }) => {
-    const mySecret = state.playerSlot === 1 ? state.p1.secretFlag : state.p2.secretFlag;
+    const mySecret = state.playerSlot===1 ? state.p1.secretFlag : state.p2.secretFlag;
     const correct  = flagId === mySecret;
     socket.emit('guessResult', { correct, flagId });
     const f = flagById(flagId);
-    if (correct) { endGame(state.playerSlot === 1 ? 2 : 1); }
-    else { showToast('Opponent guessed ' + (f ? f.name : flagId) + ' — WRONG! Your turn!'); }
+    if (correct) { endGame(state.playerSlot===1?2:1); }
+    else { showToast('Opponent guessed ' + (f?f.name:flagId) + ' — wrong! Your turn.'); setMyTurnState(); }
   });
 
   socket.on('guessResult', ({ correct, flagId }) => {
     const f = flagById(flagId);
     if (correct) { endGame(state.playerSlot); return; }
-    showToast('Wrong! ' + (f ? f.name : '') + ' is not their flag. End your turn.');
+    showToast('Wrong! ' + (f?f.name:'') + ' is not their flag. End your turn.');
     currentPlayerObj().actionUsed = true;
+    const tb = document.getElementById('turn-bar');
+    tb.textContent = '✅ Wrong guess — end your turn'; tb.className = 'turn-bar success-bar';
+    document.getElementById('player-panel').classList.add('my-turn');
     showActionPanel('none');
-    document.getElementById('end-turn-row').style.display = 'flex';
-    document.getElementById('action-used-banner').style.display = 'flex';
+    document.getElementById('end-turn-row').style.display='flex';
+    document.getElementById('action-used-notice').style.display='flex';
   });
 
   socket.on('turnChanged', ({ currentPlayer }) => {
     state.currentPlayer = currentPlayer;
-    const isMyTurn = currentPlayer === state.playerSlot;
-    const ti = document.getElementById('turn-indicator');
-    if (isMyTurn) {
-      ti.textContent = '🎯 Your turn — ask or guess!'; ti.style.background = 'var(--accent)';
-      showActionPanel('ask');
-      document.getElementById('end-turn-row').style.display = 'none';
-      document.getElementById('action-used-banner').style.display = 'none';
-      document.getElementById('rollback-request-area').style.display = state.history.length > 0 ? 'block' : 'none';
-    } else {
-      ti.textContent = '⏳ Waiting for opponent...'; ti.style.background = '#999';
-      showActionPanel('none');
-      document.getElementById('end-turn-row').style.display = 'none';
-    }
     renderHistory();
+    if (isMyTurnOnline()) { setMyTurnState(); }
+    else { setWaitingState('⏳ Opponent\'s turn — wait for their question...'); }
   });
 
   socket.on('rollbackRequest', ({ reason, from }) => {
-    state.rollback = { requestedBy: from, reason, p1Accepted: from===1?true:null, p2Accepted: from===2?true:null };
+    state.rollback = { requestedBy:from, reason, p1Accepted:from===1?true:null, p2Accepted:from===2?true:null };
     showRollbackPanel();
   });
   socket.on('rollbackDecision', ({ accepted }) => {
     if (accepted) { applyRollback(); }
-    else { showToast('Rollback declined.'); state.rollback = null; renderBoard(); }
+    else { showToast('Rollback declined.'); state.rollback=null; renderBoard(); }
   });
-  socket.on('opponentDisconnected', () => { showToast('Opponent disconnected! 😢', 5000); });
+  socket.on('opponentDisconnected', () => showToast('Opponent disconnected 😢', 5000));
 }
-
 </script>
 </body>
 </html>
