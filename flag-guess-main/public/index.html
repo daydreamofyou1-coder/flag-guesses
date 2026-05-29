@@ -8,613 +8,197 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg: #0a0a0f;
-  --surface: #13131a;
-  --surface2: #1c1c26;
-  --border: rgba(255,255,255,0.07);
-  --border2: rgba(255,255,255,0.13);
-  --text: #f0f0f8;
-  --muted: #7070a0;
-  --accent: #7c6fff;
-  --accent2: #ff6fa0;
-  --accent3: #6fffd4;
-  --success: #2ecc71;
-  --danger: #ff4d6d;
-  --warning: #ffb830;
-  --radius: 18px;
-  --radius-sm: 10px;
-  --radius-xs: 6px;
-  --font: 'Outfit', sans-serif;
-  --mono: 'DM Mono', monospace;
-  --glow: 0 0 40px rgba(124,111,255,0.15);
-  --glow-sm: 0 0 16px rgba(124,111,255,0.2);
-}
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html { scroll-behavior: smooth; }
-body {
-  font-family: var(--font);
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  background-image:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(124,111,255,0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 30% at 90% 80%, rgba(255,111,160,0.06) 0%, transparent 50%);
-}
+:root{--bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c26;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--text:#f0f0f8;--muted:#7070a0;--accent:#7c6fff;--accent2:#ff6fa0;--accent3:#6fffd4;--success:#2ecc71;--danger:#ff4d6d;--warning:#ffb830;--radius:18px;--radius-sm:10px;--radius-xs:6px;--font:'Outfit',sans-serif;--mono:'DM Mono',monospace;--glow:0 0 40px rgba(124,111,255,0.15);--glow-sm:0 0 16px rgba(124,111,255,0.2)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(124,111,255,0.12) 0%,transparent 60%),radial-gradient(ellipse 40% 30% at 90% 80%,rgba(255,111,160,0.06) 0%,transparent 50%)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.header{background:rgba(10,10,15,0.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.header-logo{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:var(--glow-sm);flex-shrink:0}
+.header-title{font-size:1rem;font-weight:700;letter-spacing:-.02em}
+.header-sub{font-size:.68rem;color:var(--muted)}
+.screen{display:none;min-height:calc(100vh - 56px)}
+.screen.active{display:block}
+.wrap{max-width:460px;margin:0 auto;padding:28px 18px}
+#toast{position:fixed;top:68px;left:50%;transform:translateX(-50%) translateY(-12px);background:var(--surface2);border:1px solid var(--border2);color:var(--text);padding:9px 18px;border-radius:100px;font-size:.8rem;font-weight:600;z-index:999;opacity:0;transition:.25s;pointer-events:none;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,0.4)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--accent),#5a4fff);color:white;border:none;border-radius:var(--radius-sm);font-size:.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s;font-family:var(--font);letter-spacing:-.01em;box-shadow:0 4px 20px rgba(124,111,255,0.3)}
+.btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.btn:active{transform:scale(.98) translateY(0)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none;filter:none;box-shadow:none}
+.btn-ghost{background:var(--surface2);border:1px solid var(--border2);color:var(--text);box-shadow:none}
+.btn-ghost:hover{background:var(--surface);border-color:var(--accent);box-shadow:none}
+.btn-danger{background:linear-gradient(135deg,var(--danger),#c0392b);box-shadow:0 4px 20px rgba(255,77,109,0.3)}
+.btn-success{background:linear-gradient(135deg,var(--success),#1a9e50);box-shadow:0 4px 20px rgba(46,204,113,0.3)}
+.btn-warning{background:linear-gradient(135deg,var(--warning),#e0951a);box-shadow:0 4px 20px rgba(255,184,48,0.3)}
+.btn-sm{width:auto;padding:9px 18px;font-size:.82rem}
+.home-hero{text-align:center;padding:36px 0 28px}
+.home-flag-emoji{font-size:3rem;margin-bottom:16px;display:block;filter:drop-shadow(0 0 20px rgba(124,111,255,0.4))}
+.home-title{font-size:2.2rem;font-weight:900;letter-spacing:-.04em;line-height:1.05;margin-bottom:8px;background:linear-gradient(135deg,#fff 30%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.home-sub{font-size:.88rem;color:var(--muted);margin-bottom:32px}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+.mode-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px 14px;cursor:pointer;transition:.2s;text-align:center}
+.mode-card:hover{border-color:var(--accent);background:var(--surface2)}
+.mode-card.selected{border-color:var(--accent);background:rgba(124,111,255,0.08);box-shadow:var(--glow-sm)}
+.mode-icon{font-size:1.8rem;margin-bottom:8px;display:block}
+.mode-name{font-size:.9rem;font-weight:700;margin-bottom:2px}
+.mode-desc{font-size:.7rem;color:var(--muted)}
+.online-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.field-label{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:7px;display:block}
+.field-input{width:100%;padding:11px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.92rem;outline:none;transition:.2s;font-family:var(--font);color:var(--text)}
+.field-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,111,255,0.1)}
+.field-input::placeholder{color:var(--muted)}
+.rooms-label{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
+.room-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.room-card:hover{border-color:var(--accent);background:var(--surface2)}
+.room-card.full{opacity:.4;cursor:not-allowed}
+.room-card-name{font-size:.9rem;font-weight:700}
+.room-card-count{font-size:.72rem;color:var(--muted);font-family:var(--mono)}
+.room-pill{background:rgba(124,111,255,0.15);color:var(--accent);border:1px solid rgba(124,111,255,0.3);border-radius:100px;padding:4px 12px;font-size:.72rem;font-weight:700}
+.room-card.full .room-pill{background:rgba(255,255,255,0.05);color:var(--muted);border-color:var(--border)}
+.waiting-box{background:rgba(124,111,255,0.07);border:1px solid rgba(124,111,255,0.2);border-radius:var(--radius-sm);padding:14px 16px;display:flex;align-items:center;gap:12px;margin-top:4px}
+.pulse-ring{width:10px;height:10px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pulse-ring 1.5s ease-in-out infinite}
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(124,111,255,.6);transform:scale(1)}50%{box-shadow:0 0 0 6px rgba(124,111,255,0);transform:scale(1.1)}}
+.waiting-text{font-size:.84rem;font-weight:600}
+.waiting-sub{font-size:.72rem;color:var(--muted);margin-top:2px;font-family:var(--mono)}
+.size-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:22px 20px;cursor:pointer;transition:.2s;margin-bottom:12px;display:flex;align-items:center;gap:16px}
+.size-card:hover{border-color:var(--accent)}
+.size-card.selected{border-color:var(--accent);background:rgba(124,111,255,0.08);box-shadow:var(--glow-sm)}
+.size-card-icon{width:48px;height:48px;border-radius:12px;background:rgba(124,111,255,0.12);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0}
+.size-card.selected .size-card-icon{background:rgba(124,111,255,0.2)}
+.size-card-num{font-size:1.4rem;font-weight:900;letter-spacing:-.03em;line-height:1}
+.size-card-num span{font-size:.85rem;font-weight:500;color:var(--muted)}
+.size-card-desc{font-size:.75rem;color:var(--muted);margin-top:3px}
+.online-size-note{background:rgba(124,111,255,0.08);border:1px solid rgba(124,111,255,0.2);border-radius:var(--radius-sm);padding:11px 14px;font-size:.8rem;color:var(--accent);font-weight:600;margin-bottom:16px;display:none}
+.screen-title{font-size:1.5rem;font-weight:900;letter-spacing:-.03em;margin-bottom:4px}
+.screen-sub{font-size:.83rem;color:var(--muted);margin-bottom:20px}
+.secret-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,111,160,0.1);border:1px solid rgba(255,111,160,0.25);border-radius:100px;padding:4px 12px;font-size:.7rem;font-weight:700;color:var(--accent2);margin-bottom:12px}
+.flags-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:20px}
+.flag-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:8px 5px 9px;cursor:pointer;transition:.15s;text-align:center;position:relative;overflow:hidden}
+.flag-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(124,111,255,0.08),transparent);opacity:0;transition:.15s}
+.flag-card:hover{border-color:rgba(124,111,255,0.4);transform:translateY(-2px)}
+.flag-card:hover::before{opacity:1}
+.flag-card.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(124,111,255,0.2)}
+.flag-card.selected::before{opacity:1}
+.flag-check{position:absolute;top:5px;right:5px;width:20px;height:20px;background:var(--accent);border-radius:50%;display:none;align-items:center;justify-content:center}
+.flag-card.selected .flag-check{display:flex}
+.flag-check svg{width:11px;height:11px}
+.flag-img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:5px;margin-bottom:5px;display:block}
+.flag-name{font-size:.66rem;font-weight:600;color:var(--muted)}
+.flag-card.selected .flag-name{color:var(--text)}
+.switch-wrap{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 56px);padding:24px 18px}
+.switch-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:36px 28px;text-align:center;width:100%;max-width:420px}
+.switch-glyph{width:72px;height:72px;border-radius:50%;background:rgba(124,111,255,0.1);border:1px solid rgba(124,111,255,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:1.8rem}
+.switch-card h2{font-size:1.5rem;font-weight:900;letter-spacing:-.03em;margin-bottom:6px}
+.switch-card p{font-size:.85rem;color:var(--muted);margin-bottom:20px}
+.privacy-box{background:var(--surface2);border-radius:var(--radius-sm);padding:12px 14px;font-size:.78rem;color:var(--muted);display:flex;gap:8px;align-items:flex-start;text-align:left;margin-bottom:20px;border:1px solid var(--border)}
 
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+/* answer reveal box */
+.answer-reveal-box{background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.2);border-radius:var(--radius-sm);padding:16px;margin-bottom:16px;text-align:center}
+.answer-reveal-box.no{background:rgba(255,77,109,0.08);border-color:rgba(255,77,109,0.2)}
+.answer-reveal-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px}
+.answer-reveal-q{font-size:.85rem;color:var(--muted);margin-bottom:10px;font-style:italic}
+.answer-reveal-ans{font-size:2rem;font-weight:900}
+.answer-reveal-box .answer-reveal-ans{color:var(--success)}
+.answer-reveal-box.no .answer-reveal-ans{color:var(--danger)}
 
-/* ── HEADER ── */
-.header {
-  background: rgba(10,10,15,0.85);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  padding: 0 20px;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-.header-logo {
-  width: 32px; height: 32px;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1rem;
-  box-shadow: var(--glow-sm);
-  flex-shrink: 0;
-}
-.header-title { font-size: 1rem; font-weight: 700; letter-spacing: -0.02em; }
-.header-sub { font-size: .68rem; color: var(--muted); }
-
-/* ── SCREENS ── */
-.screen { display: none; min-height: calc(100vh - 56px); }
-.screen.active { display: block; }
-
-/* ── WRAP ── */
-.wrap { max-width: 460px; margin: 0 auto; padding: 28px 18px; }
-
-/* ── TOAST ── */
-#toast {
-  position: fixed; top: 68px; left: 50%;
-  transform: translateX(-50%) translateY(-12px);
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  color: var(--text);
-  padding: 9px 18px;
-  border-radius: 100px;
-  font-size: .8rem; font-weight: 600;
-  z-index: 999; opacity: 0; transition: .25s;
-  pointer-events: none; white-space: nowrap;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-}
-#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-/* ── BUTTONS ── */
-.btn {
-  width: 100%; padding: 15px;
-  background: linear-gradient(135deg, var(--accent), #5a4fff);
-  color: white; border: none;
-  border-radius: var(--radius-sm);
-  font-size: .95rem; font-weight: 700;
-  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-  transition: .15s; font-family: var(--font);
-  letter-spacing: -0.01em;
-  box-shadow: 0 4px 20px rgba(124,111,255,0.3);
-}
-.btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
-.btn:active { transform: scale(.98) translateY(0); }
-.btn:disabled { opacity: .35; cursor: not-allowed; transform: none; filter: none; box-shadow: none; }
-.btn-ghost {
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  color: var(--text);
-  box-shadow: none;
-}
-.btn-ghost:hover { background: var(--surface); border-color: var(--accent); box-shadow: none; }
-.btn-danger { background: linear-gradient(135deg, var(--danger), #c0392b); box-shadow: 0 4px 20px rgba(255,77,109,0.3); }
-.btn-success { background: linear-gradient(135deg, var(--success), #1a9e50); box-shadow: 0 4px 20px rgba(46,204,113,0.3); }
-.btn-warning { background: linear-gradient(135deg, var(--warning), #e0951a); box-shadow: 0 4px 20px rgba(255,184,48,0.3); }
-.btn-sm { width: auto; padding: 9px 18px; font-size: .82rem; }
-
-/* ── SCREEN: HOME ── */
-.home-hero {
-  text-align: center;
-  padding: 36px 0 28px;
-}
-.home-flag-emoji {
-  font-size: 3rem;
-  margin-bottom: 16px;
-  display: block;
-  filter: drop-shadow(0 0 20px rgba(124,111,255,0.4));
-}
-.home-title {
-  font-size: 2.2rem; font-weight: 900;
-  letter-spacing: -0.04em;
-  line-height: 1.05;
-  margin-bottom: 8px;
-  background: linear-gradient(135deg, #fff 30%, var(--accent));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-}
-.home-sub { font-size: .88rem; color: var(--muted); margin-bottom: 32px; }
-
-.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
-.mode-card {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px 14px;
-  cursor: pointer; transition: .2s; text-align: center;
-}
-.mode-card:hover { border-color: var(--accent); background: var(--surface2); }
-.mode-card.selected {
-  border-color: var(--accent);
-  background: rgba(124,111,255,0.08);
-  box-shadow: var(--glow-sm);
-}
-.mode-icon { font-size: 1.8rem; margin-bottom: 8px; display: block; }
-.mode-name { font-size: .9rem; font-weight: 700; margin-bottom: 2px; }
-.mode-desc { font-size: .7rem; color: var(--muted); }
-
-/* ── ONLINE SETUP ── */
-.online-box {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 18px;
-  margin-bottom: 16px;
-}
-.field-label {
-  font-size: .68rem; font-weight: 700;
-  color: var(--muted); text-transform: uppercase;
-  letter-spacing: .1em; margin-bottom: 7px; display: block;
-}
-.field-input {
-  width: 100%; padding: 11px 14px;
-  background: var(--surface2);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: .92rem; outline: none;
-  transition: .2s; font-family: var(--font);
-  color: var(--text);
-}
-.field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,111,255,0.1); }
-.field-input::placeholder { color: var(--muted); }
-
-.rooms-label {
-  font-size: .68rem; font-weight: 700; color: var(--muted);
-  text-transform: uppercase; letter-spacing: .1em;
-  margin-bottom: 10px;
-}
-.room-card {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 14px 16px;
-  cursor: pointer; transition: .2s;
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 8px;
-}
-.room-card:hover { border-color: var(--accent); background: var(--surface2); }
-.room-card.full { opacity: .4; cursor: not-allowed; }
-.room-card-info { display: flex; flex-direction: column; gap: 2px; }
-.room-card-name { font-size: .9rem; font-weight: 700; }
-.room-card-count { font-size: .72rem; color: var(--muted); font-family: var(--mono); }
-.room-pill {
-  background: rgba(124,111,255,0.15);
-  color: var(--accent);
-  border: 1px solid rgba(124,111,255,0.3);
-  border-radius: 100px; padding: 4px 12px;
-  font-size: .72rem; font-weight: 700;
-}
-.room-card.full .room-pill { background: rgba(255,255,255,0.05); color: var(--muted); border-color: var(--border); }
-
-.waiting-box {
-  background: rgba(124,111,255,0.07);
-  border: 1px solid rgba(124,111,255,0.2);
-  border-radius: var(--radius-sm);
-  padding: 14px 16px;
-  display: flex; align-items: center; gap: 12px;
-  margin-top: 4px;
-}
-.pulse-ring {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: var(--accent); flex-shrink: 0;
-  animation: pulse-ring 1.5s ease-in-out infinite;
-}
-@keyframes pulse-ring {
-  0%,100% { box-shadow: 0 0 0 0 rgba(124,111,255,.6); transform: scale(1); }
-  50% { box-shadow: 0 0 0 6px rgba(124,111,255,0); transform: scale(1.1); }
-}
-.waiting-text { font-size: .84rem; font-weight: 600; }
-.waiting-sub { font-size: .72rem; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
-
-/* ── SCREEN: SIZE ── */
-.size-card {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius);
-  padding: 22px 20px;
-  cursor: pointer; transition: .2s;
-  margin-bottom: 12px;
-  display: flex; align-items: center; gap: 16px;
-}
-.size-card:hover { border-color: var(--accent); }
-.size-card.selected { border-color: var(--accent); background: rgba(124,111,255,0.08); box-shadow: var(--glow-sm); }
-.size-card-icon {
-  width: 48px; height: 48px; border-radius: 12px;
-  background: rgba(124,111,255,0.12);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.3rem; flex-shrink: 0;
-}
-.size-card.selected .size-card-icon { background: rgba(124,111,255,0.2); }
-.size-card-num { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.03em; line-height: 1; }
-.size-card-num span { font-size: .85rem; font-weight: 500; color: var(--muted); }
-.size-card-desc { font-size: .75rem; color: var(--muted); margin-top: 3px; }
-
-.online-size-note {
-  background: rgba(124,111,255,0.08);
-  border: 1px solid rgba(124,111,255,0.2);
-  border-radius: var(--radius-sm);
-  padding: 11px 14px;
-  font-size: .8rem; color: var(--accent); font-weight: 600;
-  margin-bottom: 16px; display: none;
-}
-
-/* ── SCREEN: FLAG SELECT ── */
-.screen-title {
-  font-size: 1.5rem; font-weight: 900;
-  letter-spacing: -0.03em; margin-bottom: 4px;
-}
-.screen-sub { font-size: .83rem; color: var(--muted); margin-bottom: 20px; }
-.secret-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: rgba(255,111,160,0.1);
-  border: 1px solid rgba(255,111,160,0.25);
-  border-radius: 100px; padding: 4px 12px;
-  font-size: .7rem; font-weight: 700; color: var(--accent2);
-  margin-bottom: 12px;
-}
-
-.flags-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 9px; margin-bottom: 20px;
-}
-.flag-card {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 8px 5px 9px;
-  cursor: pointer; transition: .15s; text-align: center; position: relative;
-  overflow: hidden;
-}
-.flag-card::before {
-  content: ''; position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(124,111,255,0.08), transparent);
-  opacity: 0; transition: .15s;
-}
-.flag-card:hover { border-color: rgba(124,111,255,0.4); transform: translateY(-2px); }
-.flag-card:hover::before { opacity: 1; }
-.flag-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(124,111,255,0.2); }
-.flag-card.selected::before { opacity: 1; }
-.flag-check {
-  position: absolute; top: 5px; right: 5px;
-  width: 20px; height: 20px;
-  background: var(--accent);
-  border-radius: 50%;
-  display: none; align-items: center; justify-content: center;
-}
-.flag-card.selected .flag-check { display: flex; }
-.flag-check svg { width: 11px; height: 11px; }
-.flag-img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 5px; margin-bottom: 5px; display: block; }
-.flag-name { font-size: .66rem; font-weight: 600; color: var(--muted); }
-.flag-card.selected .flag-name { color: var(--text); }
-
-/* ── SWITCH SCREEN ── */
-.switch-wrap {
-  display: flex; align-items: center; justify-content: center;
-  min-height: calc(100vh - 56px); padding: 24px 18px;
-}
-.switch-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 24px; padding: 36px 28px;
-  text-align: center; width: 100%; max-width: 420px;
-}
-.switch-glyph {
-  width: 72px; height: 72px; border-radius: 50%;
-  background: rgba(124,111,255,0.1);
-  border: 1px solid rgba(124,111,255,0.2);
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 20px;
-  font-size: 1.8rem;
-}
-.switch-card h2 { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 6px; }
-.switch-card p { font-size: .85rem; color: var(--muted); margin-bottom: 20px; }
-.privacy-box {
-  background: var(--surface2); border-radius: var(--radius-sm);
-  padding: 12px 14px; font-size: .78rem; color: var(--muted);
-  display: flex; gap: 8px; align-items: flex-start;
-  text-align: left; margin-bottom: 20px;
-  border: 1px solid var(--border);
-}
-
-/* ── GAME SCREEN ── */
-.online-bar {
-  background: linear-gradient(90deg, rgba(124,111,255,0.15), rgba(255,111,160,0.1));
-  border-bottom: 1px solid rgba(124,111,255,0.2);
-  padding: 8px 18px; font-size: .75rem; font-weight: 600;
-  display: flex; align-items: center; gap: 8px;
-  display: none;
-}
-.online-bar-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent3); flex-shrink: 0; }
-.room-chip {
-  font-family: var(--mono); font-size: .72rem; font-weight: 500;
-  background: rgba(124,111,255,0.15); border: 1px solid rgba(124,111,255,0.25);
-  border-radius: 100px; padding: 2px 9px; color: var(--accent);
-}
-
-.game-wrap { max-width: 460px; margin: 0 auto; padding: 14px 16px; }
-
-.player-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 16px;
-  margin-bottom: 14px;
-  position: relative; overflow: hidden;
-}
-.player-panel::before {
-  content: ''; position: absolute;
-  top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, var(--accent), var(--accent2));
-  opacity: 0; transition: .3s;
-}
-.player-panel.my-turn::before { opacity: 1; }
-.player-panel.my-turn { border-color: rgba(124,111,255,0.2); }
-
-.panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.panel-title { font-size: .92rem; font-weight: 700; }
-
-/* Secret flag row */
-.secret-row {
-  display: flex; align-items: center; gap: 10px;
-  background: var(--surface2); border-radius: var(--radius-xs);
-  padding: 9px 12px; margin-bottom: 12px;
-  border: 1px solid var(--border);
-}
-.secret-label { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); flex: 1; }
-.secret-value { font-size: .82rem; font-weight: 600; }
-.secret-toggle { background: none; border: none; cursor: pointer; padding: 3px; color: var(--muted); transition: .15s; }
-.secret-toggle:hover { color: var(--text); }
-
-/* Turn indicator */
-.turn-bar {
-  border-radius: var(--radius-xs); padding: 9px 12px;
-  font-size: .8rem; font-weight: 700; text-align: center;
-  margin-bottom: 12px; transition: .3s;
-}
-.turn-bar.active { background: rgba(124,111,255,0.12); color: var(--accent); border: 1px solid rgba(124,111,255,0.2); }
-.turn-bar.waiting { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
-.turn-bar.success-bar { background: rgba(46,204,113,0.1); color: var(--success); border: 1px solid rgba(46,204,113,0.2); }
-
-/* Action panels */
-.action-panel { border-radius: var(--radius-sm); padding: 14px; margin-bottom: 12px; }
-.action-panel.ask-panel { background: rgba(124,111,255,0.06); border: 1px solid rgba(124,111,255,0.15); }
-.action-panel.answer-panel { background: rgba(255,111,160,0.06); border: 1px solid rgba(255,111,160,0.2); }
-.action-panel.guess-panel { background: rgba(255,184,48,0.06); border: 1px solid rgba(255,184,48,0.2); }
-.action-panel.waiting-panel { background: var(--surface2); border: 1px solid var(--border); }
-
-.panel-label {
-  font-size: .65rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .1em; color: var(--muted); margin-bottom: 10px;
-}
-.ask-panel .panel-label { color: var(--accent); }
-.answer-panel .panel-label { color: var(--accent2); }
-.guess-panel .panel-label { color: var(--warning); }
-
-.question-bubble {
-  background: var(--surface2); border-radius: var(--radius-xs);
-  padding: 12px; margin-bottom: 12px;
-  font-size: .88rem; line-height: 1.5;
-  border-left: 2px solid var(--accent2);
-}
-.q-from { font-size: .68rem; font-weight: 700; color: var(--accent2); margin-bottom: 5px; }
-
-.answer-btns { display: flex; gap: 8px; }
-.answer-btn {
-  flex: 1; padding: 13px;
-  border: none; border-radius: var(--radius-sm);
-  font-size: 1rem; font-weight: 800;
-  cursor: pointer; transition: .15s; font-family: var(--font);
-}
-.answer-btn:active { transform: scale(.97); }
-.yes-btn { background: rgba(46,204,113,0.15); color: var(--success); border: 1.5px solid rgba(46,204,113,0.3); }
-.yes-btn:hover { background: rgba(46,204,113,0.25); }
-.no-btn { background: rgba(255,77,109,0.12); color: var(--danger); border: 1.5px solid rgba(255,77,109,0.25); }
-.no-btn:hover { background: rgba(255,77,109,0.22); }
-
-.textarea-field {
-  width: 100%; padding: 10px 13px;
-  background: var(--surface2); border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm); font-size: .88rem;
-  outline: none; transition: .2s;
-  font-family: var(--font); color: var(--text); resize: none;
-  margin-bottom: 9px;
-}
-.textarea-field:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,111,255,0.08); }
-.textarea-field::placeholder { color: var(--muted); }
-
-.action-row { display: flex; gap: 8px; }
-.action-row .btn { font-size: .82rem; padding: 11px; }
-
-.waiting-msg { font-size: .84rem; font-weight: 600; }
-.waiting-msg-sub { font-size: .72rem; color: var(--muted); margin-top: 2px; font-style: italic; }
-
-.action-used-notice {
-  display: flex; align-items: center; gap: 6px;
-  background: rgba(255,184,48,0.08);
-  border: 1px solid rgba(255,184,48,0.2);
-  border-radius: var(--radius-xs); padding: 8px 12px;
-  font-size: .76rem; color: var(--warning); font-weight: 600;
-  margin-bottom: 10px;
-}
-
-/* History */
-.history-wrap {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  margin-bottom: 14px;
-  max-height: 170px; overflow-y: auto;
-  display: none;
-}
-.history-head {
-  padding: 9px 14px;
-  font-size: .65rem; font-weight: 700; color: var(--muted);
-  text-transform: uppercase; letter-spacing: .1em;
-  border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; background: var(--surface);
-}
-.history-item {
-  padding: 9px 14px;
-  border-bottom: 1px solid var(--border);
-  font-size: .76rem; display: flex; gap: 8px; align-items: flex-start;
-}
-.history-item:last-child { border-bottom: none; }
-.h-icon { flex-shrink: 0; font-size: .85rem; margin-top: 1px; }
-.h-text { color: var(--muted); line-height: 1.4; }
-.h-text strong { color: var(--text); }
-.h-ans { font-weight: 700; }
-.h-ans.yes { color: var(--success); }
-.h-ans.no { color: var(--danger); }
-
-/* Board grid */
-.board-label {
-  font-size: .65rem; font-weight: 700; color: var(--muted);
-  text-transform: uppercase; letter-spacing: .1em;
-  margin-bottom: 8px; padding: 0 2px;
-}
-.board-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 8px; margin-bottom: 16px;
-}
-.board-flag {
-  background: var(--surface);
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 6px 4px 8px;
-  cursor: pointer; transition: .15s; text-align: center; position: relative;
-}
-.board-flag:hover { border-color: rgba(124,111,255,0.35); transform: translateY(-1px); }
-.board-flag.eliminated { opacity: .18; }
-.board-flag.eliminated::after {
-  content: '✕'; position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.6rem; color: var(--danger); font-weight: 900;
-  background: rgba(10,10,15,0.5); border-radius: var(--radius-sm);
-  opacity: 1;
-}
-.board-flag .flag-name { font-size: .64rem; color: var(--muted); }
-
-.end-turn-row { display: flex; gap: 8px; margin-bottom: 14px; }
-.end-turn-row .btn { font-size: .84rem; padding: 12px; }
-
-.rollback-btn {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: none; border: 1px solid rgba(255,184,48,0.25);
-  color: var(--warning); border-radius: var(--radius-xs);
-  padding: 7px 13px; font-size: .74rem; font-weight: 700;
-  cursor: pointer; font-family: var(--font); transition: .15s;
-  margin-bottom: 12px;
-}
-.rollback-btn:hover { background: rgba(255,184,48,0.08); }
-
-/* Rollback panel */
-.rollback-panel {
-  background: rgba(255,184,48,0.06);
-  border: 1px solid rgba(255,184,48,0.2);
-  border-radius: var(--radius-sm); padding: 16px;
-  margin-bottom: 12px;
-}
-.rollback-panel h3 { font-size: .88rem; font-weight: 700; margin-bottom: 6px; }
-.rollback-panel p { font-size: .78rem; color: var(--muted); margin-bottom: 12px; }
-.rb-row {
-  display: flex; align-items: center; gap: 8px;
-  padding: 9px 12px; background: var(--surface2);
-  border-radius: var(--radius-xs); margin-bottom: 6px;
-  font-size: .8rem;
-}
-.rb-name { flex: 1; font-weight: 600; }
-.rb-badge {
-  width: 22px; height: 22px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center; font-size: .7rem;
-}
-.rb-badge.accepted { background: rgba(46,204,113,0.2); color: var(--success); }
-.rb-badge.pending  { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
-.rb-btns { display: flex; gap: 8px; margin-top: 10px; }
-
-/* Game over */
-.gameover-wrap {
-  display: flex; align-items: center; justify-content: center;
-  min-height: calc(100vh - 56px); padding: 24px 18px;
-}
-.gameover-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 24px; padding: 40px 28px;
-  text-align: center; width: 100%; max-width: 420px;
-  position: relative; overflow: hidden;
-}
-.gameover-card::before {
-  content: ''; position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 50% 0%, rgba(124,111,255,0.12) 0%, transparent 60%);
-}
-.trophy { font-size: 3.5rem; display: block; margin-bottom: 12px; }
-.gameover-title { font-size: 1.8rem; font-weight: 900; letter-spacing: -0.04em; margin-bottom: 6px; }
-.gameover-sub { color: var(--muted); margin-bottom: 22px; font-size: .85rem; }
-.gameover-reveals {
-  background: var(--surface2); border-radius: var(--radius-sm);
-  padding: 16px; margin-bottom: 22px;
-  border: 1px solid var(--border);
-}
-.gameover-reveals-label { font-size: .68rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 14px; }
-.reveal-row { display: flex; gap: 16px; justify-content: center; }
-.reveal-item { text-align: center; }
-.reveal-item img { width: 60px; border-radius: 6px; margin-bottom: 5px; display: block; }
-.reveal-item span { font-size: .72rem; font-weight: 700; display: block; }
-.reveal-item small { font-size: .63rem; color: var(--muted); }
-
-/* Modal */
-.modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(4px);
-  z-index: 200;
-  display: flex; align-items: flex-end; justify-content: center;
-  opacity: 0; pointer-events: none; transition: .25s;
-}
-.modal-overlay.active { opacity: 1; pointer-events: all; }
-.modal-card {
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  border-radius: 22px 22px 0 0;
-  padding: 26px 22px 36px;
-  width: 100%; max-width: 460px;
-  transform: translateY(30px); transition: .25s;
-}
-.modal-overlay.active .modal-card { transform: translateY(0); }
-.modal-card h3 { font-size: 1.05rem; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.02em; }
-.modal-card p { font-size: .83rem; color: var(--muted); margin-bottom: 16px; }
-.modal-btns { display: flex; flex-direction: column; gap: 9px; }
-.modal-flag-img { width: 100%; border-radius: 10px; margin: 12px 0; border: 1px solid var(--border); }
-
-footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--muted); }
+.online-bar{background:linear-gradient(90deg,rgba(124,111,255,0.15),rgba(255,111,160,0.1));border-bottom:1px solid rgba(124,111,255,0.2);padding:8px 18px;font-size:.75rem;font-weight:600;display:none;align-items:center;gap:8px}
+.online-bar-dot{width:7px;height:7px;border-radius:50%;background:var(--accent3);flex-shrink:0}
+.room-chip{font-family:var(--mono);font-size:.72rem;font-weight:500;background:rgba(124,111,255,0.15);border:1px solid rgba(124,111,255,0.25);border-radius:100px;padding:2px 9px;color:var(--accent)}
+.game-wrap{max-width:460px;margin:0 auto;padding:14px 16px}
+.player-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px;position:relative;overflow:hidden}
+.player-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:0;transition:.3s}
+.player-panel.my-turn::before{opacity:1}
+.player-panel.my-turn{border-color:rgba(124,111,255,0.2)}
+.panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.panel-title{font-size:.92rem;font-weight:700}
+.secret-row{display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:var(--radius-xs);padding:9px 12px;margin-bottom:12px;border:1px solid var(--border)}
+.secret-label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);flex:1}
+.secret-value{font-size:.82rem;font-weight:600}
+.secret-toggle{background:none;border:none;cursor:pointer;padding:3px;color:var(--muted);transition:.15s}
+.secret-toggle:hover{color:var(--text)}
+.turn-bar{border-radius:var(--radius-xs);padding:9px 12px;font-size:.8rem;font-weight:700;text-align:center;margin-bottom:12px;transition:.3s}
+.turn-bar.active{background:rgba(124,111,255,0.12);color:var(--accent);border:1px solid rgba(124,111,255,0.2)}
+.turn-bar.waiting{background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.turn-bar.success-bar{background:rgba(46,204,113,0.1);color:var(--success);border:1px solid rgba(46,204,113,0.2)}
+.action-panel{border-radius:var(--radius-sm);padding:14px;margin-bottom:12px}
+.action-panel.ask-panel{background:rgba(124,111,255,0.06);border:1px solid rgba(124,111,255,0.15)}
+.action-panel.answer-panel{background:rgba(255,111,160,0.06);border:1px solid rgba(255,111,160,0.2)}
+.action-panel.guess-panel{background:rgba(255,184,48,0.06);border:1px solid rgba(255,184,48,0.2)}
+.action-panel.waiting-panel{background:var(--surface2);border:1px solid var(--border)}
+.panel-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:10px}
+.ask-panel .panel-label{color:var(--accent)}
+.answer-panel .panel-label{color:var(--accent2)}
+.guess-panel .panel-label{color:var(--warning)}
+.question-bubble{background:var(--surface2);border-radius:var(--radius-xs);padding:12px;margin-bottom:12px;font-size:.88rem;line-height:1.5;border-left:2px solid var(--accent2)}
+.q-from{font-size:.68rem;font-weight:700;color:var(--accent2);margin-bottom:5px}
+.answer-btns{display:flex;gap:8px}
+.answer-btn{flex:1;padding:13px;border:none;border-radius:var(--radius-sm);font-size:1rem;font-weight:800;cursor:pointer;transition:.15s;font-family:var(--font)}
+.answer-btn:active{transform:scale(.97)}
+.yes-btn{background:rgba(46,204,113,0.15);color:var(--success);border:1.5px solid rgba(46,204,113,0.3)}
+.yes-btn:hover{background:rgba(46,204,113,0.25)}
+.no-btn{background:rgba(255,77,109,0.12);color:var(--danger);border:1.5px solid rgba(255,77,109,0.25)}
+.no-btn:hover{background:rgba(255,77,109,0.22)}
+.textarea-field{width:100%;padding:10px 13px;background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.88rem;outline:none;transition:.2s;font-family:var(--font);color:var(--text);resize:none;margin-bottom:9px}
+.textarea-field:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,111,255,0.08)}
+.textarea-field::placeholder{color:var(--muted)}
+.action-row{display:flex;gap:8px}
+.action-row .btn{font-size:.82rem;padding:11px}
+.waiting-msg{font-size:.84rem;font-weight:600}
+.waiting-msg-sub{font-size:.72rem;color:var(--muted);margin-top:2px;font-style:italic}
+.action-used-notice{display:flex;align-items:center;gap:6px;background:rgba(255,184,48,0.08);border:1px solid rgba(255,184,48,0.2);border-radius:var(--radius-xs);padding:8px 12px;font-size:.76rem;color:var(--warning);font-weight:600;margin-bottom:10px}
+.history-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:14px;max-height:170px;overflow-y:auto;display:none}
+.history-head{padding:9px 14px;font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface)}
+.history-item{padding:9px 14px;border-bottom:1px solid var(--border);font-size:.76rem;display:flex;gap:8px;align-items:flex-start}
+.history-item:last-child{border-bottom:none}
+.h-icon{flex-shrink:0;font-size:.85rem;margin-top:1px}
+.h-text{color:var(--muted);line-height:1.4}
+.h-text strong{color:var(--text)}
+.h-ans{font-weight:700}
+.h-ans.yes{color:var(--success)}
+.h-ans.no{color:var(--danger)}
+.board-label{font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;padding:0 2px}
+.board-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.board-flag{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:6px 4px 8px;cursor:pointer;transition:.15s;text-align:center;position:relative}
+.board-flag:hover{border-color:rgba(124,111,255,0.35);transform:translateY(-1px)}
+.board-flag.eliminated{opacity:.18}
+.board-flag.eliminated::after{content:'✕';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:var(--danger);font-weight:900;background:rgba(10,10,15,0.5);border-radius:var(--radius-sm);opacity:1}
+.board-flag .flag-name{font-size:.64rem;color:var(--muted)}
+.end-turn-row{display:flex;gap:8px;margin-bottom:14px}
+.end-turn-row .btn{font-size:.84rem;padding:12px}
+.rollback-btn{display:inline-flex;align-items:center;gap:5px;background:none;border:1px solid rgba(255,184,48,0.25);color:var(--warning);border-radius:var(--radius-xs);padding:7px 13px;font-size:.74rem;font-weight:700;cursor:pointer;font-family:var(--font);transition:.15s;margin-bottom:12px}
+.rollback-btn:hover{background:rgba(255,184,48,0.08)}
+.rollback-panel{background:rgba(255,184,48,0.06);border:1px solid rgba(255,184,48,0.2);border-radius:var(--radius-sm);padding:16px;margin-bottom:12px}
+.rollback-panel h3{font-size:.88rem;font-weight:700;margin-bottom:6px}
+.rollback-panel p{font-size:.78rem;color:var(--muted);margin-bottom:12px}
+.rb-row{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface2);border-radius:var(--radius-xs);margin-bottom:6px;font-size:.8rem}
+.rb-name{flex:1;font-weight:600}
+.rb-badge{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem}
+.rb-badge.accepted{background:rgba(46,204,113,0.2);color:var(--success)}
+.rb-badge.pending{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+.rb-btns{display:flex;gap:8px;margin-top:10px}
+.gameover-wrap{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 56px);padding:24px 18px}
+.gameover-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:40px 28px;text-align:center;width:100%;max-width:420px;position:relative;overflow:hidden}
+.gameover-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(124,111,255,0.12) 0%,transparent 60%)}
+.trophy{font-size:3.5rem;display:block;margin-bottom:12px}
+.gameover-title{font-size:1.8rem;font-weight:900;letter-spacing:-.04em;margin-bottom:6px}
+.gameover-sub{color:var(--muted);margin-bottom:22px;font-size:.85rem}
+.gameover-reveals{background:var(--surface2);border-radius:var(--radius-sm);padding:16px;margin-bottom:22px;border:1px solid var(--border)}
+.gameover-reveals-label{font-size:.68rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px}
+.reveal-row{display:flex;gap:16px;justify-content:center}
+.reveal-item{text-align:center}
+.reveal-item img{width:60px;border-radius:6px;margin-bottom:5px;display:block}
+.reveal-item span{font-size:.72rem;font-weight:700;display:block}
+.reveal-item small{font-size:.63rem;color:var(--muted)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:.25s}
+.modal-overlay.active{opacity:1;pointer-events:all}
+.modal-card{background:var(--surface2);border:1px solid var(--border2);border-radius:22px 22px 0 0;padding:26px 22px 36px;width:100%;max-width:460px;transform:translateY(30px);transition:.25s}
+.modal-overlay.active .modal-card{transform:translateY(0)}
+.modal-card h3{font-size:1.05rem;font-weight:800;margin-bottom:6px;letter-spacing:-.02em}
+.modal-card p{font-size:.83rem;color:var(--muted);margin-bottom:16px}
+.modal-btns{display:flex;flex-direction:column;gap:9px}
+.modal-flag-img{width:100%;border-radius:10px;margin:12px 0;border:1px solid var(--border)}
+footer{text-align:center;padding:24px;font-size:.72rem;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -629,7 +213,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
 
 <div id="toast"></div>
 
-<!-- ══ SCREEN: HOME ══ -->
+<!-- HOME -->
 <div class="screen active" id="screen-mode">
   <div class="wrap">
     <div class="home-hero">
@@ -637,7 +221,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
       <h1 class="home-title">Flag Guess Who</h1>
       <p class="home-sub">A strategic flag guessing game.<br>Outwit your opponent, reveal their secret flag.</p>
     </div>
-
     <div class="mode-grid">
       <div class="mode-card selected" id="mode-local" onclick="selectMode('local')">
         <span class="mode-icon">🏠</span>
@@ -650,7 +233,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
         <div class="mode-desc">Play over internet</div>
       </div>
     </div>
-
     <div id="online-setup" style="display:none">
       <div class="online-box" style="margin-bottom:14px">
         <label class="field-label">Your Name</label>
@@ -659,24 +241,15 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
       <div class="rooms-label">Pick a Room</div>
       <div id="room-list">
         <div class="room-card" id="room-card-1" onclick="joinLobbyRoom(1)">
-          <div class="room-card-info">
-            <div class="room-card-name">Room 1</div>
-            <div class="room-card-count" id="room-status-1">0 / 2 players</div>
-          </div>
+          <div><div class="room-card-name">Room 1</div><div class="room-card-count" id="room-status-1">0 / 2 players</div></div>
           <div class="room-pill" id="room-badge-1">Join</div>
         </div>
         <div class="room-card" id="room-card-2" onclick="joinLobbyRoom(2)">
-          <div class="room-card-info">
-            <div class="room-card-name">Room 2</div>
-            <div class="room-card-count" id="room-status-2">0 / 2 players</div>
-          </div>
+          <div><div class="room-card-name">Room 2</div><div class="room-card-count" id="room-status-2">0 / 2 players</div></div>
           <div class="room-pill" id="room-badge-2">Join</div>
         </div>
         <div class="room-card" id="room-card-3" onclick="joinLobbyRoom(3)">
-          <div class="room-card-info">
-            <div class="room-card-name">Room 3</div>
-            <div class="room-card-count" id="room-status-3">0 / 2 players</div>
-          </div>
+          <div><div class="room-card-name">Room 3</div><div class="room-card-count" id="room-status-3">0 / 2 players</div></div>
           <div class="room-pill" id="room-badge-3">Join</div>
         </div>
       </div>
@@ -690,12 +263,11 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
         </div>
       </div>
     </div>
-
     <button class="btn" id="local-continue-btn" onclick="goToSizeSelect()" style="margin-top:8px">Continue →</button>
   </div>
 </div>
 
-<!-- ══ SCREEN: SIZE ══ -->
+<!-- SIZE -->
 <div class="screen" id="screen-size">
   <div class="wrap">
     <div class="online-size-note" id="online-size-note">🌐 Pick your board size, then choose your secret flag!</div>
@@ -703,23 +275,17 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
     <p class="screen-sub">How many flags do you want to play with?</p>
     <div id="size-12" class="size-card" onclick="selectSize(12)">
       <div class="size-card-icon">⚡</div>
-      <div>
-        <div class="size-card-num">12 <span>Flags</span></div>
-        <div class="size-card-desc">Quick game · ~10 minutes</div>
-      </div>
+      <div><div class="size-card-num">12 <span>Flags</span></div><div class="size-card-desc">Quick game · ~10 minutes</div></div>
     </div>
     <div id="size-24" class="size-card" onclick="selectSize(24)">
       <div class="size-card-icon">🌍</div>
-      <div>
-        <div class="size-card-num">24 <span>Flags</span></div>
-        <div class="size-card-desc">Full experience · ~20 minutes</div>
-      </div>
+      <div><div class="size-card-num">24 <span>Flags</span></div><div class="size-card-desc">Full experience · ~20 minutes</div></div>
     </div>
     <button class="btn" id="start-game-btn" onclick="startGame()" disabled style="margin-top:6px">Choose a size first</button>
   </div>
 </div>
 
-<!-- ══ SCREEN: FLAG SELECT (P1 / Online) ══ -->
+<!-- FLAG SELECT P1 -->
 <div class="screen" id="screen-p1-select">
   <div class="wrap">
     <span class="secret-badge">🔒 Private Selection</span>
@@ -731,7 +297,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   <footer>Flag Guess Who · Educational Flag Game</footer>
 </div>
 
-<!-- ══ SCREEN: SWITCH TO P2 ══ -->
+<!-- SWITCH TO P2 -->
 <div class="screen" id="screen-switch-p2">
   <div class="switch-wrap">
     <div class="switch-card">
@@ -744,7 +310,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
-<!-- ══ SCREEN: FLAG SELECT (P2) ══ -->
+<!-- FLAG SELECT P2 -->
 <div class="screen" id="screen-p2-select">
   <div class="wrap">
     <span class="secret-badge">🔒 Private Selection</span>
@@ -756,7 +322,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   <footer>Flag Guess Who · Educational Flag Game</footer>
 </div>
 
-<!-- ══ SCREEN: GAME START ══ -->
+<!-- GAME START -->
 <div class="screen" id="screen-switch-start">
   <div class="switch-wrap">
     <div class="switch-card">
@@ -769,7 +335,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
-<!-- ══ SCREEN: GAME BOARD ══ -->
+<!-- GAME BOARD -->
 <div class="screen" id="screen-game">
   <div class="online-bar" id="online-bar">
     <div class="online-bar-dot"></div>
@@ -781,7 +347,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
       <div class="panel-header">
         <span class="panel-title" id="board-player-title">Player 1's Board</span>
       </div>
-
       <div class="secret-row">
         <span class="secret-label">Your Secret Flag</span>
         <span class="secret-value" id="secret-flag-display">Hidden</span>
@@ -789,7 +354,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>
         </button>
       </div>
-
       <div class="turn-bar active" id="turn-bar">🎯 Your turn — ask or guess!</div>
 
       <!-- Ask panel -->
@@ -809,7 +373,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
         <button class="btn btn-ghost" style="font-size:.8rem;padding:10px" onclick="switchToAsk()">← Ask Instead</button>
       </div>
 
-      <!-- Waiting panel -->
+      <!-- Waiting for answer (asker sees this after submitting question) -->
       <div id="action-panel-waiting" class="action-panel waiting-panel" style="display:none">
         <div style="display:flex;align-items:center;gap:10px">
           <div class="pulse-ring"></div>
@@ -820,7 +384,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
         </div>
       </div>
 
-      <!-- Answer panel -->
+      <!-- Answer panel (answerer sees this) -->
       <div id="action-panel-answer" class="action-panel answer-panel" style="display:none">
         <div class="panel-label">Opponent's Question</div>
         <div class="question-bubble">
@@ -831,6 +395,12 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
           <button class="answer-btn yes-btn" onclick="submitAnswer(true)">✓ YES</button>
           <button class="answer-btn no-btn" onclick="submitAnswer(false)">✗ NO</button>
         </div>
+      </div>
+
+      <!-- Answer result panel (asker sees YES/NO result, then must end turn) -->
+      <div id="action-panel-answered" class="action-panel" style="display:none;background:var(--surface2);border:1px solid var(--border)">
+        <div id="answer-result-box"></div>
+        <p style="font-size:.78rem;color:var(--muted);margin-top:10px">Use the answer to eliminate flags, then end your turn.</p>
       </div>
 
       <!-- Rollback panel -->
@@ -846,11 +416,9 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
       </div>
 
       <div id="action-used-notice" class="action-used-notice" style="display:none">⚡ Action used — end your turn or request a rollback</div>
-
       <div class="end-turn-row" id="end-turn-row" style="display:none">
         <button class="btn" onclick="endTurn()">End Turn →</button>
       </div>
-
       <div id="rollback-request-area" style="display:none">
         <button class="rollback-btn" onclick="openRollbackModal()">⏪ Request Rollback</button>
       </div>
@@ -867,7 +435,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   <footer>Flag Guess Who · Educational Flag Game</footer>
 </div>
 
-<!-- ══ SCREEN: SWITCH TURNS ══ -->
+<!-- SWITCH TURNS -->
 <div class="screen" id="screen-switch-turn">
   <div class="switch-wrap">
     <div class="switch-card">
@@ -880,7 +448,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
-<!-- ══ SCREEN: GAME OVER ══ -->
+<!-- GAME OVER -->
 <div class="screen" id="screen-gameover">
   <div class="gameover-wrap">
     <div class="gameover-card">
@@ -900,7 +468,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
-<!-- ══ MODAL: ROLLBACK ══ -->
+<!-- MODAL ROLLBACK -->
 <div class="modal-overlay" id="modal-rollback">
   <div class="modal-card">
     <h3>⏪ Request Rollback</h3>
@@ -913,7 +481,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
-<!-- ══ MODAL: GUESS CONFIRM ══ -->
+<!-- MODAL GUESS CONFIRM -->
 <div class="modal-overlay" id="modal-guess">
   <div class="modal-card">
     <h3 id="modal-guess-title">Guess: Germany?</h3>
@@ -927,197 +495,162 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
 </div>
 
 <script>
-// ══════════════════════════════════════════════
-// FLAGS
-// ══════════════════════════════════════════════
-const ALL_FLAGS = [
-  { id:'de', name:'Germany',        img:'https://flagcdn.com/w160/de.png' },
-  { id:'br', name:'Brazil',         img:'https://flagcdn.com/w160/br.png' },
-  { id:'tr', name:'Turkey',         img:'https://flagcdn.com/w160/tr.png' },
-  { id:'in', name:'India',          img:'https://flagcdn.com/w160/in.png' },
-  { id:'gb', name:'United Kingdom', img:'https://flagcdn.com/w160/gb.png' },
-  { id:'gr', name:'Greece',         img:'https://flagcdn.com/w160/gr.png' },
-  { id:'mx', name:'Mexico',         img:'https://flagcdn.com/w160/mx.png' },
-  { id:'us', name:'United States',  img:'https://flagcdn.com/w160/us.png' },
-  { id:'nl', name:'Netherlands',    img:'https://flagcdn.com/w160/nl.png' },
-  { id:'se', name:'Sweden',         img:'https://flagcdn.com/w160/se.png' },
-  { id:'dk', name:'Denmark',        img:'https://flagcdn.com/w160/dk.png' },
-  { id:'au', name:'Australia',      img:'https://flagcdn.com/w160/au.png' },
-  { id:'it', name:'Italy',          img:'https://flagcdn.com/w160/it.png' },
-  { id:'ca', name:'Canada',         img:'https://flagcdn.com/w160/ca.png' },
-  { id:'za', name:'South Africa',   img:'https://flagcdn.com/w160/za.png' },
-  { id:'ch', name:'Switzerland',    img:'https://flagcdn.com/w160/ch.png' },
-  { id:'jp', name:'Japan',          img:'https://flagcdn.com/w160/jp.png' },
-  { id:'kr', name:'South Korea',    img:'https://flagcdn.com/w160/kr.png' },
-  { id:'fr', name:'France',         img:'https://flagcdn.com/w160/fr.png' },
-  { id:'no', name:'Norway',         img:'https://flagcdn.com/w160/no.png' },
-  { id:'ar', name:'Argentina',      img:'https://flagcdn.com/w160/ar.png' },
-  { id:'es', name:'Spain',          img:'https://flagcdn.com/w160/es.png' },
-  { id:'cn', name:'China',          img:'https://flagcdn.com/w160/cn.png' },
-  { id:'pt', name:'Portugal',       img:'https://flagcdn.com/w160/pt.png' },
+const ALL_FLAGS=[
+  {id:'de',name:'Germany',img:'https://flagcdn.com/w160/de.png'},
+  {id:'br',name:'Brazil',img:'https://flagcdn.com/w160/br.png'},
+  {id:'tr',name:'Turkey',img:'https://flagcdn.com/w160/tr.png'},
+  {id:'in',name:'India',img:'https://flagcdn.com/w160/in.png'},
+  {id:'gb',name:'United Kingdom',img:'https://flagcdn.com/w160/gb.png'},
+  {id:'gr',name:'Greece',img:'https://flagcdn.com/w160/gr.png'},
+  {id:'mx',name:'Mexico',img:'https://flagcdn.com/w160/mx.png'},
+  {id:'us',name:'United States',img:'https://flagcdn.com/w160/us.png'},
+  {id:'nl',name:'Netherlands',img:'https://flagcdn.com/w160/nl.png'},
+  {id:'se',name:'Sweden',img:'https://flagcdn.com/w160/se.png'},
+  {id:'dk',name:'Denmark',img:'https://flagcdn.com/w160/dk.png'},
+  {id:'au',name:'Australia',img:'https://flagcdn.com/w160/au.png'},
+  {id:'it',name:'Italy',img:'https://flagcdn.com/w160/it.png'},
+  {id:'ca',name:'Canada',img:'https://flagcdn.com/w160/ca.png'},
+  {id:'za',name:'South Africa',img:'https://flagcdn.com/w160/za.png'},
+  {id:'ch',name:'Switzerland',img:'https://flagcdn.com/w160/ch.png'},
+  {id:'jp',name:'Japan',img:'https://flagcdn.com/w160/jp.png'},
+  {id:'kr',name:'South Korea',img:'https://flagcdn.com/w160/kr.png'},
+  {id:'fr',name:'France',img:'https://flagcdn.com/w160/fr.png'},
+  {id:'no',name:'Norway',img:'https://flagcdn.com/w160/no.png'},
+  {id:'ar',name:'Argentina',img:'https://flagcdn.com/w160/ar.png'},
+  {id:'es',name:'Spain',img:'https://flagcdn.com/w160/es.png'},
+  {id:'cn',name:'China',img:'https://flagcdn.com/w160/cn.png'},
+  {id:'pt',name:'Portugal',img:'https://flagcdn.com/w160/pt.png'},
 ];
 
-// ══════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════
-let state = {
-  mode: 'local', boardSize: 0, flags: [],
-  p1: { name: 'Player 1', secretFlag: null, eliminated: [], actionUsed: false },
-  p2: { name: 'Player 2', secretFlag: null, eliminated: [], actionUsed: false },
-  currentPlayer: 1,
-  pendingQuestion: null, history: [], rollback: null,
-  secretVisible: false,
-  roomCode: '', joinedRoom: 0, playerSlot: 0, socket: null,
+let state={
+  mode:'local',boardSize:0,flags:[],
+  p1:{name:'Player 1',secretFlag:null,eliminated:[],actionUsed:false},
+  p2:{name:'Player 2',secretFlag:null,eliminated:[],actionUsed:false},
+  currentPlayer:1,
+  pendingQuestion:null,pendingAnswer:null, // pendingAnswer stores {answer,question} after P2 answers, before P1 sees it
+  history:[],rollback:null,secretVisible:false,
+  roomCode:'',joinedRoom:0,playerSlot:0,socket:null,
 };
-let guessMode = false, pendingGuessFlag = null;
-let p1SelectTemp = null, p2SelectTemp = null;
+let guessMode=false,pendingGuessFlag=null,p1SelectTemp=null,p2SelectTemp=null;
 
-// ══════════════════════════════════════════════
-// UTILS
-// ══════════════════════════════════════════════
-function showToast(msg, dur=2800) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  clearTimeout(t._t);
-  t._t = setTimeout(() => t.classList.remove('show'), dur);
+// ── UTILS ──
+function showToast(msg,dur=2800){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),dur)}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0)}
+function openModal(id){document.getElementById(id).classList.add('active')}
+function closeModal(id){document.getElementById(id).classList.remove('active')}
+function flagById(id){return ALL_FLAGS.find(f=>f.id===id)}
+function myObj(){return state.playerSlot===2?state.p2:state.p1}
+function currentPlayerObj(){return state.currentPlayer===1?state.p1:state.p2}
+function otherPlayerObj(){return state.currentPlayer===1?state.p2:state.p1}
+function isMyTurnOnline(){return state.playerSlot===state.currentPlayer}
+
+// ── SETUP ──
+function selectMode(mode){
+  state.mode=mode;
+  document.getElementById('mode-local').classList.toggle('selected',mode==='local');
+  document.getElementById('mode-online').classList.toggle('selected',mode==='online');
+  document.getElementById('online-setup').style.display=mode==='online'?'block':'none';
+  document.getElementById('local-continue-btn').style.display=mode==='local'?'flex':'none';
+  if(mode==='online')connectLobby();
 }
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  window.scrollTo(0, 0);
-}
-function openModal(id)  { document.getElementById(id).classList.add('active'); }
-function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-function flagById(id)   { return ALL_FLAGS.find(f => f.id === id); }
-function myObj()        { return state.playerSlot === 2 ? state.p2 : state.p1; }  // online: who am I
-function currentPlayerObj() { return state.currentPlayer === 1 ? state.p1 : state.p2; }
-function otherPlayerObj()   { return state.currentPlayer === 1 ? state.p2 : state.p1; }
-function isMyTurnOnline()   { return state.playerSlot === state.currentPlayer; }
+function goToSizeSelect(){showScreen('screen-size')}
 
-// ══════════════════════════════════════════════
-// SETUP
-// ══════════════════════════════════════════════
-function selectMode(mode) {
-  state.mode = mode;
-  document.getElementById('mode-local').classList.toggle('selected', mode === 'local');
-  document.getElementById('mode-online').classList.toggle('selected', mode === 'online');
-  document.getElementById('online-setup').style.display = mode === 'online' ? 'block' : 'none';
-  document.getElementById('local-continue-btn').style.display = mode === 'local' ? 'flex' : 'none';
-  if (mode === 'online') connectLobby();
-}
-function goToSizeSelect() { showScreen('screen-size'); }
-
-// ══════════════════════════════════════════════
-// LOBBY
-// ══════════════════════════════════════════════
-let lobbySocket = null, pendingRoomJoin = null;
-
-function connectLobby() {
-  if (lobbySocket) return;
-  if (typeof io === 'undefined') { showToast('Socket.io failed — refresh page'); return; }
-  const RENDER_URL = 'https://flag-guesses.onrender.com';
-  lobbySocket = io(RENDER_URL, { transports: ['websocket', 'polling'] });
-  showToast('Connecting to server...', 5000);
-
-  lobbySocket.on('connect', () => {
+// ── LOBBY ──
+let lobbySocket=null,pendingRoomJoin=null;
+function connectLobby(){
+  if(lobbySocket)return;
+  if(typeof io==='undefined'){showToast('Socket.io failed — refresh page');return}
+  const RENDER_URL='https://flag-guesses.onrender.com';
+  lobbySocket=io(RENDER_URL,{transports:['websocket','polling']});
+  showToast('Connecting to server...',5000);
+  lobbySocket.on('connect',()=>{
     showToast('Connected ✓');
     lobbySocket.emit('getRoomStatus');
-    if (pendingRoomJoin) { lobbySocket.emit('joinLobbyRoom', pendingRoomJoin); pendingRoomJoin = null; }
+    if(pendingRoomJoin){lobbySocket.emit('joinLobbyRoom',pendingRoomJoin);pendingRoomJoin=null}
   });
-  lobbySocket.on('connect_error', () => showToast('Server waking up, retrying...', 3000));
-
-  lobbySocket.on('roomStatus', ({ rooms }) => {
-    rooms.forEach(({ roomNumber, count }) => {
-      const card   = document.getElementById('room-card-'   + roomNumber);
-      const status = document.getElementById('room-status-' + roomNumber);
-      const badge  = document.getElementById('room-badge-'  + roomNumber);
-      if (!card) return;
-      status.textContent = count + ' / 2 players';
-      card.classList.toggle('full', count >= 2);
-      badge.textContent = count >= 2 ? 'Full' : 'Join';
+  lobbySocket.on('connect_error',()=>showToast('Server waking up, retrying...',3000));
+  lobbySocket.on('roomStatus',({rooms})=>{
+    rooms.forEach(({roomNumber,count})=>{
+      const card=document.getElementById('room-card-'+roomNumber);
+      const status=document.getElementById('room-status-'+roomNumber);
+      const badge=document.getElementById('room-badge-'+roomNumber);
+      if(!card)return;
+      status.textContent=count+' / 2 players';
+      card.classList.toggle('full',count>=2);
+      badge.textContent=count>=2?'Full':'Join';
     });
   });
-
-  lobbySocket.on('waitingForOpponent', () => {
-    document.getElementById('waiting-area').style.display = 'block';
-    document.getElementById('waiting-label').textContent = 'Waiting for an opponent...';
-    document.getElementById('waiting-sub').textContent = 'Room ' + state.joinedRoom + ' · 1 / 2 players';
-    document.getElementById('room-list').style.display = 'none';
+  lobbySocket.on('waitingForOpponent',()=>{
+    document.getElementById('waiting-area').style.display='block';
+    document.getElementById('waiting-label').textContent='Waiting for an opponent...';
+    document.getElementById('waiting-sub').textContent='Room '+state.joinedRoom+' · 1 / 2 players';
+    document.getElementById('room-list').style.display='none';
   });
-
-  lobbySocket.on('matchFound', ({ roomCode, slot, opponentName }) => {
-    state.roomCode = roomCode; state.playerSlot = slot; state.socket = lobbySocket;
-    if (slot === 1) { state.p2.name = opponentName || 'Player 2'; }
-    else { const n = state.p1.name; state.p1.name = opponentName || 'Player 1'; state.p2.name = n; }
-    document.getElementById('online-bar').style.display = 'flex';
-    document.getElementById('bar-room-code').textContent = 'Room ' + state.joinedRoom;
-    document.getElementById('online-size-note').style.display = 'block';
-    document.getElementById('start-game-btn').textContent = 'Confirm & Pick Flag →';
-    document.getElementById('start-game-btn').disabled = true;
+  lobbySocket.on('matchFound',({roomCode,slot,opponentName})=>{
+    state.roomCode=roomCode;state.playerSlot=slot;state.socket=lobbySocket;
+    if(slot===1)state.p2.name=opponentName||'Player 2';
+    else{const n=state.p1.name;state.p1.name=opponentName||'Player 1';state.p2.name=n}
+    document.getElementById('online-bar').style.display='flex';
+    document.getElementById('bar-room-code').textContent='Room '+state.joinedRoom;
+    document.getElementById('online-size-note').style.display='block';
+    document.getElementById('start-game-btn').textContent='Confirm & Pick Flag →';
+    document.getElementById('start-game-btn').disabled=true;
     document.getElementById('size-12').classList.remove('selected');
     document.getElementById('size-24').classList.remove('selected');
-    state.boardSize = 0;
+    state.boardSize=0;
     showScreen('screen-size');
   });
-
-  lobbySocket.on('joinError', ({ message }) => {
+  lobbySocket.on('joinError',({message})=>{
     showToast(message);
-    document.getElementById('waiting-area').style.display = 'none';
-    document.getElementById('room-list').style.display = 'block';
+    document.getElementById('waiting-area').style.display='none';
+    document.getElementById('room-list').style.display='block';
   });
 }
-
-function joinLobbyRoom(roomNumber) {
-  const name = document.getElementById('player-name').value.trim();
-  if (!name) return showToast('Enter your name first!');
-  if (document.getElementById('room-card-' + roomNumber).classList.contains('full')) return showToast('Room is full!');
-  state.p1.name = name; state.joinedRoom = roomNumber;
-  if (!lobbySocket || !lobbySocket.connected) {
-    pendingRoomJoin = { roomNumber, playerName: name };
-    showToast('Connecting... will join Room ' + roomNumber + ' automatically');
-    if (!lobbySocket) connectLobby();
+function joinLobbyRoom(roomNumber){
+  const name=document.getElementById('player-name').value.trim();
+  if(!name)return showToast('Enter your name first!');
+  if(document.getElementById('room-card-'+roomNumber).classList.contains('full'))return showToast('Room is full!');
+  state.p1.name=name;state.joinedRoom=roomNumber;
+  if(!lobbySocket||!lobbySocket.connected){
+    pendingRoomJoin={roomNumber,playerName:name};
+    showToast('Connecting... will join Room '+roomNumber+' automatically');
+    if(!lobbySocket)connectLobby();
     return;
   }
-  lobbySocket.emit('joinLobbyRoom', { roomNumber, playerName: name });
+  lobbySocket.emit('joinLobbyRoom',{roomNumber,playerName:name});
 }
 
-// ══════════════════════════════════════════════
-// SIZE + START
-// ══════════════════════════════════════════════
-function selectSize(n) {
-  state.boardSize = n;
-  document.getElementById('size-12').classList.toggle('selected', n === 12);
-  document.getElementById('size-24').classList.toggle('selected', n === 24);
-  const btn = document.getElementById('start-game-btn');
-  btn.disabled = false;
-  btn.textContent = state.mode === 'online' ? 'Confirm & Pick Flag →' : 'Start Game →';
+// ── SIZE + START ──
+function selectSize(n){
+  state.boardSize=n;
+  document.getElementById('size-12').classList.toggle('selected',n===12);
+  document.getElementById('size-24').classList.toggle('selected',n===24);
+  const btn=document.getElementById('start-game-btn');
+  btn.disabled=false;
+  btn.textContent=state.mode==='online'?'Confirm & Pick Flag →':'Start Game →';
 }
-
-function startGame() {
-  if (!state.boardSize) return showToast('Please select a board size');
-  state.flags = state.boardSize === 24 ? [...ALL_FLAGS] : ALL_FLAGS.slice(0, 12);
-  state.p1.eliminated = []; state.p2.eliminated = [];
-  state.history = []; state.rollback = null;
-
-  if (state.mode === 'online') {
+function startGame(){
+  if(!state.boardSize)return showToast('Please select a board size');
+  state.flags=state.boardSize===24?[...ALL_FLAGS]:ALL_FLAGS.slice(0,12);
+  state.p1.eliminated=[];state.p2.eliminated=[];
+  state.history=[];state.rollback=null;state.pendingQuestion=null;state.pendingAnswer=null;
+  if(state.mode==='online'){
     initOnlineGame();
-    renderFlagGrid('p1-flags-grid', null, id => onlineFlagClick(id));
-    const myName = state.playerSlot === 1 ? state.p1.name : state.p2.name;
-    document.getElementById('p1-select-title').textContent = myName + ': Pick Your Secret Flag';
-    document.getElementById('p1-confirm-btn').disabled = true;
-    document.getElementById('p1-confirm-btn').textContent = 'Confirm Selection →';
+    renderFlagGrid('p1-flags-grid',null,id=>onlineFlagClick(id));
+    const myName=state.playerSlot===1?state.p1.name:state.p2.name;
+    document.getElementById('p1-select-title').textContent=myName+': Pick Your Secret Flag';
+    document.getElementById('p1-confirm-btn').disabled=true;
+    document.getElementById('p1-confirm-btn').textContent='Confirm Selection →';
     showScreen('screen-p1-select');
-  } else {
-    renderFlagGrid('p1-flags-grid', null, id => selectFlagP1(id));
+  }else{
+    renderFlagGrid('p1-flags-grid',null,id=>selectFlagP1(id));
     showScreen('screen-p1-select');
   }
 }
 
-// ══════════════════════════════════════════════
-// FLAG GRID
-// ══════════════════════════════════════════════
-function renderFlagGrid(containerId, selectedId, onClickFn) {
-  document.getElementById(containerId).innerHTML = state.flags.map(f => `
+// ── FLAG GRID ──
+function renderFlagGrid(containerId,selectedId,onClickFn){
+  document.getElementById(containerId).innerHTML=state.flags.map(f=>`
     <div class="flag-card ${selectedId===f.id?'selected':''}" id="fc-${containerId}-${f.id}" onclick="(${onClickFn.toString()})('${f.id}')">
       <div class="flag-check"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
       <img class="flag-img" src="${f.img}" alt="${f.name}" loading="lazy">
@@ -1125,445 +658,401 @@ function renderFlagGrid(containerId, selectedId, onClickFn) {
     </div>`).join('');
 }
 
-// ══════════════════════════════════════════════
-// SELECTION
-// ══════════════════════════════════════════════
-function selectFlagP1(id) {
-  p1SelectTemp = id;
-  document.querySelectorAll('#p1-flags-grid .flag-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById('fc-p1-flags-grid-' + id)?.classList.add('selected');
-  document.getElementById('p1-confirm-btn').disabled = false;
-}
-function selectFlagP2(id) {
-  p2SelectTemp = id;
-  document.querySelectorAll('#p2-flags-grid .flag-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById('fc-p2-flags-grid-' + id)?.classList.add('selected');
-  document.getElementById('p2-confirm-btn').disabled = false;
-}
-function onlineFlagClick(id) {
-  p1SelectTemp = id;
-  document.querySelectorAll('#p1-flags-grid .flag-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById('fc-p1-flags-grid-' + id)?.classList.add('selected');
-  document.getElementById('p1-confirm-btn').disabled = false;
-}
+// ── SELECTION ──
+function selectFlagP1(id){p1SelectTemp=id;document.querySelectorAll('#p1-flags-grid .flag-card').forEach(c=>c.classList.remove('selected'));document.getElementById('fc-p1-flags-grid-'+id)?.classList.add('selected');document.getElementById('p1-confirm-btn').disabled=false}
+function selectFlagP2(id){p2SelectTemp=id;document.querySelectorAll('#p2-flags-grid .flag-card').forEach(c=>c.classList.remove('selected'));document.getElementById('fc-p2-flags-grid-'+id)?.classList.add('selected');document.getElementById('p2-confirm-btn').disabled=false}
+function onlineFlagClick(id){p1SelectTemp=id;document.querySelectorAll('#p1-flags-grid .flag-card').forEach(c=>c.classList.remove('selected'));document.getElementById('fc-p1-flags-grid-'+id)?.classList.add('selected');document.getElementById('p1-confirm-btn').disabled=false}
 
-function confirmP1Selection() {
-  if (!p1SelectTemp) return;
-  if (state.mode === 'online') {
-    // FIX: save to the correct player slot
-    if (state.playerSlot === 1) state.p1.secretFlag = p1SelectTemp;
-    else state.p2.secretFlag = p1SelectTemp;
-    state.socket.emit('confirmFlag', { flagId: p1SelectTemp });
-    document.getElementById('p1-confirm-btn').disabled = true;
-    document.getElementById('p1-confirm-btn').textContent = 'Waiting for opponent...';
+function confirmP1Selection(){
+  if(!p1SelectTemp)return;
+  if(state.mode==='online'){
+    if(state.playerSlot===1)state.p1.secretFlag=p1SelectTemp;
+    else state.p2.secretFlag=p1SelectTemp;
+    state.socket.emit('confirmFlag',{flagId:p1SelectTemp});
+    document.getElementById('p1-confirm-btn').disabled=true;
+    document.getElementById('p1-confirm-btn').textContent='Waiting for opponent...';
     showToast('Flag locked in! Waiting for opponent...');
     return;
   }
-  state.p1.secretFlag = p1SelectTemp;
+  state.p1.secretFlag=p1SelectTemp;
   showScreen('screen-switch-p2');
 }
-function startP2Selection() {
-  renderFlagGrid('p2-flags-grid', null, id => selectFlagP2(id));
-  showScreen('screen-p2-select');
-}
-function confirmP2Selection() {
-  if (!p2SelectTemp) return;
-  state.p2.secretFlag = p2SelectTemp;
-  showScreen('screen-switch-start');
-}
-function startGameBoard() {
-  state.currentPlayer = 1;
-  renderBoard();
-  showScreen('screen-game');
-}
+function startP2Selection(){renderFlagGrid('p2-flags-grid',null,id=>selectFlagP2(id));showScreen('screen-p2-select')}
+function confirmP2Selection(){if(!p2SelectTemp)return;state.p2.secretFlag=p2SelectTemp;showScreen('screen-switch-start')}
+function startGameBoard(){state.currentPlayer=1;renderBoard();showScreen('screen-game')}
 
-// ══════════════════════════════════════════════
-// BOARD
-// ══════════════════════════════════════════════
-function renderBoard() {
-  const cur = currentPlayerObj();
-  document.getElementById('board-player-title').textContent = cur.name + "'s Board";
-  document.getElementById('secret-flag-display').textContent = 'Hidden';
-  state.secretVisible = false;
-  updateSecretIcon();
+// ── BOARD RENDER ──
+function renderBoard(){
+  const cur=currentPlayerObj();
+  document.getElementById('board-player-title').textContent=cur.name+"'s Board";
+  document.getElementById('secret-flag-display').textContent='Hidden';
+  state.secretVisible=false;updateSecretIcon();
+  const tb=document.getElementById('turn-bar');
+  const panel=document.getElementById('player-panel');
+  panel.classList.add('my-turn');
 
-  const tb = document.getElementById('turn-bar');
-  const panel = document.getElementById('player-panel');
-  if (cur.actionUsed) {
-    tb.textContent = '✅ Action used — end your turn';
-    tb.className = 'turn-bar success-bar';
-    panel.classList.add('my-turn');
-  } else {
-    tb.textContent = '🎯 Your turn — ask a question or guess!';
-    tb.className = 'turn-bar active';
-    panel.classList.add('my-turn');
+  // If there's a pending answer for this player to see (they just got back after answering)
+  if(state.pendingAnswer){
+    tb.textContent='✅ Answer received — eliminate flags, then end your turn';
+    tb.className='turn-bar success-bar';
+    showAnswerResultPanel(state.pendingAnswer);
+    document.getElementById('end-turn-row').style.display='flex';
+    document.getElementById('action-used-notice').style.display='flex';
+    document.getElementById('rollback-request-area').style.display='none';
+    renderBoardGrid();renderHistory();
+    return;
   }
 
-  showActionPanel(cur.actionUsed ? 'none' : 'ask');
-  document.getElementById('end-turn-row').style.display = cur.actionUsed ? 'flex' : 'none';
-  document.getElementById('action-used-notice').style.display = cur.actionUsed ? 'flex' : 'none';
-  document.getElementById('rollback-request-area').style.display = state.history.length > 0 ? 'block' : 'none';
-  document.getElementById('rollback-panel').style.display = 'none';
-  renderBoardGrid(); renderHistory(); guessMode = false;
+  if(cur.actionUsed){
+    tb.textContent='✅ Action used — end your turn';
+    tb.className='turn-bar success-bar';
+    showActionPanel(null);
+    document.getElementById('end-turn-row').style.display='flex';
+    document.getElementById('action-used-notice').style.display='flex';
+    document.getElementById('rollback-request-area').style.display=state.history.length>0?'block':'none';
+  }else{
+    tb.textContent='🎯 Your turn — ask a question or guess!';
+    tb.className='turn-bar active';
+    showActionPanel('ask');
+    document.getElementById('end-turn-row').style.display='none';
+    document.getElementById('action-used-notice').style.display='none';
+    document.getElementById('rollback-request-area').style.display=state.history.length>0?'block':'none';
+  }
+  document.getElementById('rollback-panel').style.display='none';
+  renderBoardGrid();renderHistory();guessMode=false;
 }
 
-function showActionPanel(which) {
-  ['ask','guess','waiting','answer'].forEach(p => {
-    document.getElementById('action-panel-' + p).style.display = 'none';
-  });
-  if (which !== 'none') document.getElementById('action-panel-' + which).style.display = 'block';
+function showActionPanel(which){
+  ['ask','guess','waiting','answer','answered'].forEach(p=>document.getElementById('action-panel-'+p).style.display='none');
+  if(which)document.getElementById('action-panel-'+which).style.display='block';
 }
 
-function renderBoardGrid() {
-  const cur = state.mode === 'online' ? myObj() : currentPlayerObj();
-  document.getElementById('board-grid').innerHTML = state.flags.map(f => {
-    const elim = cur.eliminated.includes(f.id);
-    return `<div class="board-flag${elim?' eliminated':''}" onclick="onBoardFlagClick('${f.id}')">
+function showAnswerResultPanel(pendingAns){
+  const {answer,question}=pendingAns;
+  const box=document.getElementById('answer-result-box');
+  box.innerHTML=`
+    <div class="answer-reveal-box${answer?'':' no'}">
+      <div class="answer-reveal-label">Answer to your question</div>
+      <div class="answer-reveal-q">"${question}"</div>
+      <div class="answer-reveal-ans">${answer?'YES ✓':'NO ✗'}</div>
+    </div>`;
+  showActionPanel('answered');
+}
+
+function renderBoardGrid(){
+  const me=state.mode==='online'?myObj():currentPlayerObj();
+  document.getElementById('board-grid').innerHTML=state.flags.map(f=>{
+    const elim=me.eliminated.includes(f.id);
+    return`<div class="board-flag${elim?' eliminated':''}" onclick="onBoardFlagClick('${f.id}')">
       <img class="flag-img" src="${f.img}" alt="${f.name}" loading="lazy">
       <div class="flag-name">${f.name}</div>
     </div>`;
   }).join('');
 }
 
-function renderHistory() {
-  const log = document.getElementById('history-log');
-  const items = document.getElementById('history-items');
-  if (!state.history.length) { log.style.display = 'none'; return; }
-  log.style.display = 'block';
-  items.innerHTML = state.history.slice().reverse().map(h => {
-    if (h.type === 'question') return `<div class="history-item">
-      <span class="h-icon">❓</span>
-      <div class="h-text"><strong>${h.from}</strong> asked: "${h.text}"
-        ${h.answer!==undefined ? ` → <span class="h-ans ${h.answer?'yes':'no'}">${h.answer?'YES':'NO'}</span>` : ' <span style="opacity:.5">(pending...)</span>'}
-      </div></div>`;
-    if (h.type === 'guess') return `<div class="history-item">
-      <span class="h-icon">${h.correct?'🏆':'❌'}</span>
-      <div class="h-text"><strong>${h.from}</strong> guessed <strong>${h.flagName}</strong>
-        → <span class="h-ans ${h.correct?'yes':'no'}">${h.correct?'CORRECT!':'WRONG'}</span>
-      </div></div>`;
-    return '';
+function renderHistory(){
+  const log=document.getElementById('history-log'),items=document.getElementById('history-items');
+  if(!state.history.length){log.style.display='none';return}
+  log.style.display='block';
+  items.innerHTML=state.history.slice().reverse().map(h=>{
+    if(h.type==='question')return`<div class="history-item"><span class="h-icon">❓</span><div class="h-text"><strong>${h.from}</strong> asked: "${h.text}"${h.answer!==undefined?` → <span class="h-ans ${h.answer?'yes':'no'}">${h.answer?'YES':'NO'}</span>`:'<span style="opacity:.5"> (pending...)</span>'}</div></div>`;
+    if(h.type==='guess')return`<div class="history-item"><span class="h-icon">${h.correct?'🏆':'❌'}</span><div class="h-text"><strong>${h.from}</strong> guessed <strong>${h.flagName}</strong> → <span class="h-ans ${h.correct?'yes':'no'}">${h.correct?'CORRECT!':'WRONG'}</span></div></div>`;
+    return'';
   }).join('');
 }
 
-// ══════════════════════════════════════════════
-// SECRET FLAG — FIX: use playerSlot for online
-// ══════════════════════════════════════════════
-function getMySecretFlag() {
-  if (state.mode === 'online') {
-    return state.playerSlot === 1 ? state.p1.secretFlag : state.p2.secretFlag;
-  }
+// ── SECRET FLAG ──
+function getMySecretFlag(){
+  if(state.mode==='online')return state.playerSlot===1?state.p1.secretFlag:state.p2.secretFlag;
   return currentPlayerObj().secretFlag;
 }
-
-function toggleSecretFlag() {
-  state.secretVisible = !state.secretVisible;
-  const flagId = getMySecretFlag();
-  if (state.secretVisible && flagId) {
-    const f = flagById(flagId);
-    document.getElementById('secret-flag-display').innerHTML =
-      `<img src="${f.img}" style="height:20px;border-radius:3px;vertical-align:middle;margin-right:5px">${f.name}`;
-  } else {
-    document.getElementById('secret-flag-display').textContent = 'Hidden';
+function toggleSecretFlag(){
+  state.secretVisible=!state.secretVisible;
+  const flagId=getMySecretFlag();
+  if(state.secretVisible&&flagId){
+    const f=flagById(flagId);
+    document.getElementById('secret-flag-display').innerHTML=`<img src="${f.img}" style="height:20px;border-radius:3px;vertical-align:middle;margin-right:5px">${f.name}`;
+  }else{
+    document.getElementById('secret-flag-display').textContent='Hidden';
   }
   updateSecretIcon();
 }
-
-function updateSecretIcon() {
-  document.getElementById('secret-toggle-btn').innerHTML = state.secretVisible
-    ? `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
-    : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>`;
+function updateSecretIcon(){
+  document.getElementById('secret-toggle-btn').innerHTML=state.secretVisible
+    ?`<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
+    :`<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/></svg>`;
 }
 
-// ══════════════════════════════════════════════
-// FLAG CLICK
-// ══════════════════════════════════════════════
-function onBoardFlagClick(flagId) {
-  if (guessMode) {
-    const f = flagById(flagId);
-    pendingGuessFlag = flagId;
-    document.getElementById('modal-guess-title').textContent = 'Guess: ' + f.name + '?';
-    document.getElementById('modal-guess-flag').src = f.img;
+// ── FLAG CLICK ──
+function onBoardFlagClick(flagId){
+  if(guessMode){
+    const f=flagById(flagId);
+    pendingGuessFlag=flagId;
+    document.getElementById('modal-guess-title').textContent='Guess: '+f.name+'?';
+    document.getElementById('modal-guess-flag').src=f.img;
     openModal('modal-guess');
     return;
   }
-  // Online: only allow eliminations when it's your turn
-  if (state.mode === 'online' && !isMyTurnOnline()) return;
-  const me = state.mode === 'online' ? myObj() : currentPlayerObj();
-  if (me.eliminated.includes(flagId)) me.eliminated = me.eliminated.filter(id => id !== flagId);
+  if(state.mode==='online'&&!isMyTurnOnline())return;
+  const me=state.mode==='online'?myObj():currentPlayerObj();
+  if(me.eliminated.includes(flagId))me.eliminated=me.eliminated.filter(id=>id!==flagId);
   else me.eliminated.push(flagId);
   renderBoardGrid();
 }
 
-function confirmGuess() {
+function confirmGuess(){
   closeModal('modal-guess');
-  const f = flagById(pendingGuessFlag);
-  if (state.mode === 'online') {
-    state.socket.emit('makeGuess', { flagId: pendingGuessFlag });
+  const f=flagById(pendingGuessFlag);
+  if(state.mode==='online'){
+    state.socket.emit('makeGuess',{flagId:pendingGuessFlag});
     showActionPanel('waiting');
-    document.getElementById('waiting-question-preview').textContent = 'Guessing: ' + f.name + '...';
-    pendingGuessFlag = null;
+    document.getElementById('waiting-question-preview').textContent='Guessing: '+f.name+'...';
+    pendingGuessFlag=null;
     return;
   }
-  const cur = currentPlayerObj(), other = otherPlayerObj();
-  const correct = pendingGuessFlag === other.secretFlag;
-  state.history.push({ type:'guess', from:cur.name, flagId:pendingGuessFlag, flagName:f.name, correct });
-  if (correct) { endGame(state.currentPlayer); }
-  else {
-    showToast('❌ Wrong! ' + f.name + ' is not their flag.');
-    cur.actionUsed = true; guessMode = false;
-    setTimeout(() => endTurn(), 1200);
+  const cur=currentPlayerObj(),other=otherPlayerObj();
+  const correct=pendingGuessFlag===other.secretFlag;
+  state.history.push({type:'guess',from:cur.name,flagId:pendingGuessFlag,flagName:f.name,correct});
+  if(correct){endGame(state.currentPlayer);}
+  else{
+    showToast('❌ Wrong! '+f.name+' is not their flag.');
+    cur.actionUsed=true;guessMode=false;
+    setTimeout(()=>endTurn(),1200);
   }
-  pendingGuessFlag = null;
+  pendingGuessFlag=null;
 }
 
-// ══════════════════════════════════════════════
-// QUESTIONS
-// ══════════════════════════════════════════════
-function switchToGuess() { guessMode = true; showActionPanel('guess'); showToast('Tap a flag below to guess it!'); }
-function switchToAsk()   { guessMode = false; showActionPanel('ask'); }
+// ── QUESTIONS ──
+function switchToGuess(){guessMode=true;showActionPanel('guess');showToast('Tap a flag below to guess it!')}
+function switchToAsk(){guessMode=false;showActionPanel('ask')}
 
-function submitQuestion() {
-  const text = document.getElementById('question-input').value.trim();
-  if (!text) return showToast('Type a question first');
-  document.getElementById('question-input').value = '';
-  const cur = currentPlayerObj();
-  cur.actionUsed = true;
-  state.pendingQuestion = { from: cur.name, text };
-  state.history.push({ type:'question', from:cur.name, text, answer:undefined });
+function submitQuestion(){
+  const text=document.getElementById('question-input').value.trim();
+  if(!text)return showToast('Type a question first');
+  document.getElementById('question-input').value='';
+  const cur=currentPlayerObj();
+  cur.actionUsed=true;
+  state.pendingQuestion={from:cur.name,text};
+  state.history.push({type:'question',from:cur.name,text,answer:undefined});
 
-  if (state.mode === 'online') {
-    state.socket.emit('askQuestion', { text });
+  if(state.mode==='online'){
+    state.socket.emit('askQuestion',{text});
     showActionPanel('waiting');
-    document.getElementById('waiting-question-preview').textContent = '"' + text + '"';
-    document.getElementById('end-turn-row').style.display = 'none';
-    document.getElementById('action-used-notice').style.display = 'none';
-    document.getElementById('rollback-request-area').style.display = 'none';
-  } else {
-    showActionPanel('waiting');
-    document.getElementById('waiting-question-preview').textContent = '"' + text + '"';
-    document.getElementById('end-turn-row').style.display = 'none';
-    document.getElementById('action-used-notice').style.display = 'none';
-    document.getElementById('rollback-request-area').style.display = 'none';
-    setTimeout(() => goToSwitchForAnswer(), 600);
+    document.getElementById('waiting-question-preview').textContent='"'+text+'"';
+    document.getElementById('end-turn-row').style.display='none';
+    document.getElementById('action-used-notice').style.display='none';
+    document.getElementById('rollback-request-area').style.display='none';
+  }else{
+    // LOCAL: switch to P2 to answer. P1 waits.
+    const other=otherPlayerObj();
+    document.getElementById('switch-turn-title').textContent='Pass to '+other.name;
+    document.getElementById('switch-turn-sub').textContent=other.name+' needs to answer a question';
+    document.getElementById('switch-turn-btn').textContent='Answer as '+other.name+' →';
+    document.getElementById('switch-turn-btn').onclick=()=>showAnswerPanelLocal();
+    showScreen('screen-switch-turn');
   }
 }
 
-function goToSwitchForAnswer() {
-  const other = otherPlayerObj();
-  document.getElementById('switch-turn-title').textContent = 'Pass to ' + other.name;
-  document.getElementById('switch-turn-sub').textContent   = other.name + ' needs to answer a question';
-  document.getElementById('switch-turn-btn').textContent   = 'Answer as ' + other.name + ' →';
-  document.getElementById('switch-turn-btn').onclick = () => showAnswerPanel();
-  showScreen('screen-switch-turn');
-}
-
-function showAnswerPanel() {
-  const other = state.currentPlayer === 1 ? state.p2 : state.p1;
-  document.getElementById('board-player-title').textContent = other.name + "'s Board";
-  document.getElementById('secret-flag-display').textContent = 'Hidden';
-  state.secretVisible = false; updateSecretIcon();
-  document.getElementById('turn-bar').textContent = '❓ Answer your opponent\'s question';
-  document.getElementById('turn-bar').className = 'turn-bar waiting';
+function showAnswerPanelLocal(){
+  // P2 (or whoever is other) sees the question and answers yes/no
+  const other=otherPlayerObj();
+  document.getElementById('board-player-title').textContent=other.name+"'s view";
+  document.getElementById('secret-flag-display').textContent='Hidden';
+  state.secretVisible=false;updateSecretIcon();
+  document.getElementById('turn-bar').textContent='❓ Answer your opponent\'s question';
+  document.getElementById('turn-bar').className='turn-bar waiting';
   document.getElementById('player-panel').classList.remove('my-turn');
   showActionPanel('answer');
-  document.getElementById('answer-from-label').textContent    = state.pendingQuestion.from + ' asks:';
-  document.getElementById('answer-question-text').textContent = state.pendingQuestion.text;
-  document.getElementById('end-turn-row').style.display = 'none';
-  document.getElementById('action-used-notice').style.display = 'none';
-  document.getElementById('rollback-request-area').style.display = 'none';
-  renderBoardGridForPlayer(other); renderHistory();
+  document.getElementById('answer-from-label').textContent=state.pendingQuestion.from+' asks:';
+  document.getElementById('answer-question-text').textContent=state.pendingQuestion.text;
+  document.getElementById('end-turn-row').style.display='none';
+  document.getElementById('action-used-notice').style.display='none';
+  document.getElementById('rollback-request-area').style.display='none';
+  renderBoardGridForPlayer(other);renderHistory();
   showScreen('screen-game');
 }
 
-function renderBoardGridForPlayer(playerObj) {
-  document.getElementById('board-grid').innerHTML = state.flags.map(f => {
-    const elim = playerObj.eliminated.includes(f.id);
-    return `<div class="board-flag${elim?' eliminated':''}">
+function renderBoardGridForPlayer(playerObj){
+  document.getElementById('board-grid').innerHTML=state.flags.map(f=>{
+    const elim=playerObj.eliminated.includes(f.id);
+    return`<div class="board-flag${elim?' eliminated':''}">
       <img class="flag-img" src="${f.img}" alt="${f.name}" loading="lazy">
       <div class="flag-name">${f.name}</div>
     </div>`;
   }).join('');
 }
 
-function submitAnswer(answer) {
-  const q = [...state.history].reverse().find(h => h.type==='question' && h.answer===undefined);
-  if (q) q.answer = answer;
-  state.pendingQuestion = null;
+function submitAnswer(answer){
+  const q=[...state.history].reverse().find(h=>h.type==='question'&&h.answer===undefined);
+  if(q)q.answer=answer;
+  const questionText=state.pendingQuestion?state.pendingQuestion.text:'';
+  state.pendingQuestion=null;
 
-  if (state.mode === 'online') {
-    state.socket.emit('answerQuestion', { answer });
-    const tb = document.getElementById('turn-bar');
-    tb.textContent = '⏳ Waiting for opponent\'s next move...';
-    tb.className = 'turn-bar waiting';
+  if(state.mode==='online'){
+    state.socket.emit('answerQuestion',{answer});
+    const tb=document.getElementById('turn-bar');
+    tb.textContent='⏳ Waiting for opponent\'s next move...';
+    tb.className='turn-bar waiting';
     document.getElementById('player-panel').classList.remove('my-turn');
-    showActionPanel('none');
+    showActionPanel(null);
     renderHistory();
     return;
   }
 
-  // Local: switch to other player's turn
-  state.currentPlayer = state.currentPlayer === 1 ? 2 : 1;
-  const now = currentPlayerObj();
-  showToast('Answered ' + (answer ? 'YES ✓' : 'NO ✗') + '! Now ask your question.');
-  document.getElementById('board-player-title').textContent = now.name + "'s Board";
-  document.getElementById('secret-flag-display').textContent = 'Hidden';
-  state.secretVisible = false; updateSecretIcon();
-  const tb = document.getElementById('turn-bar');
-  tb.textContent = '🎯 Your turn — ask or guess!';
-  tb.className = 'turn-bar active';
-  document.getElementById('player-panel').classList.add('my-turn');
-  showActionPanel('ask');
-  document.getElementById('end-turn-row').style.display = 'none';
-  document.getElementById('action-used-notice').style.display = 'none';
-  document.getElementById('rollback-request-area').style.display = state.history.length > 0 ? 'block' : 'none';
-  renderBoardGrid(); renderHistory();
+  // LOCAL: store the answer, switch back to the asker so THEY see the result
+  // The answerer's turn does NOT start — we go back to asker who already used their action
+  state.pendingAnswer={answer,question:questionText};
+
+  const asker=currentPlayerObj(); // still the original asker (currentPlayer hasn't changed)
+  document.getElementById('switch-turn-title').textContent='Pass back to '+asker.name;
+  document.getElementById('switch-turn-sub').textContent=asker.name+' will see the answer to their question';
+  document.getElementById('switch-turn-btn').textContent='See the Answer →';
+  document.getElementById('switch-turn-btn').onclick=()=>{
+    renderBoard(); // renderBoard will see pendingAnswer and show the result
+    showScreen('screen-game');
+  };
+  showScreen('screen-switch-turn');
 }
 
-// ══════════════════════════════════════════════
-// END TURN
-// ══════════════════════════════════════════════
-function endTurn() {
-  currentPlayerObj().actionUsed = false;
-  if (state.mode === 'online') {
+// ── END TURN ──
+function endTurn(){
+  state.pendingAnswer=null; // clear any pending answer
+  currentPlayerObj().actionUsed=false;
+  if(state.mode==='online'){
     state.socket.emit('endTurn');
     setWaitingState('⏳ Opponent\'s turn — hang tight...');
     return;
   }
-  const next = state.currentPlayer === 1 ? 2 : 1;
-  const nextObj = next === 1 ? state.p1 : state.p2;
-  document.getElementById('switch-turn-title').textContent = 'Pass to ' + nextObj.name;
-  document.getElementById('switch-turn-sub').textContent   = "It's " + nextObj.name + "'s turn!";
-  document.getElementById('switch-turn-btn').textContent   = 'Start My Turn →';
-  document.getElementById('switch-turn-btn').onclick = () => { state.currentPlayer = next; renderBoard(); showScreen('screen-game'); };
+  // Switch to the other player
+  const next=state.currentPlayer===1?2:1;
+  const nextObj=next===1?state.p1:state.p2;
+  state.currentPlayer=next;
+  document.getElementById('switch-turn-title').textContent='Pass to '+nextObj.name;
+  document.getElementById('switch-turn-sub').textContent="It's "+nextObj.name+"'s turn!";
+  document.getElementById('switch-turn-btn').textContent='Start My Turn →';
+  document.getElementById('switch-turn-btn').onclick=()=>{renderBoard();showScreen('screen-game')};
   showScreen('screen-switch-turn');
 }
 
-function setWaitingState(msg) {
-  const tb = document.getElementById('turn-bar');
-  tb.textContent = msg; tb.className = 'turn-bar waiting';
+function setWaitingState(msg){
+  const tb=document.getElementById('turn-bar');
+  tb.textContent=msg;tb.className='turn-bar waiting';
   document.getElementById('player-panel').classList.remove('my-turn');
-  showActionPanel('none');
-  document.getElementById('end-turn-row').style.display = 'none';
-  document.getElementById('action-used-notice').style.display = 'none';
-  document.getElementById('rollback-request-area').style.display = 'none';
+  showActionPanel(null);
+  document.getElementById('end-turn-row').style.display='none';
+  document.getElementById('action-used-notice').style.display='none';
+  document.getElementById('rollback-request-area').style.display='none';
 }
-
-function setMyTurnState() {
-  const tb = document.getElementById('turn-bar');
-  tb.textContent = '🎯 Your turn — ask or guess!'; tb.className = 'turn-bar active';
+function setMyTurnState(){
+  const tb=document.getElementById('turn-bar');
+  tb.textContent='🎯 Your turn — ask or guess!';tb.className='turn-bar active';
   document.getElementById('player-panel').classList.add('my-turn');
   showActionPanel('ask');
-  document.getElementById('end-turn-row').style.display = 'none';
-  document.getElementById('action-used-notice').style.display = 'none';
-  document.getElementById('rollback-request-area').style.display = state.history.length > 0 ? 'block' : 'none';
+  document.getElementById('end-turn-row').style.display='none';
+  document.getElementById('action-used-notice').style.display='none';
+  document.getElementById('rollback-request-area').style.display=state.history.length>0?'block':'none';
 }
+function resumeGameBoard(){renderBoard();showScreen('screen-game')}
 
-function resumeGameBoard() { renderBoard(); showScreen('screen-game'); }
-
-// ══════════════════════════════════════════════
-// ROLLBACK
-// ══════════════════════════════════════════════
-function openRollbackModal() { document.getElementById('rollback-reason-input').value = ''; openModal('modal-rollback'); }
-function submitRollbackRequest() {
-  const reason = document.getElementById('rollback-reason-input').value.trim();
-  if (!reason) return showToast('Please give a reason');
+// ── ROLLBACK ──
+function openRollbackModal(){document.getElementById('rollback-reason-input').value='';openModal('modal-rollback')}
+function submitRollbackRequest(){
+  const reason=document.getElementById('rollback-reason-input').value.trim();
+  if(!reason)return showToast('Please give a reason');
   closeModal('modal-rollback');
-  state.rollback = {
-    requestedBy: state.currentPlayer, reason,
-    p1Accepted: state.currentPlayer===1?true:null,
-    p2Accepted: state.currentPlayer===2?true:null,
-    snapshot: { history:JSON.parse(JSON.stringify(state.history.slice(0,-1))), p1Eliminated:[...state.p1.eliminated], p2Eliminated:[...state.p2.eliminated] }
+  state.rollback={
+    requestedBy:state.currentPlayer,reason,
+    p1Accepted:state.currentPlayer===1?true:null,
+    p2Accepted:state.currentPlayer===2?true:null,
+    snapshot:{history:JSON.parse(JSON.stringify(state.history.slice(0,-1))),p1Eliminated:[...state.p1.eliminated],p2Eliminated:[...state.p2.eliminated]}
   };
-  if (state.mode === 'online') { state.socket.emit('rollbackRequest', { reason, from: state.playerSlot }); return; }
-  const other = state.currentPlayer===1?state.p2:state.p1, cur = currentPlayerObj();
-  document.getElementById('switch-turn-title').textContent = 'Rollback Requested';
-  document.getElementById('switch-turn-sub').textContent   = cur.name + ' wants to undo. ' + other.name + ', do you accept?';
-  document.getElementById('switch-turn-btn').textContent   = 'View Request →';
-  document.getElementById('switch-turn-btn').onclick = () => showRollbackPanel();
+  if(state.mode==='online'){state.socket.emit('rollbackRequest',{reason,from:state.playerSlot});return}
+  const other=state.currentPlayer===1?state.p2:state.p1,cur=currentPlayerObj();
+  document.getElementById('switch-turn-title').textContent='Rollback Requested';
+  document.getElementById('switch-turn-sub').textContent=cur.name+' wants to undo. '+other.name+', do you accept?';
+  document.getElementById('switch-turn-btn').textContent='View Request →';
+  document.getElementById('switch-turn-btn').onclick=()=>showRollbackPanel();
   showScreen('screen-switch-turn');
 }
-function showRollbackPanel() {
-  const rb = state.rollback;
-  document.getElementById('rollback-panel').style.display = 'block';
-  document.getElementById('rollback-reason-display').textContent = 'Reason: "' + rb.reason + '"';
-  document.getElementById('rb-p1-name').textContent = state.p1.name;
-  document.getElementById('rb-p2-name').textContent = state.p2.name;
-  updateRbBadges(); showActionPanel('none');
-  document.getElementById('end-turn-row').style.display = 'none';
-  document.getElementById('action-used-notice').style.display = 'none';
-  document.getElementById('rollback-request-area').style.display = 'none';
+function showRollbackPanel(){
+  const rb=state.rollback;
+  document.getElementById('rollback-panel').style.display='block';
+  document.getElementById('rollback-reason-display').textContent='Reason: "'+rb.reason+'"';
+  document.getElementById('rb-p1-name').textContent=state.p1.name;
+  document.getElementById('rb-p2-name').textContent=state.p2.name;
+  updateRbBadges();showActionPanel(null);
+  document.getElementById('end-turn-row').style.display='none';
+  document.getElementById('action-used-notice').style.display='none';
+  document.getElementById('rollback-request-area').style.display='none';
   showScreen('screen-game');
 }
-function updateRbBadges() {
-  const rb = state.rollback;
-  const p1b = document.getElementById('rb-p1-badge'), p2b = document.getElementById('rb-p2-badge');
-  p1b.className = 'rb-badge ' + (rb.p1Accepted===true?'accepted':'pending'); p1b.textContent = rb.p1Accepted===true?'✓':'?';
-  p2b.className = 'rb-badge ' + (rb.p2Accepted===true?'accepted':'pending'); p2b.textContent = rb.p2Accepted===true?'✓':'?';
+function updateRbBadges(){
+  const rb=state.rollback;
+  const p1b=document.getElementById('rb-p1-badge'),p2b=document.getElementById('rb-p2-badge');
+  p1b.className='rb-badge '+(rb.p1Accepted===true?'accepted':'pending');p1b.textContent=rb.p1Accepted===true?'✓':'?';
+  p2b.className='rb-badge '+(rb.p2Accepted===true?'accepted':'pending');p2b.textContent=rb.p2Accepted===true?'✓':'?';
 }
-function acceptRollback() {
-  const other = state.currentPlayer===1?2:1;
-  if (other===1) state.rollback.p1Accepted=true; else state.rollback.p2Accepted=true;
-  if (state.rollback.p1Accepted && state.rollback.p2Accepted) { applyRollback(); return; }
+function acceptRollback(){
+  const other=state.currentPlayer===1?2:1;
+  if(other===1)state.rollback.p1Accepted=true;else state.rollback.p2Accepted=true;
+  if(state.rollback.p1Accepted&&state.rollback.p2Accepted){applyRollback();return}
   updateRbBadges();
-  document.getElementById('switch-turn-title').textContent = 'Rollback Accepted';
-  document.getElementById('switch-turn-sub').textContent   = 'Both agreed. Undoing last action.';
-  document.getElementById('switch-turn-btn').textContent   = 'Continue →';
-  document.getElementById('switch-turn-btn').onclick = () => applyRollback();
+  document.getElementById('switch-turn-title').textContent='Rollback Accepted';
+  document.getElementById('switch-turn-sub').textContent='Both agreed. Undoing last action.';
+  document.getElementById('switch-turn-btn').textContent='Continue →';
+  document.getElementById('switch-turn-btn').onclick=()=>applyRollback();
   showScreen('screen-switch-turn');
 }
-function declineRollback() {
-  showToast('Rollback declined.'); state.rollback = null;
-  document.getElementById('rollback-panel').style.display = 'none';
+function declineRollback(){
+  showToast('Rollback declined.');state.rollback=null;
+  document.getElementById('rollback-panel').style.display='none';
   renderBoard();
 }
-function applyRollback() {
-  const s = state.rollback.snapshot;
-  state.history=s.history; state.p1.eliminated=s.p1Eliminated; state.p2.eliminated=s.p2Eliminated;
-  state.p1.actionUsed=false; state.p2.actionUsed=false;
-  state.pendingQuestion=null; state.rollback=null;
+function applyRollback(){
+  const s=state.rollback.snapshot;
+  state.history=s.history;state.p1.eliminated=s.p1Eliminated;state.p2.eliminated=s.p2Eliminated;
+  state.p1.actionUsed=false;state.p2.actionUsed=false;
+  state.pendingQuestion=null;state.pendingAnswer=null;state.rollback=null;
   showToast('Rollback applied!');
   document.getElementById('rollback-panel').style.display='none';
-  renderBoard(); showScreen('screen-game');
+  renderBoard();showScreen('screen-game');
 }
 
-// ══════════════════════════════════════════════
-// GAME OVER
-// ══════════════════════════════════════════════
-function endGame(winnerPlayer) {
-  const winner = winnerPlayer===1?state.p1:state.p2, loser = winnerPlayer===1?state.p2:state.p1;
-  document.getElementById('gameover-title').textContent = winner.name + ' Wins! 🏆';
-  document.getElementById('gameover-sub').textContent   = 'Correctly guessed ' + loser.name + "'s flag!";
-  const p1f=flagById(state.p1.secretFlag), p2f=flagById(state.p2.secretFlag);
-  document.getElementById('go-p1-flag').src=p1f?p1f.img:''; document.getElementById('go-p1-name').textContent=p1f?p1f.name:'';
-  document.getElementById('go-p2-flag').src=p2f?p2f.img:''; document.getElementById('go-p2-name').textContent=p2f?p2f.name:'';
+// ── GAME OVER ──
+function endGame(winnerPlayer){
+  const winner=winnerPlayer===1?state.p1:state.p2,loser=winnerPlayer===1?state.p2:state.p1;
+  document.getElementById('gameover-title').textContent=winner.name+' Wins! 🏆';
+  document.getElementById('gameover-sub').textContent='Correctly guessed '+loser.name+"'s flag!";
+  const p1f=flagById(state.p1.secretFlag),p2f=flagById(state.p2.secretFlag);
+  document.getElementById('go-p1-flag').src=p1f?p1f.img:'';document.getElementById('go-p1-name').textContent=p1f?p1f.name:'';
+  document.getElementById('go-p2-flag').src=p2f?p2f.img:'';document.getElementById('go-p2-name').textContent=p2f?p2f.name:'';
   showScreen('screen-gameover');
 }
-
-function playAgain() {
+function playAgain(){
   state.p1={...state.p1,secretFlag:null,eliminated:[],actionUsed:false};
   state.p2={...state.p2,secretFlag:null,eliminated:[],actionUsed:false};
-  state.history=[]; state.rollback=null; p1SelectTemp=null; p2SelectTemp=null;
-  if (state.mode==='online') {
+  state.history=[];state.rollback=null;state.pendingQuestion=null;state.pendingAnswer=null;
+  p1SelectTemp=null;p2SelectTemp=null;
+  if(state.mode==='online'){
     document.getElementById('online-size-note').style.display='block';
     document.getElementById('start-game-btn').disabled=true;
     document.getElementById('start-game-btn').textContent='Confirm & Pick Flag →';
     document.getElementById('size-12').classList.remove('selected');
     document.getElementById('size-24').classList.remove('selected');
-    state.boardSize=0; showScreen('screen-size'); return;
+    state.boardSize=0;showScreen('screen-size');return;
   }
-  renderFlagGrid('p1-flags-grid', null, id=>selectFlagP1(id));
+  renderFlagGrid('p1-flags-grid',null,id=>selectFlagP1(id));
   document.getElementById('p1-confirm-btn').disabled=true;
   document.getElementById('p1-confirm-btn').textContent='Confirm Selection →';
   showScreen('screen-p1-select');
 }
-
-function goHome() {
-  if (lobbySocket) { lobbySocket.disconnect(); lobbySocket=null; }
+function goHome(){
+  if(lobbySocket){lobbySocket.disconnect();lobbySocket=null}
   pendingRoomJoin=null;
   state={mode:'local',boardSize:0,flags:[],
     p1:{name:'Player 1',secretFlag:null,eliminated:[],actionUsed:false},
     p2:{name:'Player 2',secretFlag:null,eliminated:[],actionUsed:false},
-    currentPlayer:1,pendingQuestion:null,history:[],rollback:null,secretVisible:false,
+    currentPlayer:1,pendingQuestion:null,pendingAnswer:null,history:[],rollback:null,secretVisible:false,
     roomCode:'',joinedRoom:0,playerSlot:0,socket:null};
   guessMode=false;
   document.getElementById('size-12').classList.remove('selected');
@@ -1581,37 +1070,31 @@ function goHome() {
   showScreen('screen-mode');
 }
 
-// ══════════════════════════════════════════════
-// ONLINE SOCKET LISTENERS
-// ══════════════════════════════════════════════
-function initOnlineGame() {
-  const socket = lobbySocket;
-  if (!socket) return;
-  state.socket = socket;
-
-  const evts = ['startGame','incomingQuestion','questionAnswered','yourTurnToAsk','opponentGuess','guessResult','turnChanged','rollbackRequest','rollbackDecision','opponentDisconnected'];
-  evts.forEach(e => socket.off(e));
-
-  socket.on('startGame', ({ startingPlayer }) => {
-    state.currentPlayer = startingPlayer;
-    // Set board player title to MY name always in online
-    const myName = state.playerSlot===1 ? state.p1.name : state.p2.name;
-    document.getElementById('board-player-title').textContent = myName + "'s Board";
-    document.getElementById('secret-flag-display').textContent = 'Hidden';
-    state.secretVisible = false; updateSecretIcon();
-    if (isMyTurnOnline()) { setMyTurnState(); }
-    else { setWaitingState('⏳ Opponent goes first — wait for their question...'); }
-    renderBoardGrid(); renderHistory();
+// ── ONLINE SOCKET ──
+function initOnlineGame(){
+  const socket=lobbySocket;
+  if(!socket)return;
+  state.socket=socket;
+  const evts=['startGame','incomingQuestion','questionAnswered','yourTurnToAsk','opponentGuess','guessResult','turnChanged','rollbackRequest','rollbackDecision','opponentDisconnected'];
+  evts.forEach(e=>socket.off(e));
+  socket.on('startGame',({startingPlayer})=>{
+    state.currentPlayer=startingPlayer;
+    const myName=state.playerSlot===1?state.p1.name:state.p2.name;
+    document.getElementById('board-player-title').textContent=myName+"'s Board";
+    document.getElementById('secret-flag-display').textContent='Hidden';
+    state.secretVisible=false;updateSecretIcon();
+    if(isMyTurnOnline())setMyTurnState();
+    else setWaitingState('⏳ Opponent goes first — wait for their question...');
+    renderBoardGrid();renderHistory();
     showScreen('screen-game');
   });
-
-  socket.on('incomingQuestion', ({ from, text }) => {
-    state.pendingQuestion = { from, text };
-    state.history.push({ type:'question', from, text, answer:undefined });
-    document.getElementById('answer-from-label').textContent    = from + ' asks:';
-    document.getElementById('answer-question-text').textContent = text;
-    const tb = document.getElementById('turn-bar');
-    tb.textContent = '❓ Answer your opponent\'s question'; tb.className = 'turn-bar waiting';
+  socket.on('incomingQuestion',({from,text})=>{
+    state.pendingQuestion={from,text};
+    state.history.push({type:'question',from,text,answer:undefined});
+    document.getElementById('answer-from-label').textContent=from+' asks:';
+    document.getElementById('answer-question-text').textContent=text;
+    const tb=document.getElementById('turn-bar');
+    tb.textContent='❓ Answer your opponent\'s question';tb.className='turn-bar waiting';
     document.getElementById('player-panel').classList.remove('my-turn');
     showActionPanel('answer');
     document.getElementById('end-turn-row').style.display='none';
@@ -1619,57 +1102,58 @@ function initOnlineGame() {
     document.getElementById('rollback-request-area').style.display='none';
     renderHistory();
   });
-
-  socket.on('questionAnswered', ({ answer }) => {
-    const q = [...state.history].reverse().find(h => h.type==='question' && h.answer===undefined);
-    if (q) q.answer = answer;
+  socket.on('questionAnswered',({answer})=>{
+    const q=[...state.history].reverse().find(h=>h.type==='question'&&h.answer===undefined);
+    if(q)q.answer=answer;
     renderHistory();
-    showToast('Answered: ' + (answer?'YES ✓':'NO ✗') + ' — your turn!');
-    setMyTurnState();
-  });
-
-  socket.on('yourTurnToAsk', () => {
-    setMyTurnState();
-  });
-
-  socket.on('opponentGuess', ({ flagId }) => {
-    const mySecret = state.playerSlot===1 ? state.p1.secretFlag : state.p2.secretFlag;
-    const correct  = flagId === mySecret;
-    socket.emit('guessResult', { correct, flagId });
-    const f = flagById(flagId);
-    if (correct) { endGame(state.playerSlot===1?2:1); }
-    else { showToast('Opponent guessed ' + (f?f.name:flagId) + ' — wrong! Your turn.'); setMyTurnState(); }
-  });
-
-  socket.on('guessResult', ({ correct, flagId }) => {
-    const f = flagById(flagId);
-    if (correct) { endGame(state.playerSlot); return; }
-    showToast('Wrong! ' + (f?f.name:'') + ' is not their flag. End your turn.');
-    currentPlayerObj().actionUsed = true;
-    const tb = document.getElementById('turn-bar');
-    tb.textContent = '✅ Wrong guess — end your turn'; tb.className = 'turn-bar success-bar';
+    // Show the answer result to the asker, then they must end turn
+    const questionText=q?q.text:'';
+    state.pendingAnswer={answer,question:questionText};
+    const tb=document.getElementById('turn-bar');
+    tb.textContent='✅ Answer received — eliminate flags, then end your turn';
+    tb.className='turn-bar success-bar';
     document.getElementById('player-panel').classList.add('my-turn');
-    showActionPanel('none');
+    showAnswerResultPanel(state.pendingAnswer);
+    document.getElementById('end-turn-row').style.display='flex';
+    document.getElementById('action-used-notice').style.display='flex';
+    renderBoardGrid();
+  });
+  socket.on('yourTurnToAsk',()=>{state.pendingAnswer=null;setMyTurnState()});
+  socket.on('opponentGuess',({flagId})=>{
+    const mySecret=state.playerSlot===1?state.p1.secretFlag:state.p2.secretFlag;
+    const correct=flagId===mySecret;
+    socket.emit('guessResult',{correct,flagId});
+    const f=flagById(flagId);
+    if(correct)endGame(state.playerSlot===1?2:1);
+    else{showToast('Opponent guessed '+(f?f.name:flagId)+' — wrong! Your turn.');setMyTurnState()}
+  });
+  socket.on('guessResult',({correct,flagId})=>{
+    const f=flagById(flagId);
+    if(correct){endGame(state.playerSlot);return}
+    showToast('Wrong! '+(f?f.name:'')+' is not their flag. End your turn.');
+    currentPlayerObj().actionUsed=true;
+    const tb=document.getElementById('turn-bar');
+    tb.textContent='✅ Wrong guess — end your turn';tb.className='turn-bar success-bar';
+    document.getElementById('player-panel').classList.add('my-turn');
+    showActionPanel(null);
     document.getElementById('end-turn-row').style.display='flex';
     document.getElementById('action-used-notice').style.display='flex';
   });
-
-  socket.on('turnChanged', ({ currentPlayer }) => {
-    state.currentPlayer = currentPlayer;
+  socket.on('turnChanged',({currentPlayer})=>{
+    state.currentPlayer=currentPlayer;state.pendingAnswer=null;
     renderHistory();
-    if (isMyTurnOnline()) { setMyTurnState(); }
-    else { setWaitingState('⏳ Opponent\'s turn — wait for their question...'); }
+    if(isMyTurnOnline())setMyTurnState();
+    else setWaitingState('⏳ Opponent\'s turn — wait for their question...');
   });
-
-  socket.on('rollbackRequest', ({ reason, from }) => {
-    state.rollback = { requestedBy:from, reason, p1Accepted:from===1?true:null, p2Accepted:from===2?true:null };
+  socket.on('rollbackRequest',({reason,from})=>{
+    state.rollback={requestedBy:from,reason,p1Accepted:from===1?true:null,p2Accepted:from===2?true:null};
     showRollbackPanel();
   });
-  socket.on('rollbackDecision', ({ accepted }) => {
-    if (accepted) { applyRollback(); }
-    else { showToast('Rollback declined.'); state.rollback=null; renderBoard(); }
+  socket.on('rollbackDecision',({accepted})=>{
+    if(accepted)applyRollback();
+    else{showToast('Rollback declined.');state.rollback=null;renderBoard()}
   });
-  socket.on('opponentDisconnected', () => showToast('Opponent disconnected 😢', 5000));
+  socket.on('opponentDisconnected',()=>showToast('Opponent disconnected 😢',5000));
 }
 </script>
 </body>
