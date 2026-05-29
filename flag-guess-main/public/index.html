@@ -755,7 +755,7 @@ function connectLobby() {
   if (lobbySocket) return; // already connecting or connected
   if (typeof io === 'undefined') { showToast('Socket.io failed to load — refresh the page.'); return; }
 
-  const RENDER_URL = 'https://guess-my-flag.onrender.com';
+  const RENDER_URL = 'https://flag-guesses.onrender.com';
   lobbySocket = io(RENDER_URL, { transports: ['websocket', 'polling'] });
 
   // Show a "waking up" note since Render free tier cold-starts
