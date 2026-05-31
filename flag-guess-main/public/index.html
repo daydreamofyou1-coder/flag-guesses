@@ -1591,7 +1591,7 @@ function applyRollback() {
         document.getElementById('answer-from-label').textContent    = s.pendingQuestion.from + ' asks:';
         document.getElementById('answer-question-text').textContent = s.pendingQuestion.text;
         const tb = document.getElementById('turn-bar');
-        tb.textContent = '❓ Answer your opponent's question (rollback)';
+        tb.textContent = "❓ Answer your opponent's question (rollback)";
         tb.className = 'turn-bar waiting';
         document.getElementById('player-panel').classList.remove('my-turn');
         showActionPanel('answer');
