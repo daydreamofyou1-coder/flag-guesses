@@ -1023,6 +1023,7 @@ let state = {
   pendingQuestion: null, history: [], rollback: null,
   secretVisible: false,
   roomCode: '', joinedRoom: 0, playerSlot: 0, socket: null,
+  myUsername: '',
 };
 let guessMode = false, pendingGuessFlag = null;
 let p1SelectTemp = null, p2SelectTemp = null;
@@ -1065,9 +1066,21 @@ function goToSizeSelect() { showScreen('screen-size'); }
 // ══════════════════════════════════════════════
 // LOBBY
 // ══════════════════════════════════════════════
-let lobbySocket = null, pendingRoomJoin = null;
+let lobbySocket = null, pendingRoomJoin = null, pendingInviteFrom = null;
 
-function connectLobby() {
+function registerUsername() {
+  const name = document.getElementById('player-name').value.trim();
+  if (!name) return showToast('Enter a username first!');
+  state.myUsername = name;
+  state.p1.name = name;
+  if (!lobbySocket || !lobbySocket.connected) {
+    connectLobby(name);
+  } else {
+    lobbySocket.emit('registerUsername', { username: name });
+  }
+}
+
+function connectLobby(usernameToRegister) {
   if (lobbySocket) return;
   if (typeof io === 'undefined') { showToast('Socket.io failed — refresh page'); return; }
   const RENDER_URL = 'https://flag-guesses.onrender.com';
@@ -1077,9 +1090,62 @@ function connectLobby() {
   lobbySocket.on('connect', () => {
     showToast('Connected ✓');
     lobbySocket.emit('getRoomStatus');
+    if (usernameToRegister) lobbySocket.emit('registerUsername', { username: usernameToRegister });
     if (pendingRoomJoin) { lobbySocket.emit('joinLobbyRoom', pendingRoomJoin); pendingRoomJoin = null; }
   });
   lobbySocket.on('connect_error', () => showToast('Server waking up, retrying...', 3000));
+
+  lobbySocket.on('usernameOk', ({ username }) => {
+    state.myUsername = username;
+    document.getElementById('username-step').style.display = 'none';
+    document.getElementById('lobby-step').style.display = 'block';
+    document.getElementById('lobby-my-name-display').textContent = '👋 ' + username;
+    document.getElementById('lobby-players-section').style.display = 'block';
+    showToast('Welcome, ' + username + '! 🎉');
+  });
+
+  lobbySocket.on('usernameError', ({ message }) => showToast(message));
+
+  lobbySocket.on('onlineUsers', ({ users }) => {
+    const list = document.getElementById('lobby-players-list');
+    const others = users.filter(u => u.name !== state.myUsername);
+    if (!others.length) {
+      list.innerHTML = '<div style="font-size:.78rem;color:var(--muted);padding:6px 0">No other players online yet.</div>';
+      return;
+    }
+    list.innerHTML = others.map(u => `
+      <div class="lobby-player-card">
+        <span class="lobby-player-name">👤 ${u.name}</span>
+        <button class="lobby-invite-btn" onclick="sendInvite('${u.name}')">▶ Invite</button>
+      </div>`).join('');
+  });
+
+  lobbySocket.on('incomingInvite', ({ fromUsername, fromId }) => {
+    pendingInviteFrom = fromId;
+    document.getElementById('invite-banner-title').textContent = fromUsername + ' wants to play!';
+    document.getElementById('invite-banner-sub').textContent   = 'Do you accept the challenge?';
+    document.getElementById('invite-banner').classList.add('show');
+  });
+
+  lobbySocket.on('inviteDeclined', ({ byUsername }) => {
+    showToast(byUsername + ' declined your invite.');
+  });
+
+  lobbySocket.on('inviteError', ({ message }) => showToast(message));
+
+  lobbySocket.on('boardSizeAgreed', ({ size }) => {
+    state.boardSize = size;
+    document.getElementById('size-12').classList.toggle('selected', size === 12);
+    document.getElementById('size-24').classList.toggle('selected', size === 24);
+    document.getElementById('start-game-btn').disabled = false;
+    document.getElementById('start-game-btn').textContent = 'Confirm & Pick Flag →';
+    showToast('Board size: ' + size + ' flags ✓');
+  });
+
+  lobbySocket.on('waitingForOpponentSize', () => {
+    document.getElementById('start-game-btn').textContent = 'Waiting for opponent size...';
+    showToast('Waiting for opponent to choose size...', 3000);
+  });
 
   lobbySocket.on('roomStatus', ({ rooms }) => {
     rooms.forEach(({ roomNumber, count }) => {
@@ -1102,10 +1168,17 @@ function connectLobby() {
 
   lobbySocket.on('matchFound', ({ roomCode, slot, opponentName }) => {
     state.roomCode = roomCode; state.playerSlot = slot; state.socket = lobbySocket;
-    if (slot === 1) { state.p2.name = opponentName || 'Player 2'; }
-    else { const n = state.p1.name; state.p1.name = opponentName || 'Player 1'; state.p2.name = n; }
+    // My name = what I registered; opponent name = opponentName from server
+    const myName = state.myUsername || (slot === 1 ? state.p1.name : state.p2.name);
+    if (slot === 1) {
+      state.p1.name = myName;
+      state.p2.name = opponentName || 'Player 2';
+    } else {
+      state.p1.name = opponentName || 'Player 1';
+      state.p2.name = myName;
+    }
     document.getElementById('online-bar').style.display = 'flex';
-    document.getElementById('bar-room-code').textContent = 'Room ' + state.joinedRoom;
+    document.getElementById('bar-room-code').textContent = 'Room ' + (state.joinedRoom || roomCode);
     document.getElementById('online-size-note').style.display = 'block';
     document.getElementById('start-game-btn').textContent = 'Confirm & Pick Flag →';
     document.getElementById('start-game-btn').disabled = true;
@@ -1123,8 +1196,8 @@ function connectLobby() {
 }
 
 function joinLobbyRoom(roomNumber) {
-  const name = document.getElementById('player-name').value.trim();
-  if (!name) return showToast('Enter your name first!');
+  const name = state.myUsername;
+  if (!name) return showToast('Enter your username first!');
   if (document.getElementById('room-card-' + roomNumber).classList.contains('full')) return showToast('Room is full!');
   state.p1.name = name; state.joinedRoom = roomNumber;
   if (!lobbySocket || !lobbySocket.connected) {
