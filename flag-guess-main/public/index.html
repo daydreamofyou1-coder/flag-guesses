@@ -336,7 +336,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
 
 <div id="toast"></div>
 
-<!-- ══ SCREEN: HOME ══ -->
 <div class="screen active" id="screen-mode">
   <div class="wrap">
     <div class="home-hero">
@@ -359,7 +358,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
     </div>
 
     <div id="online-setup" style="display:none">
-      <!-- Step 1: pick username -->
       <div id="username-step">
         <div class="online-box" style="margin-bottom:14px">
           <label class="field-label">Choose a Username</label>
@@ -370,7 +368,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
         </div>
       </div>
       
-      <!-- Step 2: lobby -->
       <div id="lobby-step" style="display:none">
         <div class="online-box" style="margin-bottom:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
           <div class="pulse-ring"></div>
@@ -394,7 +391,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
       </div>
     </div>
 
-    <!-- Invite notification banner -->
     <div id="invite-banner">
       <div class="invite-banner-title" id="invite-banner-title">Someone wants to play!</div>
       <div class="invite-banner-sub" id="invite-banner-sub">Do you accept the challenge?</div>
@@ -408,7 +404,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
-<!-- ══ SCREEN: SIZE ══ -->
 <div class="screen" id="screen-size">
   <div class="wrap">
     <div class="online-size-note" id="online-size-note">🌐 Pick your board size, then choose your secret flag!</div>
@@ -432,7 +427,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
-<!-- ══ SCREEN: FLAG SELECT (P1 / Online) ══ -->
 <div class="screen" id="screen-p1-select">
   <div class="wrap">
     <span class="secret-badge">🔒 Private Selection</span>
@@ -444,7 +438,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   <footer>Flag Guess Who · Educational Flag Game</footer>
 </div>
 
-<!-- ══ SCREEN: SWITCH TO P2 ══ -->
 <div class="screen" id="screen-switch-p2">
   <div class="switch-wrap">
     <div class="switch-card">
@@ -457,7 +450,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
-<!-- ══ SCREEN: FLAG SELECT (P2) ══ -->
 <div class="screen" id="screen-p2-select">
   <div class="wrap">
     <span class="secret-badge">🔒 Private Selection</span>
@@ -469,7 +461,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   <footer>Flag Guess Who · Educational Flag Game</footer>
 </div>
 
-<!-- ══ SCREEN: GAME START ══ -->
 <div class="screen" id="screen-switch-start">
   <div class="switch-wrap">
     <div class="switch-card">
@@ -482,7 +473,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
-<!-- ══ SCREEN: GAME BOARD ══ -->
 <div class="screen" id="screen-game">
   <div class="online-bar" id="online-bar">
     <div class="online-bar-dot"></div>
@@ -505,7 +495,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
 
       <div class="turn-bar active" id="turn-bar">🎯 Your turn — ask or guess!</div>
 
-      <!-- Ask panel -->
       <div id="action-panel-ask" class="action-panel ask-panel" style="display:none">
         <div class="panel-label">Ask a Yes / No Question</div>
         <textarea class="textarea-field" id="question-input" rows="2" placeholder="e.g. Does the flag have red in it?"></textarea>
@@ -515,14 +504,12 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
         </div>
       </div>
 
-      <!-- Guess panel -->
       <div id="action-panel-guess" class="action-panel guess-panel" style="display:none">
         <div class="panel-label">Make Your Guess</div>
         <p style="font-size:.8rem;color:var(--muted);margin-bottom:10px">⚠️ Wrong guess = <strong style="color:var(--text)">lose your turn</strong>. Tap a flag below.</p>
         <button class="btn btn-ghost" style="font-size:.8rem;padding:10px" onclick="switchToAsk()">← Ask Instead</button>
       </div>
 
-      <!-- Waiting panel -->
       <div id="action-panel-waiting" class="action-panel waiting-panel" style="display:none">
         <div style="display:flex;align-items:center;gap:10px">
           <div class="pulse-ring"></div>
@@ -533,7 +520,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
         </div>
       </div>
 
-      <!-- Answer panel -->
       <div id="action-panel-answer" class="action-panel answer-panel" style="display:none">
         <div class="panel-label">Opponent's Question</div>
         <div class="question-bubble">
@@ -546,7 +532,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
         </div>
       </div>
 
-      <!-- Rollback panel -->
       <div id="rollback-panel" class="rollback-panel" style="display:none">
         <h3>⏪ Rollback Requested</h3>
         <p id="rollback-reason-display"></p>
@@ -576,7 +561,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   <footer>Flag Guess Who · Educational Flag Game</footer>
 </div>
 
-<!-- ══ SCREEN: SWITCH TURNS ══ -->
 <div class="screen" id="screen-switch-turn">
   <div class="switch-wrap">
     <div class="switch-card">
@@ -589,7 +573,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
-<!-- ══ SCREEN: GAME OVER ══ -->
 <div class="screen" id="screen-gameover">
   <div class="gameover-wrap">
     <div class="gameover-card">
@@ -609,7 +592,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
-<!-- ══ MODAL: ROLLBACK ══ -->
 <div class="modal-overlay" id="modal-rollback">
   <div class="modal-card">
     <h3>⏪ Request Rollback</h3>
@@ -622,7 +604,6 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
-<!-- ══ MODAL: GUESS CONFIRM ══ -->
 <div class="modal-overlay" id="modal-guess">
   <div class="modal-card">
     <h3 id="modal-guess-title">Guess: Germany?</h3>
@@ -868,7 +849,8 @@ function selectSize(n) {
 function startGame() {
   if (!state.boardSize) return showToast('Choose a size first');
   if (state.mode === 'online' && state.playerSlot === 1) {
-      state.socket.emit('selectBoardSize', { size: state.boardSize });
+      // roomCode added to heal session
+      state.socket.emit('selectBoardSize', { size: state.boardSize, roomCode: state.roomCode });
       return;
   }
   
@@ -918,7 +900,8 @@ function confirmP1Selection() {
   if (state.mode === 'online') {
     if (state.playerSlot === 1) state.p1.secretFlag = p1SelectTemp;
     else state.p2.secretFlag = p1SelectTemp;
-    state.socket.emit('confirmFlag', { flagId: p1SelectTemp });
+    // roomCode added
+    state.socket.emit('confirmFlag', { flagId: p1SelectTemp, roomCode: state.roomCode });
     document.getElementById('p1-confirm-btn').disabled = true;
     document.getElementById('p1-confirm-btn').textContent = 'Waiting for opponent...';
     showToast('Flag locked in! Waiting for opponent...');
@@ -1075,7 +1058,8 @@ function confirmGuess() {
   closeModal('modal-guess');
   const f = flagById(pendingGuessFlag);
   if (state.mode === 'online') {
-    state.socket.emit('makeGuess', { flagId: pendingGuessFlag });
+    // roomCode added
+    state.socket.emit('makeGuess', { flagId: pendingGuessFlag, roomCode: state.roomCode });
     showActionPanel('waiting');
     document.getElementById('waiting-question-preview').textContent = 'Guessing: ' + f.name + '...';
     pendingGuessFlag = null;
@@ -1114,7 +1098,8 @@ function submitQuestion() {
   state.history.push({ type:'question', from:cur.name, text, answer:undefined });
 
   if (state.mode === 'online') {
-    state.socket.emit('askQuestion', { text });
+    // roomCode added
+    state.socket.emit('askQuestion', { text, roomCode: state.roomCode });
     showActionPanel('waiting');
     document.getElementById('waiting-question-preview').textContent = '"' + text + '"';
     document.getElementById('action-used-notice').style.display = 'none';
@@ -1170,7 +1155,8 @@ function submitAnswer(answer) {
   state.pendingQuestion = null;
 
   if (state.mode === 'online') {
-    state.socket.emit('answerQuestion', { answer });
+    // roomCode added
+    state.socket.emit('answerQuestion', { answer, roomCode: state.roomCode });
     setMyTurnState();
     renderHistory();
     return;
@@ -1232,7 +1218,8 @@ function submitRollbackRequest() {
     }
   };
   if (state.mode === 'online') {
-    state.socket.emit('rollbackRequest', { reason, from: state.playerSlot, snapshot: state.rollback.snapshot });
+    // roomCode added
+    state.socket.emit('rollbackRequest', { reason, from: state.playerSlot, snapshot: state.rollback.snapshot, roomCode: state.roomCode });
     return;
   }
   const other = state.currentPlayer===1?state.p2:state.p1, cur = currentPlayerObj();
@@ -1242,6 +1229,7 @@ function submitRollbackRequest() {
   document.getElementById('switch-turn-btn').onclick = () => showRollbackPanel();
   showScreen('screen-switch-turn');
 }
+
 function showRollbackPanel() {
   const rb = state.rollback;
   document.getElementById('rollback-panel').style.display = 'block';
@@ -1253,15 +1241,24 @@ function showRollbackPanel() {
   document.getElementById('rollback-request-area').style.display = 'none';
   showScreen('screen-game');
 }
+
 function updateRbBadges() {
   const rb = state.rollback;
   const p1b = document.getElementById('rb-p1-badge'), p2b = document.getElementById('rb-p2-badge');
   p1b.className = 'rb-badge ' + (rb.p1Accepted===true?'accepted':'pending'); p1b.textContent = rb.p1Accepted===true?'✓':'?';
   p2b.className = 'rb-badge ' + (rb.p2Accepted===true?'accepted':'pending'); p2b.textContent = rb.p2Accepted===true?'✓':'?';
 }
+
 function acceptRollback() {
   const me = state.mode === 'online' ? state.playerSlot : (state.currentPlayer===1?2:1);
   if (me===1) state.rollback.p1Accepted=true; else state.rollback.p2Accepted=true;
+  
+  if (state.mode === 'online') {
+    updateRbBadges();
+    state.socket.emit('rollbackDecision', { accepted: true, roomCode: state.roomCode });
+    return;
+  }
+
   if (state.rollback.p1Accepted && state.rollback.p2Accepted) { applyRollback(); return; }
   updateRbBadges();
   document.getElementById('switch-turn-title').textContent = 'Rollback Accepted';
@@ -1270,11 +1267,16 @@ function acceptRollback() {
   document.getElementById('switch-turn-btn').onclick = () => applyRollback();
   showScreen('screen-switch-turn');
 }
+
 function declineRollback() {
+  if (state.mode === 'online') {
+    state.socket.emit('rollbackDecision', { accepted: false, roomCode: state.roomCode });
+  }
   showToast('Rollback declined.'); state.rollback = null;
   document.getElementById('rollback-panel').style.display = 'none';
   renderBoard();
 }
+
 function applyRollback() {
   const s = state.rollback.snapshot;
   state.history = s.history; state.p1.eliminated = s.p1Eliminated; state.p2.eliminated = s.p2Eliminated;
@@ -1411,7 +1413,9 @@ function initOnlineGame() {
     const mySecret = state.playerSlot===1 ? state.p1.secretFlag : state.p2.secretFlag;
     const opponentObj = state.playerSlot===1 ? state.p2 : state.p1;
     const correct  = flagId === mySecret;
-    socket.emit('guessResult', { correct, flagId });
+    
+    // Send response back using roomCode
+    socket.emit('guessResult', { correct, flagId, roomCode: state.roomCode });
     const f = flagById(flagId);
     
     // Log the opponent's guess properly in history!
