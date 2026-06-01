@@ -308,8 +308,16 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
 .username-row .field-input{flex:1;}
 .username-row .btn{width:auto;padding:11px 16px;font-size:.82rem;white-space:nowrap;}
 
-#invite-banner { position:fixed;top:64px;left:50%;transform:translateX(-50%) translateY(-80px); background:var(--surface2);border:1.5px solid rgba(124,111,255,.35); border-radius:var(--radius);padding:14px 18px; width:calc(100% - 32px);max-width:420px;z-index:300; transition:transform .35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 12px 40px rgba(0,0,0,.5); }
-#invite-banner.show{transform:translateX(-50%) translateY(0);}
+#invite-banner { 
+  position:fixed; top:64px; left:50%; transform:translateX(-50%) translateY(-120px); 
+  background:var(--surface2); border:1.5px solid rgba(124,111,255,.35); 
+  border-radius:var(--radius); padding:14px 18px; width:calc(100% - 32px); 
+  max-width:420px; z-index:300; transition:all .35s cubic-bezier(.34,1.56,.64,1); 
+  box-shadow:0 12px 40px rgba(0,0,0,.5); opacity:0; pointer-events:none; visibility:hidden; 
+}
+#invite-banner.show { 
+  transform:translateX(-50%) translateY(0); opacity:1; pointer-events:auto; visibility:visible; 
+}
 .invite-banner-title{font-size:.88rem;font-weight:700;margin-bottom:3px;}
 .invite-banner-sub{font-size:.76rem;color:var(--muted);margin-bottom:12px;}
 .invite-banner-btns{display:flex;gap:8px;}
@@ -362,7 +370,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
         </div>
       </div>
       
-      <!-- Step 2: lobby (GEEN KAMERS MEER) -->
+      <!-- Step 2: lobby -->
       <div id="lobby-step" style="display:none">
         <div class="online-box" style="margin-bottom:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
           <div class="pulse-ring"></div>
@@ -370,27 +378,26 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
         </div>
         
         <div id="lobby-players-section" style="display:none">
-          <div class="lobby-section-label">Online Spelers — tik ▶ om uit te nodigen</div>
+          <div class="lobby-section-label">Online Players — tap ▶ to invite</div>
           <div id="lobby-players-list"></div>
         </div>
 
-        <!-- Wachtscherm als JIJ iemand invite -->
         <div id="invite-waiting-area" style="display:none;margin-top:10px">
           <div class="waiting-area-box">
             <div class="pulse-ring"></div>
             <div>
-              <div class="waiting-text">Wachten op reactie...</div>
-              <div class="waiting-sub" id="invite-waiting-sub">Je hebt een uitnodiging verstuurd</div>
+              <div class="waiting-text">Waiting for response...</div>
+              <div class="waiting-sub" id="invite-waiting-sub">You sent an invite</div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Invite notification banner (Als JIJ ge-invite wordt) -->
+    <!-- Invite notification banner -->
     <div id="invite-banner">
       <div class="invite-banner-title" id="invite-banner-title">Someone wants to play!</div>
-      <div class="invite-banner-sub" id="invite-banner-sub">Do you accept?</div>
+      <div class="invite-banner-sub" id="invite-banner-sub">Do you accept the challenge?</div>
       <div class="invite-banner-btns">
         <button class="btn btn-success" onclick="respondInvite(true)">✓ Accept</button>
         <button class="btn btn-ghost" onclick="respondInvite(false)">✗ Decline</button>
@@ -520,7 +527,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
         <div style="display:flex;align-items:center;gap:10px">
           <div class="pulse-ring"></div>
           <div>
-            <div class="waiting-msg">Waiting for opponent to answer...</div>
+            <div class="waiting-msg">Waiting for opponent...</div>
             <div class="waiting-msg-sub" id="waiting-question-preview"></div>
           </div>
         </div>
@@ -750,7 +757,7 @@ function connectLobby(usernameToRegister) {
     const list = document.getElementById('lobby-players-list');
     const others = users.filter(u => u.name !== state.myUsername);
     if (!others.length) {
-      list.innerHTML = '<div style="font-size:.78rem;color:var(--muted);padding:6px 0">Nog geen andere spelers online.</div>';
+      list.innerHTML = '<div style="font-size:.78rem;color:var(--muted);padding:6px 0">No other players online yet.</div>';
       return;
     }
     list.innerHTML = others.map(u => `
@@ -762,13 +769,13 @@ function connectLobby(usernameToRegister) {
 
   lobbySocket.on('incomingInvite', ({ fromUsername, fromId }) => {
     pendingInviteFrom = fromId;
-    document.getElementById('invite-banner-title').textContent = fromUsername + ' wil spelen!';
-    document.getElementById('invite-banner-sub').textContent   = 'Accepteer je de uitdaging?';
+    document.getElementById('invite-banner-title').textContent = fromUsername + ' wants to play!';
+    document.getElementById('invite-banner-sub').textContent   = 'Do you accept the challenge?';
     document.getElementById('invite-banner').classList.add('show');
   });
 
   lobbySocket.on('inviteDeclined', ({ byUsername }) => {
-    showToast(byUsername + ' heeft je uitnodiging geweigerd.');
+    showToast(byUsername + ' declined your invite.');
     document.getElementById('lobby-players-section').style.display = 'block';
     document.getElementById('invite-waiting-area').style.display = 'none';
   });
@@ -788,9 +795,9 @@ function connectLobby(usernameToRegister) {
     initOnlineGame();
     renderFlagGrid('p1-flags-grid', null, id => onlineFlagClick(id));
     const myName = state.playerSlot === 1 ? state.p1.name : state.p2.name;
-    document.getElementById('p1-select-title').textContent = myName + ': Kies je Geheime Vlag';
+    document.getElementById('p1-select-title').textContent = myName + ': Pick your Secret Flag';
     document.getElementById('p1-confirm-btn').disabled = true;
-    document.getElementById('p1-confirm-btn').textContent = 'Bevestig Selectie →';
+    document.getElementById('p1-confirm-btn').textContent = 'Confirm Selection →';
     document.getElementById('start-game-btn').style.display = 'block';
     showScreen('screen-p1-select');
   });
@@ -805,21 +812,20 @@ function connectLobby(usernameToRegister) {
       state.p1.name = opponentName || 'Player 1'; state.p2.name = myName;
     }
 
-    // Reset lobby UI voor na het spel
     document.getElementById('lobby-players-section').style.display = 'block';
     document.getElementById('invite-waiting-area').style.display = 'none';
 
     document.getElementById('online-bar').style.display = 'flex';
-    document.getElementById('bar-room-code').textContent = 'Match tegen ' + opponentName;
+    document.getElementById('bar-room-code').textContent = 'Match against ' + opponentName;
     document.getElementById('online-size-note').style.display = 'block';
     
     if (slot === 2) {
-      document.getElementById('online-size-note').textContent = '⏳ Wachten tot ' + opponentName + ' de bordgrootte kiest...';
+      document.getElementById('online-size-note').textContent = '⏳ Waiting for ' + opponentName + ' to choose the board size...';
       document.getElementById('start-game-btn').style.display = 'none';
     } else {
-      document.getElementById('online-size-note').textContent = '🌐 Kies de bordgrootte voor jullie beiden!';
+      document.getElementById('online-size-note').textContent = '🌐 Choose the board size for both of you!';
       document.getElementById('start-game-btn').style.display = 'block';
-      document.getElementById('start-game-btn').textContent = 'Bevestig Maat →';
+      document.getElementById('start-game-btn').textContent = 'Confirm Size →';
       document.getElementById('start-game-btn').onclick = startGame;
     }
     
@@ -834,12 +840,11 @@ function connectLobby(usernameToRegister) {
 function sendInvite(username) {
   if (!lobbySocket) return;
   lobbySocket.emit('sendInvite', { toUsername: username });
-  showToast('Uitnodiging verstuurd naar ' + username + '!');
+  showToast('Invite sent to ' + username + '!');
   
-  // Toon wacht schermpje
   document.getElementById('lobby-players-section').style.display = 'none';
   document.getElementById('invite-waiting-area').style.display = 'block';
-  document.getElementById('invite-waiting-sub').textContent = 'Uitnodiging gestuurd naar ' + username;
+  document.getElementById('invite-waiting-sub').textContent = 'You sent an invite to ' + username;
 }
 
 function respondInvite(accept) {
@@ -857,11 +862,11 @@ function selectSize(n) {
   document.getElementById('size-24').classList.toggle('selected', n === 24);
   const btn = document.getElementById('start-game-btn');
   btn.disabled = false;
-  btn.textContent = state.mode === 'online' ? 'Bevestig Maat →' : 'Start Game →';
+  btn.textContent = state.mode === 'online' ? 'Confirm Size →' : 'Start Game →';
 }
 
 function startGame() {
-  if (!state.boardSize) return showToast('Kies eerst een maat');
+  if (!state.boardSize) return showToast('Choose a size first');
   if (state.mode === 'online' && state.playerSlot === 1) {
       state.socket.emit('selectBoardSize', { size: state.boardSize });
       return;
@@ -1005,9 +1010,27 @@ function renderHistory() {
   const items = document.getElementById('history-items');
   if (!state.history.length) { log.style.display = 'none'; return; }
   log.style.display = 'block';
+  
   items.innerHTML = state.history.slice().reverse().map(h => {
-    if (h.type === 'question') return `<div class="history-item"><span class="h-icon">❓</span><div class="h-text"><strong>${h.from}</strong> asked: "${h.text}"${h.answer!==undefined ? ` → <span class="h-ans ${h.answer?'yes':'no'}">${h.answer?'YES':'NO'}</span>` : ' <span style="opacity:.5">(pending...)</span>'}</div></div>`;
-    if (h.type === 'guess') return `<div class="history-item"><span class="h-icon">${h.correct?'🏆':'❌'}</span><div class="h-text"><strong>${h.from}</strong> guessed <strong>${h.flagName}</strong>→ <span class="h-ans ${h.correct?'yes':'no'}">${h.correct?'CORRECT!':'WRONG'}</span></div></div>`;
+    // Determine color based on who performed the action
+    const isP1 = h.from === state.p1.name;
+    const color = isP1 ? 'var(--accent)' : 'var(--accent2)';
+    const nameTag = `<strong style="color: ${color}">${h.from}</strong>`;
+
+    if (h.type === 'question') {
+      return `<div class="history-item">
+        <span class="h-icon">❓</span>
+        <div class="h-text">${nameTag} asked: "${h.text}"
+        ${h.answer!==undefined ? ` → <span class="h-ans ${h.answer?'yes':'no'}">${h.answer?'YES':'NO'}</span>` : ' <span style="opacity:.5">(pending...)</span>'}
+        </div></div>`;
+    }
+    if (h.type === 'guess') {
+      return `<div class="history-item">
+        <span class="h-icon">${h.correct?'🏆':'❌'}</span>
+        <div class="h-text">${nameTag} guessed <strong>${h.flagName}</strong>
+        → <span class="h-ans ${h.correct?'yes':'no'}">${h.correct?'CORRECT!':'WRONG'}</span>
+        </div></div>`;
+    }
     return '';
   }).join('');
 }
@@ -1063,7 +1086,7 @@ function confirmGuess() {
   state.history.push({ type:'guess', from:cur.name, flagId:pendingGuessFlag, flagName:f.name, correct });
   if (correct) { endGame(state.currentPlayer); }
   else {
-    showToast('❌ Wrong! ' + f.name + ' is not their flag.');
+    showToast('❌ Wrong guess! ' + f.name + ' is not the flag.');
     cur.actionUsed = true; guessMode = false;
     setTimeout(() => {
       state.currentPlayer = state.currentPlayer === 1 ? 2 : 1;
@@ -1155,7 +1178,7 @@ function submitAnswer(answer) {
 
   state.currentPlayer = state.currentPlayer === 1 ? 2 : 1;
   const now = currentPlayerObj();
-  showToast('Beantwoord ' + (answer ? 'YES ✓' : 'NO ✗') + '! Nu is het jouw beurt om te vragen.');
+  showToast('Answered ' + (answer ? 'YES ✓' : 'NO ✗') + '! Now it\'s your turn to ask.');
   document.getElementById('board-player-title').textContent = now.name + "'s Board";
   document.getElementById('secret-flag-display').textContent = 'Hidden';
   state.secretVisible = false; updateSecretIcon();
@@ -1304,7 +1327,7 @@ function playAgain() {
   if (state.mode==='online') {
     document.getElementById('online-size-note').style.display='block';
     document.getElementById('start-game-btn').disabled=true;
-    document.getElementById('start-game-btn').textContent='Bevestig Maat →';
+    document.getElementById('start-game-btn').textContent='Confirm Size →';
     document.getElementById('size-12').classList.remove('selected');
     document.getElementById('size-24').classList.remove('selected');
     state.boardSize=0; showScreen('screen-size'); return;
@@ -1380,24 +1403,36 @@ function initOnlineGame() {
     const q = [...state.history].reverse().find(h => h.type==='question' && h.answer===undefined);
     if (q) q.answer = answer;
     renderHistory();
-    showToast('Tegenstander antwoordde: ' + (answer?'YES ✓':'NO ✗'));
-    setWaitingState('⏳ Wachten op de vraag of gok van de tegenstander...');
+    showToast('Opponent answered: ' + (answer?'YES ✓':'NO ✗'));
+    setWaitingState('⏳ Waiting for opponent\'s question or guess...');
   });
 
   socket.on('opponentGuess', ({ flagId }) => {
     const mySecret = state.playerSlot===1 ? state.p1.secretFlag : state.p2.secretFlag;
+    const opponentObj = state.playerSlot===1 ? state.p2 : state.p1;
     const correct  = flagId === mySecret;
     socket.emit('guessResult', { correct, flagId });
     const f = flagById(flagId);
+    
+    // Log the opponent's guess properly in history!
+    state.history.push({ type:'guess', from: opponentObj.name, flagId, flagName: f?f.name:'', correct });
+    renderHistory();
+
     if (correct) { endGame(state.playerSlot===1?2:1); }
     else { showToast('Opponent guessed ' + (f?f.name:flagId) + ' — wrong! Your turn.'); setMyTurnState(); }
   });
 
   socket.on('guessResult', ({ correct, flagId }) => {
+    const myName = myObj().name;
     const f = flagById(flagId);
+
+    // Log your guess properly in history!
+    state.history.push({ type:'guess', from: myName, flagId, flagName: f?f.name:'', correct });
+    renderHistory();
+
     if (correct) { endGame(state.playerSlot); return; }
-    showToast('Foute gok! ' + (f?f.name:'') + ' is niet de vlag.');
-    setWaitingState('⏳ Je beurt is voorbij door een foute gok. Wachten...');
+    showToast('Wrong guess! ' + (f?f.name:'') + ' is not the flag.');
+    setWaitingState('⏳ Your turn is over due to a wrong guess. Waiting...');
   });
 
   socket.on('rollbackRequest', ({ reason, from, snapshot }) => {
@@ -1419,4 +1454,4 @@ function initOnlineGame() {
 }
 </script>
 </body>
-  </html>
+</html>
