@@ -615,6 +615,43 @@ body {
 .modal-flag-img { width: 100%; border-radius: 10px; margin: 12px 0; border: 1px solid var(--border); }
 
 footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--muted); }
+
+/* ── LOBBY PLAYERS ── */
+.lobby-section-label {
+  font-size:.68rem;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.1em;margin:14px 0 8px;
+}
+.lobby-player-card {
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);padding:11px 14px;margin-bottom:7px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.lobby-player-name {font-size:.88rem;font-weight:700;}
+.lobby-invite-btn {
+  background:none;border:1px solid rgba(124,111,255,.35);
+  color:var(--accent);border-radius:100px;padding:5px 13px;
+  font-size:.72rem;font-weight:700;cursor:pointer;
+  font-family:var(--font);transition:.15s;
+}
+.lobby-invite-btn:hover{background:rgba(124,111,255,.12);}
+.lobby-invite-btn:disabled{opacity:.3;cursor:not-allowed;}
+.username-row{display:flex;gap:8px;align-items:flex-end;margin-bottom:12px;}
+.username-row .field-input{flex:1;}
+.username-row .btn{width:auto;padding:11px 16px;font-size:.82rem;white-space:nowrap;}
+
+/* ── INVITE NOTIFICATION ── */
+#invite-banner {
+  position:fixed;top:64px;left:50%;transform:translateX(-50%) translateY(-80px);
+  background:var(--surface2);border:1.5px solid rgba(124,111,255,.35);
+  border-radius:var(--radius);padding:14px 18px;
+  width:calc(100% - 32px);max-width:420px;z-index:300;
+  transition:transform .35s cubic-bezier(.34,1.56,.64,1);box-shadow:0 12px 40px rgba(0,0,0,.5);
+}
+#invite-banner.show{transform:translateX(-50%) translateY(0);}
+.invite-banner-title{font-size:.88rem;font-weight:700;margin-bottom:3px;}
+.invite-banner-sub{font-size:.76rem;color:var(--muted);margin-bottom:12px;}
+.invite-banner-btns{display:flex;gap:8px;}
+.invite-banner-btns .btn{font-size:.8rem;padding:10px;}
 </style>
 </head>
 <body>
@@ -652,42 +689,60 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
     </div>
 
     <div id="online-setup" style="display:none">
-      <div class="online-box" style="margin-bottom:14px">
-        <label class="field-label">Your Name</label>
-        <input class="field-input" id="player-name" placeholder="Enter your name..." maxlength="20">
-      </div>
-      <div class="rooms-label">Pick a Room</div>
-      <div id="room-list">
-        <div class="room-card" id="room-card-1" onclick="joinLobbyRoom(1)">
-          <div class="room-card-info">
-            <div class="room-card-name">Room 1</div>
-            <div class="room-card-count" id="room-status-1">0 / 2 players</div>
+      <!-- Step 1: pick username -->
+      <div id="username-step">
+        <div class="online-box" style="margin-bottom:14px">
+          <label class="field-label">Choose a Username</label>
+          <div class="username-row">
+            <input class="field-input" id="player-name" placeholder="Enter your name..." maxlength="20" onkeydown="if(event.key==='Enter')registerUsername()">
+            <button class="btn" onclick="registerUsername()">Enter →</button>
           </div>
-          <div class="room-pill" id="room-badge-1">Join</div>
-        </div>
-        <div class="room-card" id="room-card-2" onclick="joinLobbyRoom(2)">
-          <div class="room-card-info">
-            <div class="room-card-name">Room 2</div>
-            <div class="room-card-count" id="room-status-2">0 / 2 players</div>
-          </div>
-          <div class="room-pill" id="room-badge-2">Join</div>
-        </div>
-        <div class="room-card" id="room-card-3" onclick="joinLobbyRoom(3)">
-          <div class="room-card-info">
-            <div class="room-card-name">Room 3</div>
-            <div class="room-card-count" id="room-status-3">0 / 2 players</div>
-          </div>
-          <div class="room-pill" id="room-badge-3">Join</div>
         </div>
       </div>
-      <div id="waiting-area" style="display:none;margin-top:10px">
-        <div class="waiting-box">
+      <!-- Step 2: lobby + rooms (shown after username confirmed) -->
+      <div id="lobby-step" style="display:none">
+        <div class="online-box" style="margin-bottom:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
           <div class="pulse-ring"></div>
-          <div>
-            <div class="waiting-text" id="waiting-label">Waiting for opponent...</div>
-            <div class="waiting-sub" id="waiting-sub"></div>
+          <span style="font-size:.84rem;font-weight:600;" id="lobby-my-name-display"></span>
+        </div>
+        <div class="rooms-label">Pick a Room</div>
+        <div id="room-list">
+          <div class="room-card" id="room-card-1" onclick="joinLobbyRoom(1)">
+            <div class="room-card-info"><div class="room-card-name">Room 1</div><div class="room-card-count" id="room-status-1">0 / 2 players</div></div>
+            <div class="room-pill" id="room-badge-1">Join</div>
+          </div>
+          <div class="room-card" id="room-card-2" onclick="joinLobbyRoom(2)">
+            <div class="room-card-info"><div class="room-card-name">Room 2</div><div class="room-card-count" id="room-status-2">0 / 2 players</div></div>
+            <div class="room-pill" id="room-badge-2">Join</div>
+          </div>
+          <div class="room-card" id="room-card-3" onclick="joinLobbyRoom(3)">
+            <div class="room-card-info"><div class="room-card-name">Room 3</div><div class="room-card-count" id="room-status-3">0 / 2 players</div></div>
+            <div class="room-pill" id="room-badge-3">Join</div>
           </div>
         </div>
+        <div id="lobby-players-section" style="display:none">
+          <div class="lobby-section-label">Online Players — tap ▶ to invite</div>
+          <div id="lobby-players-list"></div>
+        </div>
+        <div id="waiting-area" style="display:none;margin-top:10px">
+          <div class="waiting-box">
+            <div class="pulse-ring"></div>
+            <div>
+              <div class="waiting-text" id="waiting-label">Waiting for opponent...</div>
+              <div class="waiting-sub" id="waiting-sub"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invite notification banner -->
+    <div id="invite-banner">
+      <div class="invite-banner-title" id="invite-banner-title">Someone wants to play!</div>
+      <div class="invite-banner-sub" id="invite-banner-sub">Do you accept?</div>
+      <div class="invite-banner-btns">
+        <button class="btn btn-success" onclick="respondInvite(true)">✓ Accept</button>
+        <button class="btn btn-ghost" onclick="respondInvite(false)">✗ Decline</button>
       </div>
     </div>
 
@@ -1773,4 +1828,4 @@ function initOnlineGame() {
 }
 </script>
 </body>
-</html>
+  </html>
