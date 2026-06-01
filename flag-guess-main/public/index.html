@@ -1193,6 +1193,16 @@ function connectLobby(usernameToRegister) {
     document.getElementById('waiting-area').style.display = 'none';
     document.getElementById('room-list').style.display = 'block';
   });
+  function sendInvite(username) {
+  if (!lobbySocket) return;
+  lobbySocket.emit('sendInvite', { toUsername: username });
+  showToast('Uitnodiging verstuurd naar ' + username + '!');
+}
+
+function respondInvite(accept) {
+  document.getElementById('invite-banner').classList.remove('show');
+  lobbySocket.emit('respondInvite', { accept, fromId: pendingInviteFrom });
+}
 }
 
 function joinLobbyRoom(roomNumber) {
