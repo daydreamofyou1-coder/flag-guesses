@@ -20,7 +20,7 @@ function broadcastOnlineUsers() {
 }
 
 app.use(cors());
-app.get('/', (_, res) => res.json({ status: 'ok', online: onlineUsers.size, rooms: gameRooms.size }));
+app.get('/', (_, res) => res.json({ status: 'ok', online: onlineUsers.size, activeGames: gameRooms.size }));
 app.get('/ping', (_, res) => res.send('pong'));
 
 io.on('connection', (socket) => {
@@ -33,10 +33,10 @@ io.on('connection', (socket) => {
     broadcastOnlineUsers();
   });
 
-  // 2. Invites versturen en ontvangen
+  // 2. Invites versturen en ontvangen (GEEN ROOMS MEER)
   socket.on('sendInvite', ({ toUsername }) => {
     const target = Array.from(onlineUsers.values()).find(u => u.name === toUsername && u.available);
-    if (!target) return socket.emit('inviteError', { message: 'Speler is offline of in een game.' });
+    if (!target) return socket.emit('inviteError', { message: 'Speler is offline of zit al in een game.' });
     io.to(target.id).emit('incomingInvite', { fromUsername: socket.data.username, fromId: socket.id });
   });
 
@@ -50,11 +50,11 @@ io.on('connection', (socket) => {
     const p2 = onlineUsers.get(socket.id);
     if (!p1 || !p2 || !p1.available || !p2.available) return socket.emit('inviteError', { message: 'Uitnodiging niet meer geldig.' });
 
-    // Haal ze uit de publieke lobby lijst
+    // Haal ze uit de publieke lobby lijst (zodat niemand ze meer kan inviten)
     p1.available = false; p2.available = false;
     broadcastOnlineUsers();
 
-    const roomCode = 'ROOM_' + Date.now();
+    const roomCode = 'MATCH_' + Date.now();
     const p1Socket = io.sockets.sockets.get(p1.id);
     const p2Socket = socket;
 
@@ -73,12 +73,12 @@ io.on('connection', (socket) => {
       history: []
     });
 
-    // Stuur enkel de TEGENSTANDER naam door (geen leak)
+    // Stuur match info naar beide (zonder leak van elkaars data)
     p1Socket.emit('matchFound', { roomCode, slot: 1, opponentName: p2.name });
     p2Socket.emit('matchFound', { roomCode, slot: 2, opponentName: p1.name });
   });
 
-  // 3. Board size synchroon houden
+  // 3. Board size sync
   socket.on('selectBoardSize', ({ size }) => {
      const code = socket.data.roomCode;
      if(code) io.to(code).emit('boardSizeAgreed', { size });
@@ -97,7 +97,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // 4. Strict beurten logica
+  // 4. Game logica
   socket.on('askQuestion', ({ text }) => {
     const code = socket.data.roomCode;
     const room = gameRooms.get(code);
@@ -116,7 +116,6 @@ io.on('connection', (socket) => {
     const q = [...room.history].reverse().find(h => h.type === 'question' && h.answer === undefined);
     if (q) q.answer = answer;
     
-    // Antwoorder mag nu vragen (server switcht de turn)
     room.currentPlayer = room.currentPlayer === 1 ? 2 : 1;
     io.to(questioner.id).emit('questionAnswered', { answer });
   });
@@ -136,11 +135,10 @@ io.on('connection', (socket) => {
     const guesser = room.players.find(p => p.id !== socket.id);
     room.history.push({ type: 'guess', from: guesser.slot, flagId, correct });
     io.to(guesser.id).emit('guessResult', { correct, flagId });
-    // Bij foute gok gaat de beurt naar de ander
     if (!correct) room.currentPlayer = room.currentPlayer === 1 ? 2 : 1;
   });
 
-  // Rollback sync
+  // 5. Rollbacks
   socket.on('rollbackRequest', ({ reason, from, snapshot }) => {
     const code = socket.data.roomCode;
     const opponent = gameRooms.get(code)?.players.find(p => p.id !== socket.id);
