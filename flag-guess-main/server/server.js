@@ -11,75 +11,77 @@ const io = new Server(server, {
   cors: { origin: FRONTEND_URL, methods: ['GET', 'POST'] },
 });
 
-// ── Fixed lobby rooms 1, 2, 3 ────────────────────────────────────────────────
-const lobbyRooms = {
-  1: { players: [], gameStarted: false },
-  2: { players: [], gameStarted: false },
-  3: { players: [], gameStarted: false },
-};
-
+const onlineUsers = new Map(); // socket.id -> { id, name, available }
 const gameRooms = new Map();
 
-function getRoomStatus() {
-  return Object.entries(lobbyRooms).map(([num, r]) => ({
-    roomNumber: Number(num),
-    count: r.players.length,
-  }));
-}
-
-function broadcastRoomStatus() {
-  io.emit('roomStatus', { rooms: getRoomStatus() });
+function broadcastOnlineUsers() {
+  const users = Array.from(onlineUsers.values()).filter(u => u.available).map(u => ({ id: u.id, name: u.name }));
+  io.emit('onlineUsers', { users });
 }
 
 app.use(cors());
-app.get('/',     (_, res) => res.json({ status: 'ok', rooms: getRoomStatus() }));
+app.get('/', (_, res) => res.json({ status: 'ok', online: onlineUsers.size, rooms: gameRooms.size }));
 app.get('/ping', (_, res) => res.send('pong'));
 
 io.on('connection', (socket) => {
-  console.log('connected:', socket.id);
 
-  socket.on('getRoomStatus', () => {
-    socket.emit('roomStatus', { rooms: getRoomStatus() });
+  // 1. Username registratie
+  socket.on('registerUsername', ({ username }) => {
+    socket.data.username = username;
+    onlineUsers.set(socket.id, { id: socket.id, name: username, available: true });
+    socket.emit('usernameOk', { username });
+    broadcastOnlineUsers();
   });
 
-  socket.on('joinLobbyRoom', ({ roomNumber, playerName }) => {
-    const room = lobbyRooms[roomNumber];
-    if (!room) return socket.emit('joinError', { message: 'Room not found.' });
-    if (room.players.length >= 2) return socket.emit('joinError', { message: 'Room is full, pick another!' });
+  // 2. Invites versturen en ontvangen
+  socket.on('sendInvite', ({ toUsername }) => {
+    const target = Array.from(onlineUsers.values()).find(u => u.name === toUsername && u.available);
+    if (!target) return socket.emit('inviteError', { message: 'Speler is offline of in een game.' });
+    io.to(target.id).emit('incomingInvite', { fromUsername: socket.data.username, fromId: socket.id });
+  });
 
-    const slot = room.players.length + 1;
-    room.players.push({ id: socket.id, name: playerName, slot });
-    socket.data.roomNumber = roomNumber;
-    socket.data.playerName = playerName;
-    socket.data.slot = slot;
-
-    const roomCode = 'ROOM' + roomNumber;
-    socket.join(roomCode);
-    socket.data.roomCode = roomCode;
-
-    broadcastRoomStatus();
-
-    if (room.players.length === 1) {
-      socket.emit('waitingForOpponent');
-      console.log(`${playerName} waiting in Room ${roomNumber}`);
-    } else {
-      const p1 = room.players[0];
-      const p2 = room.players[1];
-
-      gameRooms.set(roomCode, {
-        code: roomCode,
-        players: [
-          { id: p1.id, name: p1.name, slot: 1, secretFlag: null, ready: false },
-          { id: p2.id, name: p2.name, slot: 2, secretFlag: null, ready: false },
-        ],
-        currentPlayer: 1,
-        history: [],
-      });
-
-      io.to(p1.id).emit('matchFound', { roomCode, slot: 1, opponentName: p2.name });
-      io.to(p2.id).emit('matchFound', { roomCode, slot: 2, opponentName: p1.name });
-      console.log(`Room ${roomNumber}: ${p1.name} vs ${p2.name} — game on!`);
+  socket.on('respondInvite', ({ accept, fromId }) => {
+    if (!accept) {
+      io.to(fromId).emit('inviteDeclined', { byUsername: socket.data.username });
+      return;
     }
+    
+    const p1 = onlineUsers.get(fromId);
+    const p2 = onlineUsers.get(socket.id);
+    if (!p1 || !p2 || !p1.available || !p2.available) return socket.emit('inviteError', { message: 'Uitnodiging niet meer geldig.' });
+
+    // Haal ze uit de publieke lobby lijst
+    p1.available = false; p2.available = false;
+    broadcastOnlineUsers();
+
+    const roomCode = 'ROOM_' + Date.now();
+    const p1Socket = io.sockets.sockets.get(p1.id);
+    const p2Socket = socket;
+
+    p1Socket.join(roomCode);
+    p2Socket.join(roomCode);
+    p1Socket.data.roomCode = roomCode;
+    p2Socket.data.roomCode = roomCode;
+
+    gameRooms.set(roomCode, {
+      code: roomCode,
+      players: [
+        { id: p1.id, name: p1.name, slot: 1, secretFlag: null, ready: false },
+        { id: p2.id, name: p2.name, slot: 2, secretFlag: null, ready: false },
+      ],
+      currentPlayer: 1,
+      history: []
+    });
+
+    // Stuur enkel de TEGENSTANDER naam door (geen leak)
+    p1Socket.emit('matchFound', { roomCode, slot: 1, opponentName: p2.name });
+    p2Socket.emit('matchFound', { roomCode, slot: 2, opponentName: p1.name });
+  });
+
+  // 3. Board size synchroon houden
+  socket.on('selectBoardSize', ({ size }) => {
+     const code = socket.data.roomCode;
+     if(code) io.to(code).emit('boardSizeAgreed', { size });
   });
 
   socket.on('confirmFlag', ({ flagId }) => {
@@ -95,15 +97,15 @@ io.on('connection', (socket) => {
     }
   });
 
+  // 4. Strict beurten logica
   socket.on('askQuestion', ({ text }) => {
     const code = socket.data.roomCode;
     const room = gameRooms.get(code);
     if (!room) return;
     const me = room.players.find(p => p.id === socket.id);
     const opponent = room.players.find(p => p.id !== socket.id);
-    if (!opponent) return;
-    room.history.push({ type: 'question', from: me?.slot, text, answer: undefined });
-    io.to(opponent.id).emit('incomingQuestion', { from: `Player ${me?.slot}`, text });
+    room.history.push({ type: 'question', from: me.slot, text, answer: undefined });
+    io.to(opponent.id).emit('incomingQuestion', { from: me.name, text });
   });
 
   socket.on('answerQuestion', ({ answer }) => {
@@ -111,11 +113,12 @@ io.on('connection', (socket) => {
     const room = gameRooms.get(code);
     if (!room) return;
     const questioner = room.players.find(p => p.id !== socket.id);
-    if (!questioner) return;
     const q = [...room.history].reverse().find(h => h.type === 'question' && h.answer === undefined);
     if (q) q.answer = answer;
+    
+    // Antwoorder mag nu vragen (server switcht de turn)
+    room.currentPlayer = room.currentPlayer === 1 ? 2 : 1;
     io.to(questioner.id).emit('questionAnswered', { answer });
-    socket.emit('yourTurnToAsk');
   });
 
   socket.on('makeGuess', ({ flagId }) => {
@@ -123,7 +126,6 @@ io.on('connection', (socket) => {
     const room = gameRooms.get(code);
     if (!room) return;
     const opponent = room.players.find(p => p.id !== socket.id);
-    if (!opponent) return;
     io.to(opponent.id).emit('opponentGuess', { flagId, flagName: flagId });
   });
 
@@ -132,23 +134,17 @@ io.on('connection', (socket) => {
     const room = gameRooms.get(code);
     if (!room) return;
     const guesser = room.players.find(p => p.id !== socket.id);
-    if (!guesser) return;
     room.history.push({ type: 'guess', from: guesser.slot, flagId, correct });
     io.to(guesser.id).emit('guessResult', { correct, flagId });
+    // Bij foute gok gaat de beurt naar de ander
+    if (!correct) room.currentPlayer = room.currentPlayer === 1 ? 2 : 1;
   });
 
-  socket.on('endTurn', () => {
-    const code = socket.data.roomCode;
-    const room = gameRooms.get(code);
-    if (!room) return;
-    room.currentPlayer = room.currentPlayer === 1 ? 2 : 1;
-    io.to(code).emit('turnChanged', { currentPlayer: room.currentPlayer });
-  });
-
-  socket.on('rollbackRequest', ({ reason, from }) => {
+  // Rollback sync
+  socket.on('rollbackRequest', ({ reason, from, snapshot }) => {
     const code = socket.data.roomCode;
     const opponent = gameRooms.get(code)?.players.find(p => p.id !== socket.id);
-    if (opponent) io.to(opponent.id).emit('rollbackRequest', { reason, from });
+    if (opponent) io.to(opponent.id).emit('rollbackRequest', { reason, from, snapshot });
   });
 
   socket.on('rollbackDecision', ({ accepted }) => {
@@ -159,27 +155,17 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    const roomNumber = socket.data.roomNumber;
-    const code = socket.data.roomCode;
-
-    if (roomNumber && lobbyRooms[roomNumber]) {
-      lobbyRooms[roomNumber].players = lobbyRooms[roomNumber].players.filter(p => p.id !== socket.id);
-      broadcastRoomStatus();
+    if (onlineUsers.has(socket.id)) {
+      onlineUsers.delete(socket.id);
+      broadcastOnlineUsers();
     }
-
+    const code = socket.data.roomCode;
     if (code) {
       socket.to(code).emit('opponentDisconnected');
-      setTimeout(() => {
-              const gr = gameRooms.get(code);
-              if (gr && gr.players.every(p => !io.sockets.sockets.has(p.id))) {
-                gameRooms.delete(code);
-              }
-            }, 30_000);
+      setTimeout(() => gameRooms.delete(code), 30000);
     }
-
-    console.log(`${socket.data.playerName || socket.id} disconnected`);
   });
 });
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => console.log(`Flag Guess Who server on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server on port ${PORT}`));
