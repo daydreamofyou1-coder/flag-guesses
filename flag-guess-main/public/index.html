@@ -663,6 +663,16 @@ let state = {
 let guessMode = false, pendingGuessFlag = null;
 let p1SelectTemp = null, p2SelectTemp = null;
 
+// Reconnect logic for mobile browsers
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    if (lobbySocket && lobbySocket.disconnected) {
+      showToast('Reconnecting to game...', 2000);
+      lobbySocket.connect();
+    }
+  }
+});
+
 function showToast(msg, dur=2800) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
@@ -849,7 +859,6 @@ function selectSize(n) {
 function startGame() {
   if (!state.boardSize) return showToast('Choose a size first');
   if (state.mode === 'online' && state.playerSlot === 1) {
-      // roomCode added to heal session
       state.socket.emit('selectBoardSize', { size: state.boardSize, roomCode: state.roomCode });
       return;
   }
@@ -900,7 +909,6 @@ function confirmP1Selection() {
   if (state.mode === 'online') {
     if (state.playerSlot === 1) state.p1.secretFlag = p1SelectTemp;
     else state.p2.secretFlag = p1SelectTemp;
-    // roomCode added
     state.socket.emit('confirmFlag', { flagId: p1SelectTemp, roomCode: state.roomCode });
     document.getElementById('p1-confirm-btn').disabled = true;
     document.getElementById('p1-confirm-btn').textContent = 'Waiting for opponent...';
@@ -1058,7 +1066,6 @@ function confirmGuess() {
   closeModal('modal-guess');
   const f = flagById(pendingGuessFlag);
   if (state.mode === 'online') {
-    // roomCode added
     state.socket.emit('makeGuess', { flagId: pendingGuessFlag, roomCode: state.roomCode });
     showActionPanel('waiting');
     document.getElementById('waiting-question-preview').textContent = 'Guessing: ' + f.name + '...';
@@ -1098,7 +1105,6 @@ function submitQuestion() {
   state.history.push({ type:'question', from:cur.name, text, answer:undefined });
 
   if (state.mode === 'online') {
-    // roomCode added
     state.socket.emit('askQuestion', { text, roomCode: state.roomCode });
     showActionPanel('waiting');
     document.getElementById('waiting-question-preview').textContent = '"' + text + '"';
@@ -1155,7 +1161,6 @@ function submitAnswer(answer) {
   state.pendingQuestion = null;
 
   if (state.mode === 'online') {
-    // roomCode added
     state.socket.emit('answerQuestion', { answer, roomCode: state.roomCode });
     setMyTurnState();
     renderHistory();
@@ -1218,7 +1223,6 @@ function submitRollbackRequest() {
     }
   };
   if (state.mode === 'online') {
-    // roomCode added
     state.socket.emit('rollbackRequest', { reason, from: state.playerSlot, snapshot: state.rollback.snapshot, roomCode: state.roomCode });
     return;
   }
@@ -1310,7 +1314,7 @@ function applyRollback() {
 }
 
 // ══════════════════════════════════════════════
-// GAME OVER
+// GAME OVER (PLAY AGAIN & GO HOME UPDATE)
 // ══════════════════════════════════════════════
 function endGame(winnerPlayer) {
   const winner = winnerPlayer===1?state.p1:state.p2, loser = winnerPlayer===1?state.p2:state.p1;
@@ -1323,44 +1327,62 @@ function endGame(winnerPlayer) {
 }
 
 function playAgain() {
-  state.p1={...state.p1,secretFlag:null,eliminated:[],actionUsed:false};
-  state.p2={...state.p2,secretFlag:null,eliminated:[],actionUsed:false};
-  state.history=[]; state.rollback=null; p1SelectTemp=null; p2SelectTemp=null;
-  if (state.mode==='online') {
-    document.getElementById('online-size-note').style.display='block';
-    document.getElementById('start-game-btn').disabled=true;
-    document.getElementById('start-game-btn').textContent='Confirm Size →';
-    document.getElementById('size-12').classList.remove('selected');
-    document.getElementById('size-24').classList.remove('selected');
-    state.boardSize=0; showScreen('screen-size'); return;
+  state.p1 = { ...state.p1, secretFlag: null, eliminated: [], actionUsed: false };
+  state.p2 = { ...state.p2, secretFlag: null, eliminated: [], actionUsed: false };
+  state.history = []; state.rollback = null; p1SelectTemp = null; p2SelectTemp = null;
+  guessMode = false;
+
+  if (state.mode === 'online') {
+    state.socket.emit('playAgainRequest', { roomCode: state.roomCode });
+    document.getElementById('start-game-btn').disabled = true;
+    document.getElementById('start-game-btn').textContent = 'Waiting for opponent...';
+    showToast('Asking opponent for a rematch...');
+    return;
   }
-  renderFlagGrid('p1-flags-grid', null, id=>selectFlagP1(id));
-  document.getElementById('p1-confirm-btn').disabled=true;
-  document.getElementById('p1-confirm-btn').textContent='Confirm Selection →';
+  
+  // Local mode behavior
+  renderFlagGrid('p1-flags-grid', null, id => selectFlagP1(id));
+  document.getElementById('p1-confirm-btn').disabled = true;
+  document.getElementById('p1-confirm-btn').textContent = 'Confirm Selection →';
   showScreen('screen-p1-select');
 }
 
 function goHome() {
-  if (lobbySocket) { lobbySocket.disconnect(); lobbySocket=null; }
-  pendingInviteFrom=null;
-  state={mode:'local',boardSize:0,flags:[],
-    p1:{name:'Player 1',secretFlag:null,eliminated:[],actionUsed:false},
-    p2:{name:'Player 2',secretFlag:null,eliminated:[],actionUsed:false},
-    currentPlayer:1,pendingQuestion:null,history:[],rollback:null,secretVisible:false,
-    roomCode:'',joinedRoom:0,playerSlot:0,socket:null};
-  guessMode=false;
+  if (state.mode === 'online' && state.roomCode) {
+    if (state.socket) state.socket.emit('leaveRoom', { roomCode: state.roomCode });
+  }
+  
+  // Reset all state
+  pendingInviteFrom = null;
+  state = { mode: 'local', boardSize: 0, flags: [],
+    p1: { name: state.p1.name, secretFlag: null, eliminated: [], actionUsed: false },
+    p2: { name: 'Player 2', secretFlag: null, eliminated: [], actionUsed: false },
+    currentPlayer: 1, pendingQuestion: null, history: [], rollback: null, secretVisible: false,
+    roomCode: '', joinedRoom: 0, playerSlot: 0, socket: state.socket, myUsername: state.myUsername 
+  };
+  guessMode = false;
+
   document.getElementById('size-12').classList.remove('selected');
   document.getElementById('size-24').classList.remove('selected');
-  document.getElementById('start-game-btn').disabled=true;
-  document.getElementById('start-game-btn').textContent='Choose a size first';
-  document.getElementById('online-size-note').style.display='none';
+  document.getElementById('start-game-btn').disabled = true;
+  document.getElementById('start-game-btn').textContent = 'Choose a size first';
+  document.getElementById('online-size-note').style.display = 'none';
   document.getElementById('mode-local').classList.add('selected');
   document.getElementById('mode-online').classList.remove('selected');
-  document.getElementById('online-setup').style.display='none';
-  document.getElementById('local-continue-btn').style.display='flex';
-  document.getElementById('online-bar').style.display='none';
-  document.getElementById('lobby-players-section').style.display='none';
-  document.getElementById('invite-waiting-area').style.display='none';
+  
+  // Return to exact state based on if they are logged in or not
+  if (state.myUsername) {
+    document.getElementById('online-setup').style.display = 'block';
+    document.getElementById('username-step').style.display = 'none';
+    document.getElementById('lobby-step').style.display = 'block';
+    document.getElementById('lobby-players-section').style.display = 'block';
+    document.getElementById('invite-waiting-area').style.display = 'none';
+  } else {
+    document.getElementById('online-setup').style.display = 'none';
+  }
+
+  document.getElementById('local-continue-btn').style.display = 'flex';
+  document.getElementById('online-bar').style.display = 'none';
   showScreen('screen-mode');
 }
 
@@ -1372,7 +1394,7 @@ function initOnlineGame() {
   if (!socket) return;
   state.socket = socket;
 
-  const evts = ['startGame','incomingQuestion','questionAnswered','yourTurnToAsk','opponentGuess','guessResult','turnChanged','rollbackRequest','rollbackDecision','opponentDisconnected'];
+  const evts = ['startGame','incomingQuestion','questionAnswered','opponentGuess','guessResult','rollbackRequest','rollbackDecision','opponentDisconnected', 'rematchStarted', 'opponentLeftLobby'];
   evts.forEach(e => socket.off(e));
 
   socket.on('startGame', ({ startingPlayer }) => {
@@ -1414,11 +1436,9 @@ function initOnlineGame() {
     const opponentObj = state.playerSlot===1 ? state.p2 : state.p1;
     const correct  = flagId === mySecret;
     
-    // Send response back using roomCode
     socket.emit('guessResult', { correct, flagId, roomCode: state.roomCode });
     const f = flagById(flagId);
     
-    // Log the opponent's guess properly in history!
     state.history.push({ type:'guess', from: opponentObj.name, flagId, flagName: f?f.name:'', correct });
     renderHistory();
 
@@ -1430,7 +1450,6 @@ function initOnlineGame() {
     const myName = myObj().name;
     const f = flagById(flagId);
 
-    // Log your guess properly in history!
     state.history.push({ type:'guess', from: myName, flagId, flagName: f?f.name:'', correct });
     renderHistory();
 
@@ -1452,6 +1471,20 @@ function initOnlineGame() {
   socket.on('rollbackDecision', ({ accepted }) => {
     if (accepted) { applyRollback(); }
     else { showToast('Rollback declined.'); state.rollback=null; renderBoard(); }
+  });
+
+  socket.on('rematchStarted', () => {
+    showToast('Rematch accepted! Pick your flags.');
+    document.getElementById('online-size-note').style.display='block';
+    renderFlagGrid('p1-flags-grid', null, id => onlineFlagClick(id));
+    document.getElementById('p1-confirm-btn').disabled = true;
+    document.getElementById('p1-confirm-btn').textContent = 'Confirm Selection →';
+    showScreen('screen-p1-select');
+  });
+
+  socket.on('opponentLeftLobby', () => {
+    showToast('Opponent has left the room.', 4000);
+    setTimeout(() => goHome(), 1500);
   });
   
   socket.on('opponentDisconnected', () => showToast('Opponent disconnected 😢', 5000));
