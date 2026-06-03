@@ -9,9 +9,14 @@ const server = http.createServer(app);
 const FRONTEND_URL = process.env.FRONTEND_URL || '*';
 const io = new Server(server, {
   cors: { origin: FRONTEND_URL, methods: ['GET', 'POST'] },
+  pingTimeout: 60000, // Wait 60 seconds before kicking a lagging player
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000, // Give them 2 minutes to switch apps and return
+    skipMiddlewares: true,
+  }
 });
 
-const onlineUsers = new Map();
+const onlineUsers = new Map(); // socket.id -> { id, name, available }
 const gameRooms = new Map();
 
 function broadcastOnlineUsers() {
@@ -92,7 +97,6 @@ io.on('connection', (socket) => {
   socket.on('confirmFlag', ({ flagId, roomCode }) => {
     const { code, room } = getRoom(socket, roomCode);
     if (!room) return;
-    const player = room.players.find(p => p.slot === 1 ? (p.name === socket.data.username) : true); // Fallback lookup
     const targetPlayer = room.players.find(p => p.id === socket.id) || room.players.find(p => !p.ready);
     if (!targetPlayer) return;
     
@@ -104,11 +108,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('askQuestion', ({ text, roomCode }) => {
-    const { code, room } = getRoom(socket, roomCode);
+    const { room } = getRoom(socket, roomCode);
     if (!room) return;
     const me = room.players.find(p => p.id === socket.id) || room.players[room.currentPlayer === 1 ? 0 : 1];
     const opponent = room.players.find(p => p.id !== me.id);
-    room.history.push({ type: 'question', from: me.slot, text, answer: undefined });
+    room.history.push({ type: 'question', from: me.name, text, answer: undefined });
     io.to(opponent.id).emit('incomingQuestion', { from: me.name, text });
   });
 
@@ -131,26 +135,55 @@ io.on('connection', (socket) => {
   });
 
   socket.on('guessResult', ({ correct, flagId, roomCode }) => {
-    const { code, room } = getRoom(socket, roomCode);
+    const { room } = getRoom(socket, roomCode);
     if (!room) return;
     const guesser = room.players[room.currentPlayer === 1 ? 0 : 1];
-    room.history.push({ type: 'guess', from: guesser.slot, flagId, correct });
+    room.history.push({ type: 'guess', from: guesser.name, flagId, correct });
     io.to(guesser.id).emit('guessResult', { correct, flagId });
     if (!correct) room.currentPlayer = room.currentPlayer === 1 ? 2 : 1;
   });
 
   socket.on('rollbackRequest', ({ reason, from, snapshot, roomCode }) => {
-    const { code, room } = getRoom(socket, roomCode);
+    const { room } = getRoom(socket, roomCode);
     const opponent = room?.players.find(p => p.slot !== from);
     if (opponent) io.to(opponent.id).emit('rollbackRequest', { reason, from, snapshot });
   });
 
   socket.on('rollbackDecision', ({ accepted, roomCode }) => {
-    const { code, room } = getRoom(socket, roomCode);
+    const { room } = getRoom(socket, roomCode);
     const meSlot = room?.currentPlayer === 1 ? 2 : 1;
     const requester = room?.players.find(p => p.slot !== meSlot);
     if (requester) io.to(requester.id).emit('rollbackDecision', { accepted });
     socket.emit('rollbackDecision', { accepted });
+  });
+
+  // Handle Play Again Request
+  socket.on('playAgainRequest', ({ roomCode }) => {
+    const { room } = getRoom(socket, roomCode);
+    if (!room) return;
+    room.players.forEach(p => { p.ready = false; p.secretFlag = null; });
+    room.history = [];
+    room.currentPlayer = 1;
+    io.to(room.code).emit('rematchStarted');
+  });
+
+  // Handle Go Home / Leave Room
+  socket.on('leaveRoom', ({ roomCode }) => {
+    const { room } = getRoom(socket, roomCode);
+    if (!room) return;
+    
+    socket.leave(roomCode);
+    socket.data.roomCode = null;
+    
+    const opponent = room.players.find(p => p.id !== socket.id);
+    if (opponent) {
+      io.to(opponent.id).emit('opponentLeftLobby');
+    }
+    gameRooms.delete(roomCode);
+    
+    const user = onlineUsers.get(socket.id);
+    if (user) user.available = true;
+    broadcastOnlineUsers();
   });
 
   socket.on('disconnect', () => {
