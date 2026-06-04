@@ -336,6 +336,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
 
 <div id="toast"></div>
 
+<!-- ══ SCREEN: HOME ══ -->
 <div class="screen active" id="screen-mode">
   <div class="wrap">
     <div class="home-hero">
@@ -358,6 +359,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
     </div>
 
     <div id="online-setup" style="display:none">
+      <!-- Step 1: pick username -->
       <div id="username-step">
         <div class="online-box" style="margin-bottom:14px">
           <label class="field-label">Choose a Username</label>
@@ -368,6 +370,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
         </div>
       </div>
       
+      <!-- Step 2: lobby -->
       <div id="lobby-step" style="display:none">
         <div class="online-box" style="margin-bottom:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
           <div class="pulse-ring"></div>
@@ -391,6 +394,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
       </div>
     </div>
 
+    <!-- Invite notification banner -->
     <div id="invite-banner">
       <div class="invite-banner-title" id="invite-banner-title">Someone wants to play!</div>
       <div class="invite-banner-sub" id="invite-banner-sub">Do you accept the challenge?</div>
@@ -404,6 +408,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
+<!-- ══ SCREEN: SIZE ══ -->
 <div class="screen" id="screen-size">
   <div class="wrap">
     <div class="online-size-note" id="online-size-note">🌐 Pick your board size, then choose your secret flag!</div>
@@ -427,6 +432,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
+<!-- ══ SCREEN: FLAG SELECT (P1 / Online) ══ -->
 <div class="screen" id="screen-p1-select">
   <div class="wrap">
     <span class="secret-badge">🔒 Private Selection</span>
@@ -438,6 +444,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   <footer>Flag Guess Who · Educational Flag Game</footer>
 </div>
 
+<!-- ══ SCREEN: SWITCH TO P2 ══ -->
 <div class="screen" id="screen-switch-p2">
   <div class="switch-wrap">
     <div class="switch-card">
@@ -450,6 +457,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
+<!-- ══ SCREEN: FLAG SELECT (P2) ══ -->
 <div class="screen" id="screen-p2-select">
   <div class="wrap">
     <span class="secret-badge">🔒 Private Selection</span>
@@ -461,6 +469,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   <footer>Flag Guess Who · Educational Flag Game</footer>
 </div>
 
+<!-- ══ SCREEN: GAME START ══ -->
 <div class="screen" id="screen-switch-start">
   <div class="switch-wrap">
     <div class="switch-card">
@@ -473,6 +482,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
+<!-- ══ SCREEN: GAME BOARD ══ -->
 <div class="screen" id="screen-game">
   <div class="online-bar" id="online-bar">
     <div class="online-bar-dot"></div>
@@ -495,6 +505,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
 
       <div class="turn-bar active" id="turn-bar">🎯 Your turn — ask or guess!</div>
 
+      <!-- Ask panel -->
       <div id="action-panel-ask" class="action-panel ask-panel" style="display:none">
         <div class="panel-label">Ask a Yes / No Question</div>
         <textarea class="textarea-field" id="question-input" rows="2" placeholder="e.g. Does the flag have red in it?"></textarea>
@@ -504,12 +515,14 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
         </div>
       </div>
 
+      <!-- Guess panel -->
       <div id="action-panel-guess" class="action-panel guess-panel" style="display:none">
         <div class="panel-label">Make Your Guess</div>
         <p style="font-size:.8rem;color:var(--muted);margin-bottom:10px">⚠️ Wrong guess = <strong style="color:var(--text)">lose your turn</strong>. Tap a flag below.</p>
         <button class="btn btn-ghost" style="font-size:.8rem;padding:10px" onclick="switchToAsk()">← Ask Instead</button>
       </div>
 
+      <!-- Waiting panel -->
       <div id="action-panel-waiting" class="action-panel waiting-panel" style="display:none">
         <div style="display:flex;align-items:center;gap:10px">
           <div class="pulse-ring"></div>
@@ -520,6 +533,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
         </div>
       </div>
 
+      <!-- Answer panel -->
       <div id="action-panel-answer" class="action-panel answer-panel" style="display:none">
         <div class="panel-label">Opponent's Question</div>
         <div class="question-bubble">
@@ -532,6 +546,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
         </div>
       </div>
 
+      <!-- Rollback panel -->
       <div id="rollback-panel" class="rollback-panel" style="display:none">
         <h3>⏪ Rollback Requested</h3>
         <p id="rollback-reason-display"></p>
@@ -561,6 +576,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   <footer>Flag Guess Who · Educational Flag Game</footer>
 </div>
 
+<!-- ══ SCREEN: SWITCH TURNS ══ -->
 <div class="screen" id="screen-switch-turn">
   <div class="switch-wrap">
     <div class="switch-card">
@@ -573,6 +589,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
+<!-- ══ SCREEN: GAME OVER ══ -->
 <div class="screen" id="screen-gameover">
   <div class="gameover-wrap">
     <div class="gameover-card">
@@ -592,6 +609,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
+<!-- ══ MODAL: ROLLBACK ══ -->
 <div class="modal-overlay" id="modal-rollback">
   <div class="modal-card">
     <h3>⏪ Request Rollback</h3>
@@ -604,6 +622,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
+<!-- ══ MODAL: GUESS CONFIRM ══ -->
 <div class="modal-overlay" id="modal-guess">
   <div class="modal-card">
     <h3 id="modal-guess-title">Guess: Germany?</h3>
@@ -666,9 +685,9 @@ let p1SelectTemp = null, p2SelectTemp = null;
 // Reconnect logic for mobile browsers
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
-    if (lobbySocket && lobbySocket.disconnected) {
+    if (state.socket && state.socket.disconnected) {
       showToast('Reconnecting to game...', 2000);
-      lobbySocket.connect();
+      state.socket.connect();
     }
   }
 });
@@ -727,8 +746,13 @@ function connectLobby(usernameToRegister) {
   showToast('Connecting to server...', 5000);
 
   lobbySocket.on('connect', () => {
-    showToast('Connected ✓');
-    if (usernameToRegister) lobbySocket.emit('registerUsername', { username: usernameToRegister });
+    if (state.myUsername && state.roomCode) {
+      lobbySocket.emit('rejoinRoom', { username: state.myUsername, roomCode: state.roomCode });
+    } else if (usernameToRegister || state.myUsername) {
+      lobbySocket.emit('registerUsername', { username: usernameToRegister || state.myUsername });
+    } else {
+      showToast('Connected ✓');
+    }
   });
   
   lobbySocket.on('connect_error', () => showToast('Server waking up, retrying...', 3000));
@@ -1003,7 +1027,6 @@ function renderHistory() {
   log.style.display = 'block';
   
   items.innerHTML = state.history.slice().reverse().map(h => {
-    // Determine color based on who performed the action
     const isP1 = h.from === state.p1.name;
     const color = isP1 ? 'var(--accent)' : 'var(--accent2)';
     const nameTag = `<strong style="color: ${color}">${h.from}</strong>`;
@@ -1336,7 +1359,7 @@ function playAgain() {
     state.socket.emit('playAgainRequest', { roomCode: state.roomCode });
     document.getElementById('start-game-btn').disabled = true;
     document.getElementById('start-game-btn').textContent = 'Waiting for opponent...';
-    showToast('Asking opponent for a rematch...');
+    showToast('Asking opponent for a rematch...', 4000);
     return;
   }
   
@@ -1352,10 +1375,10 @@ function goHome() {
     if (state.socket) state.socket.emit('leaveRoom', { roomCode: state.roomCode });
   }
   
-  // Reset all state
+  // Keep the username and socket alive, reset everything else
   pendingInviteFrom = null;
   state = { mode: 'local', boardSize: 0, flags: [],
-    p1: { name: state.p1.name, secretFlag: null, eliminated: [], actionUsed: false },
+    p1: { name: state.myUsername || 'Player 1', secretFlag: null, eliminated: [], actionUsed: false },
     p2: { name: 'Player 2', secretFlag: null, eliminated: [], actionUsed: false },
     currentPlayer: 1, pendingQuestion: null, history: [], rollback: null, secretVisible: false,
     roomCode: '', joinedRoom: 0, playerSlot: 0, socket: state.socket, myUsername: state.myUsername 
@@ -1370,7 +1393,7 @@ function goHome() {
   document.getElementById('mode-local').classList.add('selected');
   document.getElementById('mode-online').classList.remove('selected');
   
-  // Return to exact state based on if they are logged in or not
+  // Return to the exact lobby state without forcing a reload
   if (state.myUsername) {
     document.getElementById('online-setup').style.display = 'block';
     document.getElementById('username-step').style.display = 'none';
@@ -1394,7 +1417,7 @@ function initOnlineGame() {
   if (!socket) return;
   state.socket = socket;
 
-  const evts = ['startGame','incomingQuestion','questionAnswered','opponentGuess','guessResult','rollbackRequest','rollbackDecision','opponentDisconnected', 'rematchStarted', 'opponentLeftLobby'];
+  const evts = ['startGame','incomingQuestion','questionAnswered','opponentGuess','guessResult','rollbackRequest','rollbackDecision','opponentDisconnected', 'rematchStarted', 'opponentLeftLobby', 'rejoinSuccess', 'rejoinFailed', 'opponentReconnected'];
   evts.forEach(e => socket.off(e));
 
   socket.on('startGame', ({ startingPlayer }) => {
@@ -1487,7 +1510,23 @@ function initOnlineGame() {
     setTimeout(() => goHome(), 1500);
   });
   
-  socket.on('opponentDisconnected', () => showToast('Opponent disconnected 😢', 5000));
+  // --- RECONNECT LISTENERS --- //
+  socket.on('rejoinSuccess', () => {
+    showToast('Successfully reconnected to the game! 🎮');
+  });
+
+  socket.on('rejoinFailed', () => {
+    showToast('Game session expired.', 3000);
+    setTimeout(() => goHome(), 1500);
+  });
+
+  socket.on('opponentReconnected', () => {
+    showToast('Opponent is back online! 🎮', 4000);
+  });
+  
+  socket.on('opponentDisconnected', () => {
+    showToast('Opponent paused/disconnected. Waiting for them...', 6000);
+  });
 }
 </script>
 </body>
