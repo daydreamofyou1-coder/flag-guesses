@@ -9,14 +9,14 @@ const server = http.createServer(app);
 const FRONTEND_URL = process.env.FRONTEND_URL || '*';
 const io = new Server(server, {
   cors: { origin: FRONTEND_URL, methods: ['GET', 'POST'] },
-  pingTimeout: 60000, // Wait 60 seconds before kicking a lagging player
+  pingTimeout: 60000, 
   connectionStateRecovery: {
-    maxDisconnectionDuration: 2 * 60 * 1000, // Give them 2 minutes to switch apps and return
+    maxDisconnectionDuration: 2 * 60 * 1000, 
     skipMiddlewares: true,
   }
 });
 
-const onlineUsers = new Map(); // socket.id -> { id, name, available }
+const onlineUsers = new Map(); 
 const gameRooms = new Map();
 
 function broadcastOnlineUsers() {
@@ -24,7 +24,6 @@ function broadcastOnlineUsers() {
   io.emit('onlineUsers', { users });
 }
 
-// Session healer: if socket lost its room, put it back based on client's roomCode
 function getRoom(socket, clientRoomCode) {
   const code = clientRoomCode || socket.data.roomCode;
   if (code && socket.data.roomCode !== code) {
@@ -40,11 +39,36 @@ app.get('/ping', (_, res) => res.send('pong'));
 
 io.on('connection', (socket) => {
 
+  // Normale Login
   socket.on('registerUsername', ({ username }) => {
     socket.data.username = username;
     onlineUsers.set(socket.id, { id: socket.id, name: username, available: true });
     socket.emit('usernameOk', { username });
     broadcastOnlineUsers();
+  });
+
+  // SMART REJOIN: Voor als een iPhone speler terugkomt na een disconnect
+  socket.on('rejoinRoom', ({ username, roomCode }) => {
+    socket.data.username = username;
+    onlineUsers.set(socket.id, { id: socket.id, name: username, available: false });
+    
+    const room = gameRooms.get(roomCode);
+    if (room) {
+      const player = room.players.find(p => p.name === username);
+      if (player) {
+        player.id = socket.id; // Update the socket ID to the newly reconnected one!
+        socket.join(roomCode);
+        socket.data.roomCode = roomCode;
+        socket.emit('rejoinSuccess');
+        socket.to(roomCode).emit('opponentReconnected');
+        return;
+      }
+    }
+    // Als de kamer toch verwijderd is (langer dan 5 min weg)
+    onlineUsers.get(socket.id).available = true;
+    socket.emit('usernameOk', { username });
+    broadcastOnlineUsers();
+    socket.emit('rejoinFailed');
   });
 
   socket.on('sendInvite', ({ toUsername }) => {
@@ -157,7 +181,6 @@ io.on('connection', (socket) => {
     socket.emit('rollbackDecision', { accepted });
   });
 
-  // Handle Play Again Request
   socket.on('playAgainRequest', ({ roomCode }) => {
     const { room } = getRoom(socket, roomCode);
     if (!room) return;
@@ -167,20 +190,14 @@ io.on('connection', (socket) => {
     io.to(room.code).emit('rematchStarted');
   });
 
-  // Handle Go Home / Leave Room
   socket.on('leaveRoom', ({ roomCode }) => {
     const { room } = getRoom(socket, roomCode);
     if (!room) return;
-    
     socket.leave(roomCode);
     socket.data.roomCode = null;
-    
     const opponent = room.players.find(p => p.id !== socket.id);
-    if (opponent) {
-      io.to(opponent.id).emit('opponentLeftLobby');
-    }
+    if (opponent) io.to(opponent.id).emit('opponentLeftLobby');
     gameRooms.delete(roomCode);
-    
     const user = onlineUsers.get(socket.id);
     if (user) user.available = true;
     broadcastOnlineUsers();
@@ -194,7 +211,11 @@ io.on('connection', (socket) => {
     const code = socket.data.roomCode;
     if (code) {
       socket.to(code).emit('opponentDisconnected');
-      setTimeout(() => gameRooms.delete(code), 30000);
+      // Geef de iPhone speler 5 minuten de tijd om terug te komen!
+      setTimeout(() => {
+        const room = io.sockets.adapter.rooms.get(code);
+        if (!room || room.size === 0) gameRooms.delete(code);
+      }, 5 * 60 * 1000);
     }
   });
 });
