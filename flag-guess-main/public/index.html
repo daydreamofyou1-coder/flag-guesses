@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Flag Guess Who</title>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -25,6 +26,7 @@
   --radius-sm: 10px;
   --radius-xs: 6px;
   --font: 'Outfit', sans-serif;
+  --mono: 'DM Mono', monospace;
   --glow-sm: 0 0 16px rgba(124,111,255,0.2);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -78,8 +80,8 @@ body {
   border-radius: 10px;
   font-size: .8rem; font-weight: 600;
   z-index: 999; opacity: 0; transition: .25s;
-  pointer-events: none; white-space: nowrap;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  pointer-events: none; max-width: 90vw; text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
@@ -100,6 +102,7 @@ body {
 .btn-ghost { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); box-shadow: none; }
 .btn-ghost:hover { background: var(--surface); border-color: var(--accent); }
 .btn-warning { background: linear-gradient(135deg, var(--warning), #e0951a); color: #000; }
+.btn-success { background: linear-gradient(135deg, var(--success), #1a9e50); }
 
 .home-hero { text-align: center; padding: 36px 0 28px; }
 .home-flag-emoji { font-size: 3rem; margin-bottom: 16px; display: block; filter: drop-shadow(0 0 20px rgba(124,111,255,0.4)); }
@@ -108,6 +111,35 @@ body {
   background: linear-gradient(135deg, #fff 30%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
 .home-sub { font-size: .88rem; color: var(--muted); margin-bottom: 32px; }
+
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+.mode-card {
+  background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius);
+  padding: 20px 14px; cursor: pointer; transition: .2s; text-align: center;
+}
+.mode-card:hover { border-color: var(--accent); background: var(--surface2); }
+.mode-card.selected { border-color: var(--accent); background: rgba(124,111,255,0.08); box-shadow: var(--glow-sm); }
+.mode-icon { font-size: 1.8rem; margin-bottom: 8px; display: block; }
+.mode-name { font-size: .9rem; font-weight: 700; margin-bottom: 2px; }
+.mode-desc { font-size: .7rem; color: var(--muted); }
+
+.online-box { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 16px; }
+.field-label { font-size: .68rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 7px; display: block; }
+.field-input {
+  width: 100%; padding: 11px 14px; background: var(--surface2); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); font-size: .92rem; outline: none; transition: .2s; font-family: var(--font); color: var(--text);
+}
+.field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,111,255,0.1); }
+.field-input::placeholder { color: var(--muted); }
+
+.waiting-area-box {
+  background: rgba(124,111,255,0.07); border: 1px solid rgba(124,111,255,0.2);
+  border-radius: var(--radius-sm); padding: 14px 16px; display: flex; align-items: center; gap: 12px; margin-top: 4px;
+}
+.pulse-ring { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); flex-shrink: 0; animation: pulse-ring 1.5s ease-in-out infinite; }
+@keyframes pulse-ring { 0%,100% { box-shadow: 0 0 0 0 rgba(124,111,255,.6); transform: scale(1); } 50% { box-shadow: 0 0 0 6px rgba(124,111,255,0); transform: scale(1.1); } }
+.waiting-text { font-size: .84rem; font-weight: 600; }
+.waiting-sub { font-size: .72rem; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
 
 .size-card {
   background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius);
@@ -141,6 +173,10 @@ body {
 .switch-card h2 { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 6px; }
 .switch-card p { font-size: .85rem; color: var(--muted); margin-bottom: 20px; }
 .privacy-box { background: var(--surface2); border-radius: var(--radius-sm); padding: 12px 14px; font-size: .78rem; color: var(--muted); display: flex; gap: 8px; align-items: flex-start; text-align: left; margin-bottom: 20px; border: 1px solid var(--border); }
+
+.online-bar { background: linear-gradient(90deg, rgba(124,111,255,0.15), rgba(255,111,160,0.1)); border-bottom: 1px solid rgba(124,111,255,0.2); padding: 8px 18px; font-size: .75rem; font-weight: 600; display: none; align-items: center; gap: 8px; }
+.online-bar-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent3); flex-shrink: 0; }
+.room-chip { font-family: var(--mono); font-size: .72rem; font-weight: 500; background: rgba(124,111,255,0.15); border: 1px solid rgba(124,111,255,0.25); border-radius: 100px; padding: 2px 9px; color: var(--accent); }
 
 .game-wrap { max-width: 460px; margin: 0 auto; padding: 14px 16px; }
 .player-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; position: relative; overflow: hidden; }
@@ -220,27 +256,95 @@ body {
   <div class="header-logo">🚩</div>
   <div>
     <div class="header-title">Flag Guess Who</div>
-    <div class="header-sub">Local Pass & Play</div>
+    <div class="header-sub">Local & Online Multiplayer</div>
   </div>
 </header>
 
 <div id="toast"></div>
 
-<!-- HOME / SIZE SCREEN -->
-<div class="screen active" id="screen-size">
+<!-- ══ SCREEN: HOME / LOBBY ══ -->
+<div class="screen active" id="screen-mode">
   <div class="wrap">
     <div class="home-hero">
       <span class="home-flag-emoji">🌍</span>
       <h1 class="home-title">Flag Guess Who</h1>
-      <p class="home-sub">Kies je bordgrootte en start direct lokaal!</p>
+      <p class="home-sub">Kies je spelmodus: lokaal of online via de lobby!</p>
     </div>
+
+    <div class="mode-grid">
+      <div class="mode-card selected" id="mode-local" onclick="selectMode('local')">
+        <span class="mode-icon">🏠</span>
+        <div class="mode-name">Local</div>
+        <div class="mode-desc">Pass the device</div>
+      </div>
+      <div class="mode-card" id="mode-online" onclick="selectMode('online')">
+        <span class="mode-icon">🌐</span>
+        <div class="mode-name">Online</div>
+        <div class="mode-desc">Play over internet</div>
+      </div>
+    </div>
+
+    <div id="online-setup" style="display:none">
+      <div id="username-step">
+        <div class="online-box" style="margin-bottom:14px">
+          <label class="field-label">Kies je gebruikersnaam</label>
+          <div class="username-row" style="display:flex; gap:8px;">
+            <input class="field-input" id="player-name" placeholder="Typ je naam..." maxlength="20" onkeydown="if(event.key==='Enter')registerUsername()">
+            <button class="btn" style="width:auto; padding:11px 16px;" onclick="registerUsername()">Start →</button>
+          </div>
+        </div>
+      </div>
+      
+      <div id="lobby-step" style="display:none">
+        <div class="online-box" style="margin-bottom:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+          <div class="pulse-ring"></div>
+          <span style="font-size:.84rem;font-weight:600;" id="lobby-my-name-display"></span>
+        </div>
+        
+        <div id="lobby-players-section" style="display:none">
+          <div class="lobby-section-label">Online Spelers — tik op ▶ om uit te nodigen</div>
+          <div id="lobby-players-list"></div>
+        </div>
+
+        <div id="invite-waiting-area" style="display:none;margin-top:10px">
+          <div class="waiting-area-box" style="background:rgba(124,111,255,0.07); border:1px solid rgba(124,111,255,0.2); border-radius:var(--radius-sm); padding:14px; display:flex; align-items:center; gap:12px;">
+            <div class="pulse-ring"></div>
+            <div>
+              <div class="waiting-text" id="invite-waiting-title" style="font-weight:700; font-size:.84rem;">Wachten op reactie...</div>
+              <div class="waiting-sub" id="invite-waiting-sub" style="font-size:.72rem; color:var(--muted);">Uitnodiging verzonden</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Uitnodiging Banner -->
+    <div id="invite-banner" style="position:fixed; top:64px; left:50%; transform:translateX(-50%) translateY(-120px); background:var(--surface2); border:1.5px solid rgba(124,111,255,.35); border-radius:var(--radius); padding:14px 18px; width:calc(100% - 32px); max-width:420px; z-index:300; transition:all .35s; box-shadow:0 12px 40px rgba(0,0,0,.5); opacity:0; pointer-events:none; visibility:hidden;">
+      <div class="invite-banner-title" id="invite-banner-title" style="font-weight:700; margin-bottom:4px;">Uitnodiging ontvangen!</div>
+      <div class="invite-banner-sub" id="invite-banner-sub" style="font-size:.76rem; color:var(--muted); margin-bottom:12px;">Wil je deze uitdaging aannemen?</div>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-success" style="padding:10px; font-size:.8rem;" onclick="respondInvite(true)">✓ Accepteren</button>
+        <button class="btn btn-ghost" style="padding:10px; font-size:.8rem;" onclick="respondInvite(false)">✗ Afwijzen</button>
+      </div>
+    </div>
+
+    <button class="btn" id="local-continue-btn" onclick="goToSizeSelect()" style="margin-top:8px">Doorgaan →</button>
+  </div>
+</div>
+
+<!-- ══ SCREEN: SIZE ══ -->
+<div class="screen" id="screen-size">
+  <div class="wrap">
+    <div class="online-size-note" id="online-size-note" style="display:none; background:rgba(124,111,255,0.08); border:1px solid rgba(124,111,255,0.2); border-radius:var(--radius-sm); padding:11px; font-size:.8rem; color:var(--accent); font-weight:600; margin-bottom:16px;">🌐 Jij kiest de bordgrootte voor jullie beide!</div>
+    <h2 class="screen-title" style="margin-bottom:4px">Bordgrootte</h2>
+    <p class="screen-sub">Met hoeveel vlaggen wil je spelen?</p>
     <div id="size-12" class="size-card" onclick="selectSize(12)">
       <div class="size-card-icon">⚡</div>
-      <div><div class="size-card-num">12 <span>Flags</span></div><div class="size-card-desc">Snelle ronde · Willekeurige vlaggen</div></div>
+      <div><div class="size-card-num">12 <span>Vlaggen</span></div><div class="size-card-desc">Snelle ronde · Willekeurig</div></div>
     </div>
     <div id="size-24" class="size-card" onclick="selectSize(24)">
       <div class="size-card-icon">🌍</div>
-      <div><div class="size-card-num">24 <span>Flags</span></div><div class="size-card-desc">Volledige uitdaging · Willekeurige vlaggen</div></div>
+      <div><div class="size-card-num">24 <span>Vlaggen</span></div><div class="size-card-desc">Volledige uitdaging · Willekeurig</div></div>
     </div>
     <button class="btn" id="start-game-btn" onclick="startGame()" disabled style="margin-top:6px">Kies een grootte →</button>
   </div>
@@ -251,13 +355,13 @@ body {
   <div class="wrap">
     <span class="secret-badge">🔒 Geheime Selectie</span>
     <h2 class="screen-title" id="p1-select-title">Speler 1: Kies je geheime vlag</h2>
-    <p class="screen-sub">Speler 2 mag straks raden. Houd het geheim!</p>
+    <p class="screen-sub">Jouw tegenstander gaat deze vlag proberen te raden.</p>
     <div class="flags-grid" id="p1-flags-grid"></div>
     <button class="btn" id="p1-confirm-btn" onclick="confirmP1Selection()" disabled>Bevestig Selectie →</button>
   </div>
 </div>
 
-<!-- SWITCH TO P2 -->
+<!-- SWITCH TO P2 (LOKAAL) -->
 <div class="screen" id="screen-switch-p2">
   <div class="switch-wrap">
     <div class="switch-card">
@@ -269,18 +373,18 @@ body {
   </div>
 </div>
 
-<!-- P2 FLAG SELECT -->
+<!-- P2 FLAG SELECT (LOKAAL) -->
 <div class="screen" id="screen-p2-select">
   <div class="wrap">
     <span class="secret-badge">🔒 Geheime Selectie</span>
     <h2 class="screen-title">Speler 2: Kies je geheime vlag</h2>
-    <p class="screen-sub">Speler 1 mag straks raden. Houd het geheim!</p>
+    <p class="screen-sub">Speler 1 gaat deze vlag proberen te raden.</p>
     <div class="flags-grid" id="p2-flags-grid"></div>
     <button class="btn" id="p2-confirm-btn" onclick="confirmP2Selection()" disabled>Bevestig Selectie →</button>
   </div>
 </div>
 
-<!-- SWITCH TO START -->
+<!-- SWITCH TO START (LOKAAL) -->
 <div class="screen" id="screen-switch-start">
   <div class="switch-wrap">
     <div class="switch-card">
@@ -294,6 +398,11 @@ body {
 
 <!-- GAME BOARD -->
 <div class="screen" id="screen-game">
+  <div class="online-bar" id="online-bar">
+    <div class="online-bar-dot"></div>
+    <span>Online Verbonden</span>
+    <span class="room-chip" id="bar-room-code">Match</span>
+  </div>
   <div class="game-wrap">
     <div class="player-panel" id="player-panel">
       <div class="panel-header"><span class="panel-title" id="board-player-title">Speler 1's Bord</span></div>
@@ -317,6 +426,16 @@ body {
         <div class="panel-label">Doe je gok</div>
         <p style="font-size:.8rem;color:var(--muted);margin-bottom:10px">⚠️ Foute gok = beurt kwijt. Tik op een vlag hieronder.</p>
         <button class="btn btn-ghost" style="font-size:.8rem;padding:10px" onclick="switchToAsk()">← Vraag stellen</button>
+      </div>
+
+      <div id="action-panel-waiting" class="action-panel" style="display:none; background:var(--surface2);">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="pulse-ring"></div>
+          <div>
+            <div style="font-weight:600; font-size:.84rem;">Wachten op tegenstander...</div>
+            <div style="font-size:.72rem; color:var(--muted);" id="waiting-question-preview"></div>
+          </div>
+        </div>
       </div>
 
       <div id="action-panel-answer" class="action-panel answer-panel" style="display:none">
@@ -346,7 +465,7 @@ body {
   </div>
 </div>
 
-<!-- SWITCH TURNS -->
+<!-- SWITCH TURNS (LOKAAL) -->
 <div class="screen" id="screen-switch-turn">
   <div class="switch-wrap">
     <div class="switch-card">
@@ -366,11 +485,12 @@ body {
     <p class="gameover-sub" id="gameover-sub">Juiste vlag geraden!</p>
     <div class="gameover-reveals">
       <div class="reveal-row">
-        <div class="reveal-item"><img id="go-p1-flag" src=""><br><small>Speler 1</small></div>
-        <div class="reveal-item"><img id="go-p2-flag" src=""><br><small>Speler 2</small></div>
+        <div class="reveal-item"><img id="go-p1-flag" src=""><br><small id="go-p1-name">Speler 1</small></div>
+        <div class="reveal-item"><img id="go-p2-flag" src=""><br><small id="go-p2-name">Speler 2</small></div>
       </div>
     </div>
-    <button class="btn" onclick="playAgain()">Opnieuw Spelen</button>
+    <button class="btn" id="play-again-btn" onclick="playAgain()">Opnieuw Spelen</button>
+    <button class="btn btn-ghost" style="margin-top:9px" onclick="goHome()">Terug naar Hoofdmenu</button>
   </div>
 </div>
 
@@ -395,8 +515,6 @@ body {
       <button class="btn btn-ghost" id="edit-btn-yes" onclick="setEditAnswerChoice(true)">✓ JA</button>
       <button class="btn btn-ghost" id="edit-btn-no" onclick="setEditAnswerChoice(false)">✗ NEE</button>
     </div>
-    <label class="field-label">Reden</label>
-    <input class="field-input" id="edit-history-reason" placeholder="Bijv. Te snel geklikt" style="margin-bottom:14px;">
     <div style="display:flex;gap:10px;">
       <button class="btn btn-warning" onclick="saveHistoryEdit()">Opslaan</button>
       <button class="btn btn-ghost" onclick="closeModal('modal-edit-history')">Sluiten</button>
@@ -432,20 +550,31 @@ const ALL_FLAGS = [
   { id:'pt', name:'Portugal', img:'https://flagcdn.com/w160/pt.png' },
 ];
 
-function shuffleArray(array) {
+function seededShuffle(array, seedStr) {
+  let h = 1779033703 ^ seedStr.length;
+  for (let i = 0; i < seedStr.length; i++) {
+    h = Math.imul(h ^ seedStr.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  const rng = function() {
+    h = Math.imul(h ^ (h >>> 16), 2246822507);
+    h = Math.imul(h ^ (h >>> 13), 3266489909);
+    return ((h ^= h >>> 16) >>> 0) / 4294967296;
+  };
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(rng() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
 }
 
 let state = {
-  boardSize: 0, flags: [],
+  mode: 'local', boardSize: 0, flags: [],
   p1: { name: 'Speler 1', secretFlag: null, eliminated: [], actionUsed: false },
   p2: { name: 'Speler 2', secretFlag: null, eliminated: [], actionUsed: false },
-  currentPlayer: 1, pendingQuestion: null, history: [], secretVisible: false
+  currentPlayer: 1, pendingQuestion: null, history: [], secretVisible: false,
+  roomCode: '', playerSlot: 0, socket: null, myUsername: '', roundCount: 1
 };
 let guessMode = false, pendingGuessFlag = null, editPendingAnswer = null;
 
@@ -462,22 +591,169 @@ function showScreen(id) {
 function openModal(id) { document.getElementById(id).classList.add('active'); }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 function flagById(id) { return ALL_FLAGS.find(f => f.id === id); }
+function myObj() { return state.playerSlot === 2 ? state.p2 : state.p1; }
 function currentPlayerObj() { return state.currentPlayer === 1 ? state.p1 : state.p2; }
 function otherPlayerObj() { return state.currentPlayer === 1 ? state.p2 : state.p1; }
+function isMyTurnOnline() { return state.playerSlot === state.currentPlayer; }
+
+function selectMode(mode) {
+  state.mode = mode;
+  document.getElementById('mode-local').classList.toggle('selected', mode === 'local');
+  document.getElementById('mode-online').classList.toggle('selected', mode === 'online');
+  document.getElementById('online-setup').style.display = mode === 'online' ? 'block' : 'none';
+  document.getElementById('local-continue-btn').style.display = mode === 'local' ? 'flex' : 'none';
+  if (mode === 'online') connectLobby();
+}
+
+function goToSizeSelect() {
+  document.getElementById('online-size-note').style.display = 'none';
+  showScreen('screen-size');
+}
+
+// LOBBY & SOCKET LOGICA
+let lobbySocket = null, pendingInviteFrom = null;
+
+function registerUsername() {
+  const name = document.getElementById('player-name').value.trim();
+  if (!name) return showToast('Typ eerst een gebruikersnaam!');
+  state.myUsername = name;
+  state.p1.name = name;
+  if (!lobbySocket || !lobbySocket.connected) {
+    connectLobby(name);
+  } else {
+    lobbySocket.emit('registerUsername', { username: name });
+  }
+}
+
+function connectLobby(usernameToRegister) {
+  if (lobbySocket) return;
+  if (typeof io === 'undefined') { showToast('Socket.io niet geladen'); return; }
+  lobbySocket = io('https://flag-guesses.onrender.com', { transports: ['websocket', 'polling'] });
+  showToast('Verbinden met server...', 4000);
+
+  lobbySocket.on('connect', () => {
+    lobbySocket.emit('registerUsername', { username: usernameToRegister || state.myUsername });
+  });
+
+  lobbySocket.on('usernameOk', ({ username }) => {
+    state.myUsername = username;
+    document.getElementById('username-step').style.display = 'none';
+    document.getElementById('lobby-step').style.display = 'block';
+    document.getElementById('lobby-my-name-display').textContent = '👋 ' + username;
+    document.getElementById('lobby-players-section').style.display = 'block';
+    showToast('Welkom, ' + username + '!');
+  });
+
+  lobbySocket.on('usernameError', ({ message }) => showToast(message));
+
+  lobbySocket.on('onlineUsers', ({ users }) => {
+    const list = document.getElementById('lobby-players-list');
+    const others = users.filter(u => u.name !== state.myUsername);
+    if (!others.length) {
+      list.innerHTML = '<div style="font-size:.78rem;color:var(--muted);padding:6px 0">Geen andere spelers online.</div>';
+      return;
+    }
+    list.innerHTML = others.map(u => `
+      <div class="lobby-player-card" style="background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:10px 14px; margin-bottom:6px; display:flex; align-items:center; justify-content:space-between;">
+        <span style="font-weight:700;">👤 ${u.name}</span>
+        <button class="lobby-invite-btn" style="background:none; border:1px solid rgba(124,111,255,.35); color:var(--accent); border-radius:100px; padding:4px 12px; font-size:.72rem; font-weight:700; cursor:pointer;" onclick="sendInvite('${u.name}')">▶ Nodig uit</button>
+      </div>`).join('');
+  });
+
+  lobbySocket.on('incomingInvite', ({ fromUsername, fromId }) => {
+    pendingInviteFrom = fromId;
+    document.getElementById('invite-banner-title').textContent = fromUsername + ' wil spelen!';
+    document.getElementById('invite-banner').classList.add('show');
+  });
+
+  lobbySocket.on('inviteDeclined', ({ byUsername }) => {
+    showToast(byUsername + ' heeft je uitnodiging afgewezen.');
+    document.getElementById('lobby-players-section').style.display = 'block';
+    document.getElementById('invite-waiting-area').style.display = 'none';
+  });
+
+  lobbySocket.on('matchFound', ({ roomCode, slot, opponentName }) => {
+    state.roomCode = roomCode;
+    state.playerSlot = slot;
+    state.socket = lobbySocket;
+    state.roundCount = 1;
+    const myName = state.myUsername || (slot === 1 ? state.p1.name : state.p2.name);
+    
+    if (slot === 1) {
+      state.p1.name = myName; state.p2.name = opponentName || 'Speler 2';
+    } else {
+      state.p1.name = opponentName || 'Speler 1'; state.p2.name = myName;
+    }
+
+    initOnlineGame();
+    document.getElementById('online-bar').style.display = 'flex';
+    document.getElementById('bar-room-code').textContent = 'Match vs ' + opponentName;
+
+    if (slot === 2) {
+      document.getElementById('lobby-players-section').style.display = 'none';
+      document.getElementById('invite-waiting-area').style.display = 'block';
+      document.getElementById('invite-waiting-title').textContent = 'Match gevonden!';
+      document.getElementById('invite-waiting-sub').textContent = '⏳ Wachten tot ' + opponentName + ' de bordgrootte kiest...';
+      showScreen('screen-mode');
+    } else {
+      document.getElementById('online-size-note').style.display = 'block';
+      const btn = document.getElementById('start-game-btn');
+      btn.style.display = 'flex';
+      btn.disabled = true;
+      btn.textContent = 'Kies een grootte →';
+      showScreen('screen-size');
+    }
+  });
+
+  lobbySocket.on('boardSizeAgreed', ({ size }) => {
+    state.boardSize = Number(size) === 24 ? 24 : 12;
+    const shuffledPool = seededShuffle(ALL_FLAGS, state.roomCode + '-r' + state.roundCount);
+    state.flags = state.boardSize === 24 ? shuffledPool : shuffledPool.slice(0, 12);
+    state.p1.eliminated = []; state.p2.eliminated = []; state.history = [];
+    p1SelectTemp = null;
+
+    renderFlagGrid('p1-flags-grid', null, selectFlagP1);
+    const myName = state.playerSlot === 1 ? state.p1.name : state.p2.name;
+    document.getElementById('p1-select-title').textContent = myName + ': Kies je geheime vlag';
+    document.getElementById('p1-confirm-btn').disabled = true;
+    showScreen('screen-p1-select');
+  });
+}
+
+function sendInvite(username) {
+  if (!lobbySocket) return;
+  lobbySocket.emit('sendInvite', { toUsername: username });
+  showToast('Uitnodiging verstuurd naar ' + username + '!');
+  document.getElementById('lobby-players-section').style.display = 'none';
+  document.getElementById('invite-waiting-area').style.display = 'block';
+}
+
+function respondInvite(accept) {
+  document.getElementById('invite-banner').classList.remove('show');
+  lobbySocket.emit('respondInvite', { accept, fromId: pendingInviteFrom });
+}
 
 function selectSize(n) {
+  if (state.mode === 'online' && state.playerSlot === 2) return;
   state.boardSize = n;
   document.getElementById('size-12').classList.toggle('selected', n === 12);
   document.getElementById('size-24').classList.toggle('selected', n === 24);
   const btn = document.getElementById('start-game-btn');
   btn.disabled = false;
-  btn.textContent = `Start Spel (${n} Vlaggen) →`;
+  btn.textContent = state.mode === 'online' ? `Bevestig (${n} Vlaggen) →` : `Start Spel (${n} Vlaggen) →`;
 }
 
 function startGame() {
-  const shuffled = shuffleArray(ALL_FLAGS);
+  if (!state.boardSize) return showToast('Kies eerst een bordgrootte');
+  if (state.mode === 'online' && state.playerSlot === 1) {
+    state.socket.emit('selectBoardSize', { size: state.boardSize, roomCode: state.roomCode });
+    return;
+  }
+  
+  const shuffled = seededShuffle(ALL_FLAGS, String(Date.now()));
   state.flags = state.boardSize === 24 ? shuffled : shuffled.slice(0, 12);
   state.p1.eliminated = []; state.p2.eliminated = []; state.history = [];
+  p1SelectTemp = null; p2SelectTemp = null;
   renderFlagGrid('p1-flags-grid', null, selectFlagP1);
   showScreen('screen-p1-select');
 }
@@ -499,9 +775,19 @@ function selectFlagP1(id) {
   document.getElementById('p1-confirm-btn').disabled = false;
 }
 function confirmP1Selection() {
+  if (!p1SelectTemp) return;
+  if (state.mode === 'online') {
+    if (state.playerSlot === 1) state.p1.secretFlag = p1SelectTemp;
+    else state.p2.secretFlag = p1SelectTemp;
+    state.socket.emit('confirmFlag', { flagId: p1SelectTemp, roomCode: state.roomCode });
+    document.getElementById('p1-confirm-btn').disabled = true;
+    document.getElementById('p1-confirm-btn').textContent = '⏳ Wachten op tegenstander...';
+    return;
+  }
   state.p1.secretFlag = p1SelectTemp;
   showScreen('screen-switch-p2');
 }
+
 function startP2Selection() {
   renderFlagGrid('p2-flags-grid', null, selectFlagP2);
   showScreen('screen-p2-select');
@@ -523,7 +809,7 @@ function startGameBoard() {
 }
 
 function renderBoard() {
-  const cur = currentPlayerObj();
+  const cur = state.mode === 'online' ? myObj() : currentPlayerObj();
   document.getElementById('board-player-title').textContent = cur.name + "'s Bord";
   document.getElementById('secret-flag-display').textContent = 'Verborgen';
   state.secretVisible = false;
@@ -533,18 +819,23 @@ function renderBoard() {
   document.getElementById('board-section').style.display = 'block';
   document.getElementById('history-log').style.display = state.history.length ? 'block' : 'none';
 
-  if (cur.actionUsed) {
-    tb.textContent = '✅ Actie gebruikt — vlaggen wegstrepen & Beurt Beëindigen';
-    tb.className = 'turn-bar success-bar';
-    panel.classList.add('my-turn');
-    showActionPanel('none');
-    document.getElementById('end-turn-btn').style.display = 'flex';
+  if (state.mode === 'online') {
+    if (isMyTurnOnline()) setMyTurnState();
+    else setWaitingState('⏳ Wachten op tegenstander...');
   } else {
-    tb.textContent = '🎯 Jouw beurt — stel een vraag of doe een gok!';
-    tb.className = 'turn-bar active';
-    panel.classList.add('my-turn');
-    showActionPanel('ask');
-    document.getElementById('end-turn-btn').style.display = 'none';
+    if (cur.actionUsed) {
+      tb.textContent = '✅ Actie gebruikt — beëindig je beurt';
+      tb.className = 'turn-bar success-bar';
+      panel.classList.add('my-turn');
+      showActionPanel('none');
+      document.getElementById('end-turn-btn').style.display = 'flex';
+    } else {
+      tb.textContent = '🎯 Jouw beurt — stel een vraag of doe een gok!';
+      tb.className = 'turn-bar active';
+      panel.classList.add('my-turn');
+      showActionPanel('ask');
+      document.getElementById('end-turn-btn').style.display = 'none';
+    }
   }
 
   renderBoardGrid();
@@ -553,14 +844,16 @@ function renderBoard() {
 }
 
 function showActionPanel(which) {
-  ['ask','guess','answer'].forEach(p => {
-    document.getElementById('action-panel-' + p).style.display = 'none';
+  ['ask','guess','answer','waiting'].forEach(p => {
+    const el = document.getElementById('action-panel-' + p);
+    if (el) el.style.display = 'none';
   });
-  if (which !== 'none') document.getElementById('action-panel-' + which).style.display = 'block';
+  const target = document.getElementById('action-panel-' + which);
+  if (target) target.style.display = 'block';
 }
 
 function renderBoardGrid() {
-  const cur = currentPlayerObj();
+  const cur = state.mode === 'online' ? myObj() : currentPlayerObj();
   document.getElementById('board-grid').innerHTML = state.flags.map(f => {
     const elim = cur.eliminated.includes(f.id);
     return `<div class="board-flag${elim?' eliminated':''}" onclick="onBoardFlagClick('${f.id}')">
@@ -579,13 +872,11 @@ function renderHistory() {
   items.innerHTML = state.history.slice().reverse().map((h, i) => {
     const realIdx = state.history.length - 1 - i;
     if (h.type === 'question') {
-      const editBtn = h.answer !== undefined ? `<button class="edit-ans-btn" onclick="openEditHistory(${realIdx})">✏️ Edit</button>` : '';
+      const editBtn = (h.answer !== undefined && state.mode === 'local') ? `<button class="edit-ans-btn" onclick="openEditHistory(${realIdx})">✏️ Edit</button>` : '';
       const ansText = h.answer !== undefined ? (h.answer ? 'JA' : 'NEE') : 'Wachten...';
       const ansClass = h.answer !== undefined ? (h.answer ? 'yes' : 'no') : '';
-      const editNote = h.edited ? `<div class="hc-edited-bar"><span>⚠️ Was ${h.originalAnswer ? 'JA' : 'NEE'}</span></div>` : '';
-
       return `
-        <div class="history-card ${h.edited ? 'edited-card' : ''}">
+        <div class="history-card">
           <div class="hc-top">
             <div class="hc-question">❓ <strong>${h.from}:</strong> "${h.text}"</div>
             <div class="hc-actions">
@@ -593,7 +884,6 @@ function renderHistory() {
               ${editBtn}
             </div>
           </div>
-          ${editNote}
         </div>`;
     }
     if (h.type === 'guess') {
@@ -609,11 +899,16 @@ function renderHistory() {
 
 function toggleSecretFlag() {
   state.secretVisible = !state.secretVisible;
-  const flagId = currentPlayerObj().secretFlag;
+  const flagId = getMySecretFlag();
   if (state.secretVisible && flagId) {
     const f = flagById(flagId);
     document.getElementById('secret-flag-display').innerHTML = `<img src="${f.img}" style="height:20px;border-radius:3px;vertical-align:middle;margin-right:5px">${f.name}`;
   } else { document.getElementById('secret-flag-display').textContent = 'Verborgen'; }
+}
+
+function getMySecretFlag() {
+  if (state.mode === 'online') return state.playerSlot === 1 ? state.p1.secretFlag : state.p2.secretFlag;
+  return currentPlayerObj().secretFlag;
 }
 
 function onBoardFlagClick(flagId) {
@@ -625,7 +920,7 @@ function onBoardFlagClick(flagId) {
     openModal('modal-guess');
     return;
   }
-  const cur = currentPlayerObj();
+  const cur = state.mode === 'online' ? myObj() : currentPlayerObj();
   if (cur.eliminated.includes(flagId)) cur.eliminated = cur.eliminated.filter(id => id !== flagId);
   else cur.eliminated.push(flagId);
   renderBoardGrid();
@@ -633,17 +928,20 @@ function onBoardFlagClick(flagId) {
 
 function confirmGuess() {
   closeModal('modal-guess');
-  const cur = currentPlayerObj(), other = otherPlayerObj();
   const f = flagById(pendingGuessFlag);
+  if (state.mode === 'online') {
+    guessMode = false;
+    state.socket.emit('makeGuess', { flagId: pendingGuessFlag, roomCode: state.roomCode });
+    showActionPanel('waiting');
+    document.getElementById('waiting-question-preview').textContent = 'Gokken op: ' + f.name;
+    pendingGuessFlag = null;
+    return;
+  }
+  const cur = currentPlayerObj(), other = otherPlayerObj();
   const correct = pendingGuessFlag === other.secretFlag;
-  
   state.history.push({ type:'guess', from:cur.name, flagId:pendingGuessFlag, flagName:f.name, correct });
   if (correct) {
-    document.getElementById('gameover-title').textContent = cur.name + ' Wint! 🏆';
-    document.getElementById('gameover-sub').textContent = 'Juiste vlag geraden!';
-    document.getElementById('go-p1-flag').src = flagById(state.p1.secretFlag).img;
-    document.getElementById('go-p2-flag').src = flagById(state.p2.secretFlag).img;
-    showScreen('screen-gameover');
+    endGame(state.currentPlayer);
   } else {
     showToast('❌ Foute gok! Beurt voorbij.');
     cur.actionUsed = true; guessMode = false;
@@ -659,33 +957,48 @@ function submitQuestion() {
   const text = document.getElementById('question-input').value.trim();
   if (!text) return showToast('Typ eerst een vraag');
   document.getElementById('question-input').value = '';
-  const cur = currentPlayerObj();
-  cur.actionUsed = true;
-  state.pendingQuestion = { from: cur.name, text };
-  state.history.push({ type:'question', from:cur.name, text, answer:undefined });
+  const sender = state.mode === 'online' ? myObj() : currentPlayerObj();
+  sender.actionUsed = true;
+  state.pendingQuestion = { from: sender.name, text };
+  state.history.push({ type:'question', from:sender.name, text, answer:undefined });
+  renderHistory();
 
-  setTimeout(() => {
-    const other = otherPlayerObj();
-    document.getElementById('switch-turn-title').textContent = 'Geef door aan ' + other.name;
-    document.getElementById('switch-turn-sub').textContent = other.name + ' moet antwoorden';
-    document.getElementById('switch-turn-btn').textContent = 'Beantwoord als ' + other.name + ' →';
-    document.getElementById('switch-turn-btn').onclick = () => {
-      document.getElementById('board-section').style.display = 'none';
-      document.getElementById('history-log').style.display = 'none';
-      document.getElementById('end-turn-btn').style.display = 'none';
-      showActionPanel('answer');
-      document.getElementById('answer-from-label').textContent = state.pendingQuestion.from + ' vraagt:';
-      document.getElementById('answer-question-text').textContent = state.pendingQuestion.text;
-      showScreen('screen-game');
-    };
-    showScreen('screen-switch-turn');
-  }, 500);
+  if (state.mode === 'online') {
+    state.socket.emit('askQuestion', { text, roomCode: state.roomCode });
+    showActionPanel('waiting');
+    document.getElementById('waiting-question-preview').textContent = '"' + text + '"';
+  } else {
+    showActionPanel('waiting');
+    document.getElementById('waiting-question-preview').textContent = '"' + text + '"';
+    setTimeout(() => {
+      const other = otherPlayerObj();
+      document.getElementById('switch-turn-title').textContent = 'Geef door aan ' + other.name;
+      document.getElementById('switch-turn-sub').textContent = other.name + ' moet antwoorden';
+      document.getElementById('switch-turn-btn').textContent = 'Beantwoord als ' + other.name + ' →';
+      document.getElementById('switch-turn-btn').onclick = () => {
+        document.getElementById('board-section').style.display = 'none';
+        document.getElementById('history-log').style.display = 'none';
+        showActionPanel('answer');
+        document.getElementById('answer-from-label').textContent = state.pendingQuestion.from + ' vraagt:';
+        document.getElementById('answer-question-text').textContent = state.pendingQuestion.text;
+        showScreen('screen-game');
+      };
+      showScreen('screen-switch-turn');
+    }, 500);
+  }
 }
 
 function submitAnswer(answer) {
   const q = [...state.history].reverse().find(h => h.type==='question' && h.answer===undefined);
-  if (q) { q.answer = answer; q.edited = false; }
+  if (q) q.answer = answer;
   state.pendingQuestion = null;
+
+  if (state.mode === 'online') {
+    state.socket.emit('answerQuestion', { answer, roomCode: state.roomCode });
+    setMyTurnState();
+    renderHistory();
+    return;
+  }
 
   const asker = currentPlayerObj();
   document.getElementById('switch-turn-title').textContent = 'Geef terug aan ' + asker.name;
@@ -711,13 +1024,29 @@ function endTurn() {
   showScreen('screen-switch-turn');
 }
 
+function setWaitingState(msg) {
+  const tb = document.getElementById('turn-bar');
+  tb.textContent = msg; tb.className = 'turn-bar waiting';
+  document.getElementById('player-panel').classList.remove('my-turn');
+  showActionPanel('waiting');
+  document.getElementById('waiting-question-preview').textContent = '';
+  document.getElementById('board-section').style.display = 'block';
+}
+
+function setMyTurnState() {
+  const tb = document.getElementById('turn-bar');
+  tb.textContent = '🎯 Jouw beurt — stel een vraag of doe een gok!'; tb.className = 'turn-bar active';
+  document.getElementById('player-panel').classList.add('my-turn');
+  showActionPanel('ask');
+  document.getElementById('board-section').style.display = 'block';
+}
+
 function resumeGameBoard() { renderBoard(); showScreen('screen-game'); }
 
 function openEditHistory(idx) {
   const h = state.history[idx];
   document.getElementById('edit-history-idx').value = idx;
   document.getElementById('edit-history-q').textContent = `"${h.text}"`;
-  document.getElementById('edit-history-reason').value = h.editReason || '';
   editPendingAnswer = !h.answer;
   setEditAnswerChoice(editPendingAnswer);
   openModal('modal-edit-history');
@@ -736,19 +1065,133 @@ function setEditAnswerChoice(isYes) {
 function saveHistoryEdit() {
   const idx = Number(document.getElementById('edit-history-idx').value);
   const h = state.history[idx];
-  const reason = document.getElementById('edit-history-reason').value.trim();
   if (h.answer !== editPendingAnswer) {
     if (!h.edited) h.originalAnswer = h.answer;
     h.answer = editPendingAnswer;
     h.edited = true;
-    h.editReason = reason;
     showToast('✅ Antwoord gecorrigeerd!');
   }
   closeModal('modal-edit-history');
   renderHistory();
 }
 
-function playAgain() { location.reload(); }
+function endGame(winnerPlayer) {
+  const winner = winnerPlayer===1?state.p1:state.p2, loser = winnerPlayer===1?state.p2:state.p1;
+  document.getElementById('gameover-title').textContent = winner.name + ' Wint! 🏆';
+  document.getElementById('gameover-sub').textContent = 'Juiste vlag geraden!';
+  const p1f=flagById(state.p1.secretFlag), p2f=flagById(state.p2.secretFlag);
+  document.getElementById('go-p1-flag').src = p1f?p1f.img:''; document.getElementById('go-p1-name').textContent = state.p1.name;
+  document.getElementById('go-p2-flag').src = p2f?p2f.img:''; document.getElementById('go-p2-name').textContent = state.p2.name;
+  showScreen('screen-gameover');
+}
+
+function playAgain() {
+  state.p1 = { ...state.p1, secretFlag: null, eliminated: [], actionUsed: false };
+  state.p2 = { ...state.p2, secretFlag: null, eliminated: [], actionUsed: false };
+  state.history = [];
+  if (state.mode === 'online') {
+    state.socket.emit('playAgainRequest', { roomCode: state.roomCode });
+    const btn = document.getElementById('play-again-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Wachten op rematch...';
+    showToast('Rematch aangevraagd...');
+    return;
+  }
+  document.getElementById('size-12').classList.remove('selected');
+  document.getElementById('size-24').classList.remove('selected');
+  document.getElementById('start-game-btn').disabled = true;
+  state.boardSize = 0;
+  showScreen('screen-size');
+}
+
+function goHome() {
+  if (state.mode === 'online' && state.roomCode && state.socket) {
+    state.socket.emit('leaveRoom', { roomCode: state.roomCode });
+  }
+  location.reload();
+}
+
+// ONLINE SOCKET LISTENERS
+function initOnlineGame() {
+  const socket = lobbySocket;
+  if (!socket) return;
+  state.socket = socket;
+
+  const evts = ['startGame','incomingQuestion','questionAnswered','opponentGuess','guessResult','rematchStarted','opponentLeftLobby'];
+  evts.forEach(e => socket.off(e));
+
+  socket.on('startGame', ({ startingPlayer }) => {
+    state.currentPlayer = startingPlayer;
+    const myName = state.playerSlot===1 ? state.p1.name : state.p2.name;
+    document.getElementById('board-player-title').textContent = myName + "'s Bord";
+    document.getElementById('secret-flag-display').textContent = 'Verborgen';
+    state.secretVisible = false;
+    document.getElementById('board-section').style.display = 'block';
+    
+    if (isMyTurnOnline()) setMyTurnState();
+    else setWaitingState('⏳ Wachten op tegenstander...');
+    renderBoardGrid();
+    renderHistory();
+    showScreen('screen-game');
+  });
+
+  socket.on('incomingQuestion', ({ from, text }) => {
+    state.pendingQuestion = { from, text };
+    state.history.push({ type:'question', from, text, answer:undefined });
+    document.getElementById('answer-from-label').textContent = from + ' vraagt:';
+    document.getElementById('answer-question-text').textContent = text;
+    showActionPanel('answer');
+    document.getElementById('board-section').style.display = 'none';
+    renderHistory();
+  });
+
+  socket.on('questionAnswered', ({ answer }) => {
+    const q = [...state.history].reverse().find(h => h.type==='question' && h.answer===undefined);
+    if (q) q.answer = answer;
+    renderHistory();
+    showToast('Tegenstander antwoordde: ' + (answer?'JA ✓':'NEE ✗'));
+    setMyTurnState();
+  });
+
+  socket.on('opponentGuess', ({ flagId }) => {
+    const mySecret = state.playerSlot===1 ? state.p1.secretFlag : state.p2.secretFlag;
+    const opponentObj = state.playerSlot===1 ? state.p2 : state.p1;
+    const correct = flagId === mySecret;
+    socket.emit('guessResult', { correct, flagId, roomCode: state.roomCode });
+    const f = flagById(flagId);
+    state.history.push({ type:'guess', from: opponentObj.name, flagId, flagName: f?f.name:'', correct });
+    renderHistory();
+    if (correct) endGame(state.playerSlot===1?2:1);
+    else { showToast('Tegenstander gokte ' + (f?f.name:flagId) + ' — fout! Jouw beurt.'); setMyTurnState(); }
+  });
+
+  socket.on('guessResult', ({ correct, flagId }) => {
+    const myName = myObj().name;
+    const f = flagById(flagId);
+    state.history.push({ type:'guess', from: myName, flagId, flagName: f?f.name:'', correct });
+    renderHistory();
+    if (correct) { endGame(state.playerSlot); return; }
+    showToast('Foute gok! Jouw beurt is voorbij.');
+    setWaitingState('⏳ Foute gok. Wachten op tegenstander...');
+  });
+
+  socket.on('rematchStarted', () => {
+    state.roundCount++;
+    const shuffledPool = seededShuffle(ALL_FLAGS, state.roomCode + '-r' + state.roundCount);
+    state.flags = state.boardSize === 24 ? shuffledPool : shuffledPool.slice(0, 12);
+    state.p1.eliminated = []; state.p2.eliminated = []; state.history = [];
+    p1SelectTemp = null;
+    showToast('Rematch gestart! Nieuwe vlaggen.');
+    renderFlagGrid('p1-flags-grid', null, selectFlagP1);
+    document.getElementById('p1-confirm-btn').disabled = true;
+    showScreen('screen-p1-select');
+  });
+
+  socket.on('opponentLeftLobby', () => {
+    showToast('Tegenstander heeft de game verlaten.', 4000);
+    setTimeout(() => location.reload(), 2000);
+  });
+}
 </script>
 </body>
 </html>
