@@ -79,6 +79,7 @@ io.on('connection', (socket) => {
     rooms.set(code, {
       code, phase: 'sizing', boardSize: 12, round: 1,
       currentSlot: 1, pending: null, seq: 0, rematchVotes: new Set(),
+      qs: new Map(), // questionId -> { askerSlot, answer }
       players: [
         { id: inviter.id, name: inviter.name, slot: 1, secret: null, ready: false },
         { id: me.id, name: me.name, slot: 2, secret: null, ready: false },
@@ -120,8 +121,10 @@ io.on('connection', (socket) => {
     const p = r && meIn(r);
     const q = clean(text, 200);
     if (!r || !p || r.phase !== 'playing' || r.pending || !q || p.slot !== r.currentSlot) return;
-    r.pending = { id: ++r.seq, askerSlot: p.slot };
-    io.to(r.code).emit('questionAsked', { id: r.pending.id, askerSlot: p.slot, from: p.name, text: q });
+    const id = ++r.seq;
+    r.pending = { id, askerSlot: p.slot };
+    r.qs.set(id, { askerSlot: p.slot, answer: null });
+    io.to(r.code).emit('questionAsked', { id, askerSlot: p.slot, from: p.name, text: q });
   });
 
   socket.on('answerQuestion', ({ answer } = {}) => {
@@ -129,9 +132,24 @@ io.on('connection', (socket) => {
     const p = r && meIn(r);
     if (!r || !p || !r.pending || p.slot === r.pending.askerSlot) return;
     const id = r.pending.id;
+    const q = r.qs.get(id);
+    if (q) q.answer = answer === true;
     r.pending = null;
     r.currentSlot = p.slot; // na het antwoord is de antwoorder aan de beurt
     io.to(r.code).emit('questionAnswered', { id, answer: answer === true, currentSlot: r.currentSlot });
+  });
+
+  // Alleen de speler die antwoordde mag het antwoord wijzigen, met een reden
+  socket.on('correctAnswer', ({ id, answer, reason } = {}) => {
+    const r = roomOf();
+    const p = r && meIn(r);
+    const q = r && r.qs.get(id);
+    const why = clean(reason, 300);
+    if (!r || !p || !q || r.phase !== 'playing' || q.answer === null || p.slot === q.askerSlot || !why) return;
+    const to = answer === true;
+    if (to === q.answer) return;
+    q.answer = to;
+    io.to(r.code).emit('answerCorrected', { id, to, reason: why, byName: p.name });
   });
 
   socket.on('makeGuess', ({ flagId } = {}) => {
@@ -160,6 +178,7 @@ io.on('connection', (socket) => {
     r.round += 1;
     r.phase = 'selecting';
     r.pending = null;
+    r.qs = new Map();
     r.players.forEach((p) => { p.secret = null; p.ready = false; });
     io.to(r.code).emit('rematchStarted', { round: r.round });
   });
