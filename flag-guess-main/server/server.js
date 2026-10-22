@@ -1,226 +1,177 @@
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
 const path = require('path');
+const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
-// 1. Serveer statische bestanden uit de 'public' map in de hoofdmap
-app.use(express.static(path.join(__dirname, 'public')));
+// server/ staat in een submap, dus public/ ligt één map hoger
+const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+app.use(express.static(PUBLIC_DIR));
+app.get('/', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
+app.get('/status', (req, res) => res.json({ status: 'ok', online: io.engine.clientsCount }));
 
-// 2. Laad de index.html op de hoofdpagina
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+const users = new Map();      // socketId -> { id, name }
+const rooms = new Map();      // roomCode -> room
+const playerRoom = new Map(); // socketId -> roomCode
 
-// 3. Statuscontrole op een apart pad
-app.get('/status', (req, res) => {
-  res.json({ status: 'ok', online: io.engine.clientsCount, activeGames: 0 });
-});
+const clean = (v, max) => String(v ?? '').trim().slice(0, max);
+const makeCode = () => 'ROOM-' + Math.random().toString(36).slice(2, 7).toUpperCase();
 
-// 4. Socket.io Logica voor Lobby, Invites en Game Rooms
-const onlineUsers = {}; // socket.id -> { id, name }
-const rooms = {};       // roomCode -> room object
+function broadcastUsers() {
+  io.emit('onlineUsers', {
+    users: [...users.values()].map((u) => ({ id: u.id, name: u.name, busy: playerRoom.has(u.id) })),
+  });
+}
 
-function broadcastOnlineUsers() {
-  const users = Object.values(onlineUsers);
-  io.emit('onlineUsers', { users });
+function leaveRoom(socketId) {
+  const code = playerRoom.get(socketId);
+  if (!code) return;
+  const room = rooms.get(code);
+  rooms.delete(code);
+  room.players.forEach((p) => {
+    playerRoom.delete(p.id);
+    io.sockets.sockets.get(p.id)?.leave(code);
+    if (p.id !== socketId) io.to(p.id).emit('opponentLeft');
+  });
+  broadcastUsers();
 }
 
 io.on('connection', (socket) => {
-  let myRoom = null;
-  let mySlot = null;
+  const roomOf = () => rooms.get(playerRoom.get(socket.id));
+  const meIn = (r) => r.players.find((p) => p.id === socket.id);
+  const oppIn = (r) => r.players.find((p) => p.id !== socket.id);
 
-  socket.on('registerUsername', ({ username }) => {
-    const clean = (username || '').trim();
-    if (!clean) {
-      socket.emit('usernameError', { message: 'Ongeldige naam' });
-      return;
-    }
-    const taken = Object.values(onlineUsers).some(
-      (u) => u.name.toLowerCase() === clean.toLowerCase() && u.id !== socket.id
-    );
-    if (taken) {
-      socket.emit('usernameError', { message: 'Deze naam is al in gebruik!' });
-      return;
-    }
-    onlineUsers[socket.id] = { id: socket.id, name: clean };
-    socket.emit('usernameOk', { username: clean });
-    broadcastOnlineUsers();
+  socket.on('registerUsername', ({ username } = {}) => {
+    const name = clean(username, 20);
+    if (!name) return socket.emit('usernameError', { message: 'Vul een naam in.' });
+    const taken = [...users.values()].some((u) => u.id !== socket.id && u.name.toLowerCase() === name.toLowerCase());
+    if (taken) return socket.emit('usernameError', { message: 'Deze naam is al in gebruik!' });
+    users.set(socket.id, { id: socket.id, name });
+    socket.emit('usernameOk', { username: name });
+    broadcastUsers();
   });
 
-  socket.on('sendInvite', ({ toUsername }) => {
-    const sender = onlineUsers[socket.id];
-    if (!sender) return;
-    const target = Object.values(onlineUsers).find((u) => u.name === toUsername);
-    if (!target) {
-      socket.emit('inviteError', { message: 'Speler is niet meer online.' });
-      return;
+  socket.on('sendInvite', ({ toId } = {}) => {
+    const me = users.get(socket.id);
+    const target = users.get(toId);
+    if (!me) return;
+    if (!target || target.id === me.id) return socket.emit('inviteError', { message: 'Speler is niet meer online.' });
+    if (playerRoom.has(me.id) || playerRoom.has(target.id)) {
+      return socket.emit('inviteError', { message: 'Speler zit al in een spel.' });
     }
-    io.to(target.id).emit('incomingInvite', {
-      fromUsername: sender.name,
-      fromId: socket.id,
-    });
+    io.to(target.id).emit('incomingInvite', { fromId: me.id, fromUsername: me.name });
   });
 
-  socket.on('respondInvite', ({ accept, fromId }) => {
-    const responder = onlineUsers[socket.id];
-    const inviter = onlineUsers[fromId];
-    if (!inviter || !responder) {
-      socket.emit('inviteError', { message: 'Uitnodiging is verlopen.' });
-      return;
-    }
-    if (!accept) {
-      io.to(fromId).emit('inviteDeclined', { byUsername: responder.name });
-      return;
-    }
-
-    const roomCode = 'ROOM-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+  socket.on('respondInvite', ({ accept, fromId } = {}) => {
+    const me = users.get(socket.id);
+    const inviter = users.get(fromId);
     const inviterSocket = io.sockets.sockets.get(fromId);
-    if (!inviterSocket) {
-      socket.emit('inviteError', { message: 'Tegenstander heeft de verbinding verbroken.' });
-      return;
+    if (!me || !inviter || !inviterSocket) return socket.emit('inviteError', { message: 'Uitnodiging is verlopen.' });
+    if (!accept) return inviterSocket.emit('inviteDeclined', { byUsername: me.name });
+    if (playerRoom.has(me.id) || playerRoom.has(inviter.id)) {
+      return socket.emit('inviteError', { message: 'Speler zit al in een spel.' });
     }
 
-    rooms[roomCode] = {
-      code: roomCode,
-      boardSize: 12,
+    const code = makeCode();
+    rooms.set(code, {
+      code, phase: 'sizing', boardSize: 12, round: 1,
+      currentSlot: 1, pending: null, seq: 0, rematchVotes: new Set(),
       players: [
-        { socket: inviterSocket, id: fromId, name: inviter.name, slot: 1, secretFlag: null, ready: false },
-        { socket: socket, id: socket.id, name: responder.name, slot: 2, secretFlag: null, ready: false },
+        { id: inviter.id, name: inviter.name, slot: 1, secret: null, ready: false },
+        { id: me.id, name: me.name, slot: 2, secret: null, ready: false },
       ],
-      currentPlayer: 1,
-      history: [],
-      rollback: null,
-      phase: 'sizing',
-    };
-
-    inviterSocket.join(roomCode);
-    socket.join(roomCode);
-
-    inviterSocket.emit('matchFound', { roomCode, slot: 1, opponentName: responder.name });
-    socket.emit('matchFound', { roomCode, slot: 2, opponentName: inviter.name });
+    });
+    playerRoom.set(inviter.id, code);
+    playerRoom.set(me.id, code);
+    inviterSocket.join(code);
+    socket.join(code);
+    inviterSocket.emit('matchFound', { roomCode: code, slot: 1, opponentName: me.name });
+    socket.emit('matchFound', { roomCode: code, slot: 2, opponentName: inviter.name });
+    broadcastUsers();
   });
 
-  socket.on('selectBoardSize', ({ size, roomCode }) => {
-    const code = roomCode || myRoom;
-    const room = rooms[code];
-    if (!room) return;
-    room.boardSize = Number(size) === 24 ? 24 : 12;
-    room.phase = 'selecting';
-    io.to(code).emit('boardSizeAgreed', { size: room.boardSize });
+  socket.on('selectBoardSize', ({ size } = {}) => {
+    const r = roomOf();
+    const p = r && meIn(r);
+    if (!r || !p || p.slot !== 1 || r.phase !== 'sizing') return;
+    r.boardSize = Number(size) === 24 ? 24 : 12;
+    r.phase = 'selecting';
+    io.to(r.code).emit('boardSizeAgreed', { size: r.boardSize, round: r.round });
   });
 
-  socket.on('confirmFlag', ({ flagId, roomCode }) => {
-    const code = roomCode || myRoom;
-    const room = rooms[code];
-    if (!room) return;
-    const player = room.players.find((p) => p.id === socket.id);
-    if (!player) return;
-
-    myRoom = code;
-    mySlot = player.slot;
-    player.secretFlag = flagId;
-    player.ready = true;
-
-    const allReady = room.players.length === 2 && room.players.every((p) => p.ready);
-    if (allReady) {
-      room.phase = 'playing';
-      room.currentPlayer = 1;
-      io.to(code).emit('startGame', { startingPlayer: 1 });
+  socket.on('confirmFlag', ({ flagId } = {}) => {
+    const r = roomOf();
+    const p = r && meIn(r);
+    if (!r || !p || r.phase !== 'selecting' || p.ready || typeof flagId !== 'string') return;
+    p.secret = flagId;
+    p.ready = true;
+    if (r.players.every((x) => x.ready)) {
+      r.phase = 'playing';
+      r.currentSlot = 1;
+      io.to(r.code).emit('startGame', { currentSlot: 1 });
     }
   });
 
-  socket.on('askQuestion', ({ text, roomCode }) => {
-    const code = roomCode || myRoom;
-    const room = rooms[code];
-    if (!room) return;
-    const me = room.players.find((p) => p.id === socket.id);
-    const opponent = room.players.find((p) => p.id !== socket.id);
-    if (!opponent || !me) return;
-
-    room.history.push({ type: 'question', from: me.name, text, answer: undefined });
-    opponent.socket.emit('incomingQuestion', { from: me.name, text });
+  socket.on('askQuestion', ({ text } = {}) => {
+    const r = roomOf();
+    const p = r && meIn(r);
+    const q = clean(text, 200);
+    if (!r || !p || r.phase !== 'playing' || r.pending || !q || p.slot !== r.currentSlot) return;
+    r.pending = { id: ++r.seq, askerSlot: p.slot };
+    io.to(r.code).emit('questionAsked', { id: r.pending.id, askerSlot: p.slot, from: p.name, text: q });
   });
 
-  socket.on('answerQuestion', ({ answer, roomCode }) => {
-    const code = roomCode || myRoom;
-    const room = rooms[code];
-    if (!room) return;
-    const questioner = room.players.find((p) => p.id !== socket.id);
-    if (!questioner) return;
-
-    const qEntry = [...room.history].reverse().find((h) => h.type === 'question' && h.answer === undefined);
-    if (qEntry) qEntry.answer = answer;
-
-    questioner.socket.emit('questionAnswered', { answer });
+  socket.on('answerQuestion', ({ answer } = {}) => {
+    const r = roomOf();
+    const p = r && meIn(r);
+    if (!r || !p || !r.pending || p.slot === r.pending.askerSlot) return;
+    const id = r.pending.id;
+    r.pending = null;
+    r.currentSlot = p.slot; // na het antwoord is de antwoorder aan de beurt
+    io.to(r.code).emit('questionAnswered', { id, answer: answer === true, currentSlot: r.currentSlot });
   });
 
-  socket.on('makeGuess', ({ flagId, roomCode }) => {
-    const code = roomCode || myRoom;
-    const room = rooms[code];
-    if (!room) return;
-    const opponent = room.players.find((p) => p.id !== socket.id);
-    if (!opponent) return;
-
-    opponent.socket.emit('opponentGuess', { flagId, flagName: flagId });
+  socket.on('makeGuess', ({ flagId } = {}) => {
+    const r = roomOf();
+    const p = r && meIn(r);
+    const t = r && oppIn(r);
+    if (!r || !p || r.phase !== 'playing' || r.pending || p.slot !== r.currentSlot || typeof flagId !== 'string') return;
+    const correct = flagId === t.secret;
+    r.currentSlot = correct ? p.slot : t.slot; // foute gok = beurt voorbij
+    io.to(r.code).emit('guessMade', { guesserName: p.name, flagId, correct, currentSlot: r.currentSlot });
+    if (correct) {
+      r.phase = 'over';
+      io.to(r.code).emit('gameOver', {
+        winnerSlot: p.slot,
+        flags: { 1: r.players[0].secret, 2: r.players[1].secret },
+      });
+    }
   });
 
-  socket.on('guessResult', ({ correct, flagId, roomCode }) => {
-    const code = roomCode || myRoom;
-    const room = rooms[code];
-    if (!room) return;
-    const guesser = room.players.find((p) => p.id !== socket.id);
-    if (!guesser) return;
-
-    room.history.push({ type: 'guess', from: guesser.slot, flagId, correct });
-    guesser.socket.emit('guessResult', { correct, flagId });
+  socket.on('playAgainRequest', () => {
+    const r = roomOf();
+    if (!r || r.phase !== 'over') return;
+    r.rematchVotes.add(socket.id);
+    if (r.rematchVotes.size < 2) return; // wacht tot beide spelers rematch willen
+    r.rematchVotes.clear();
+    r.round += 1;
+    r.phase = 'selecting';
+    r.pending = null;
+    r.players.forEach((p) => { p.secret = null; p.ready = false; });
+    io.to(r.code).emit('rematchStarted', { round: r.round });
   });
 
-  socket.on('rollbackRequest', ({ reason, from, snapshot, roomCode }) => {
-    const code = roomCode || myRoom;
-    const room = rooms[code];
-    if (!room) return;
-    const opponent = room.players.find((p) => p.id !== socket.id);
-    if (opponent) opponent.socket.emit('rollbackRequest', { reason, from, snapshot });
-  });
-
-  socket.on('rollbackDecision', ({ accepted, roomCode }) => {
-    const code = roomCode || myRoom;
-    const room = rooms[code];
-    if (!room) return;
-    io.to(code).emit('rollbackDecision', { accepted });
-  });
-
-  socket.on('playAgainRequest', ({ roomCode }) => {
-    const code = roomCode || myRoom;
-    const room = rooms[code];
-    if (!room) return;
-    room.players.forEach((p) => {
-      p.secretFlag = null;
-      p.ready = false;
-    });
-    room.history = [];
-    room.phase = 'selecting';
-    io.to(code).emit('rematchStarted');
-  });
-
-  socket.on('leaveRoom', ({ roomCode }) => {
-    const code = roomCode || myRoom;
-    const room = rooms[code];
-    if (!room) return;
-    const opponent = room.players.find((p) => p.id !== socket.id);
-    if (opponent) opponent.socket.emit('opponentLeftLobby');
-    delete rooms[code];
-  });
+  socket.on('leaveRoom', () => leaveRoom(socket.id));
 
   socket.on('disconnect', () => {
-    delete onlineUsers[socket.id];
-    broadcastOnlineUsers();
+    leaveRoom(socket.id);
+    users.delete(socket.id);
+    broadcastUsers();
   });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Flag Guess Who server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Flag Guess Who draait op poort ${PORT}`));
