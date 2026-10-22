@@ -8,7 +8,12 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 // Serveer statische bestanden uit de 'public' map
-app.use(express.static(path.join(__dirname, 'public')));
+// Verander dit in je server.js:
+app.use(express.static(path.join(__dirname, '../public')));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public', 'index.html'));
+});
 
 // Zorg dat de root ('/') de index.html laadt in plaats van JSON
 app.get('/', (req, res) => {
