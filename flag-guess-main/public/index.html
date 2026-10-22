@@ -156,13 +156,20 @@ textarea:focus{border-color:var(--accent)}
 .no{background:rgba(255,77,109,.12);color:var(--danger);border:1.5px solid rgba(255,77,109,.25)}
 .yn.pick button{opacity:.4}
 .yn.pick button.sel{opacity:1}
-.hist{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);max-height:280px;overflow-y:auto}
-.hist-h{position:sticky;top:0;z-index:1;background:var(--surface);padding:10px 14px;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)}
-.hist ul{list-style:none;padding:10px;display:flex;flex-direction:column;gap:8px}
-.hc{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:.8rem;line-height:1.4}
-.hc > span:first-child{min-width:0;overflow-wrap:anywhere}
-.hc.edited{border-color:rgba(255,184,48,.55);background:rgba(255,184,48,.07)}
-.hc-r{display:flex;align-items:center;gap:4px;flex-shrink:0}
+
+/* geschiedenis: overzicht per zet */
+.hist{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);max-height:min(440px,55vh);overflow-y:auto}
+.hist-h{position:sticky;top:0;z-index:2;background:var(--surface);padding:10px 14px;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border)}
+.hist ul{list-style:none;padding:12px;display:flex;flex-direction:column;gap:12px}
+.zet{--pc:var(--accent);background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--pc);border-radius:var(--radius-sm);padding:10px 12px;font-size:.8rem;line-height:1.4}
+.zet[data-slot="2"]{--pc:var(--accent2)}
+.zet.edited{background:rgba(255,184,48,.07);box-shadow:inset 0 0 0 1px rgba(255,184,48,.5)}
+.zet-h{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--pc)}
+.zet-h .dot{width:8px;height:8px;border-radius:50%;background:var(--pc);flex-shrink:0}
+.zet-h::after{content:'';flex:1;height:1px;background:var(--border2)}
+.zet-b{font-size:.9rem;overflow-wrap:anywhere;margin-bottom:8px}
+.zet-f{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.76rem}
+.hc-r{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
 .bdg{padding:3px 9px;border-radius:100px;font-size:.72rem;font-weight:800;white-space:nowrap}
 .bdg.g{background:rgba(46,204,113,.15);color:var(--success);border:1px solid rgba(46,204,113,.3)}
 .bdg.r{background:rgba(255,77,109,.15);color:var(--danger);border:1px solid rgba(255,77,109,.3)}
@@ -331,7 +338,7 @@ textarea:focus{border-color:var(--accent)}
         <button class="btn warn hidden" id="end-btn" type="button">Beurt beëindigen →</button>
       </div>
       <div class="hist hidden" id="hist">
-        <div class="hist-h">Spelgeschiedenis</div>
+        <div class="hist-h">Spelgeschiedenis · <span id="hist-count"></span></div>
         <ul id="hist-list"></ul>
       </div>
     </aside>
@@ -880,21 +887,46 @@ function renderBoard(v) {
   }).join('');
 }
 
+// Geschiedenis als overzicht: oudste zet bovenaan, genummerd, met kleur per speler
 function renderHistory() {
-  $('hist').classList.toggle('hidden', !S.history.length);
-  $('hist-list').innerHTML = [...S.history].reverse().map((h) => {
+  const box = $('hist');
+  box.classList.toggle('hidden', !S.history.length);
+  const n = S.history.length;
+  $('hist-count').textContent = `${n} zet${n === 1 ? '' : 'ten'}`;
+  $('hist-list').innerHTML = S.history.map((h, i) => {
+    const nr = i + 1;
     if (h.type === 'guess') {
-      return `<li class="hc"><span>🏆 <b>${esc(h.from)}</b> gokte <b>${esc(h.flagName)}</b></span><span class="hc-r"><span class="bdg ${h.correct ? 'g' : 'r'}">${h.correct ? 'GOED' : 'FOUT'}</span></span></li>`;
+      const slot = S.players[1].name === h.from ? 1 : 2;
+      return `
+        <li class="zet" data-slot="${slot}">
+          <div class="zet-h"><span class="dot"></span><span>Zet ${nr} · ${esc(h.from)} gokt</span></div>
+          <div class="zet-b">🏆 Gok op <b>${esc(h.flagName)}</b></div>
+          <div class="zet-f">
+            <span class="muted">Resultaat</span>
+            <span class="hc-r"><span class="bdg ${h.correct ? 'g' : 'r'}">${h.correct ? 'GOED' : 'FOUT'}</span></span>
+          </div>
+        </li>`;
     }
-    const badge = h.answer === null
-      ? '<span class="bdg wait">…</span>'
-      : `<span class="bdg ${h.answer ? 'g' : 'r'}">${h.answer ? 'JA' : 'NEE'}</span>`;
+    const slot = h.askerSlot;
+    const answerer = S.players[other(slot)].name;
     const changed = h.corrections.length > 0;
-    const info = changed ? '<button class="edit warn-ico" data-info="' + h.id + '" type="button" aria-label="Bekijk wijziging">⚠️</button>' : '';
     const canEdit = h.answer !== null && (!online() || h.askerSlot !== S.mySlot);
-    const edit = canEdit ? '<button class="edit" data-edit="' + h.id + '" type="button" aria-label="Antwoord wijzigen">✏️</button>' : '';
-    return `<li class="hc${changed ? ' edited' : ''}"><span><b>${esc(h.from)}:</b> "${esc(h.text)}"</span><span class="hc-r">${badge}${info}${edit}</span></li>`;
+    const info = changed ? `<button class="edit warn-ico" data-info="${h.id}" type="button" aria-label="Bekijk wijziging">⚠️</button>` : '';
+    const edit = canEdit ? `<button class="edit" data-edit="${h.id}" type="button" aria-label="Antwoord wijzigen">✏️</button>` : '';
+    const result = h.answer === null
+      ? `<span class="muted">Wacht op ${esc(answerer)}…</span>`
+      : `<span class="muted">${esc(answerer)} antwoordde</span> ${yn(h.answer)}`;
+    return `
+      <li class="zet${changed ? ' edited' : ''}" data-slot="${slot}">
+        <div class="zet-h"><span class="dot"></span><span>Zet ${nr} · ${esc(h.from)} vraagt</span></div>
+        <div class="zet-b">"${esc(h.text)}"</div>
+        <div class="zet-f">
+          <span class="hc-r">${result}</span>
+          <span class="hc-r">${info}${edit}</span>
+        </div>
+      </li>`;
   }).join('');
+  box.scrollTop = box.scrollHeight;
 }
 
 /* ---------- game actions ---------- */
