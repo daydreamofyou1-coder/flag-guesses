@@ -242,16 +242,20 @@ body {
 
 .action-used-notice { display: flex; align-items: center; gap: 6px; background: rgba(255,184,48,0.08); border: 1px solid rgba(255,184,48,0.2); border-radius: var(--radius-xs); padding: 8px 12px; font-size: .76rem; color: var(--warning); font-weight: 600; margin-bottom: 10px; }
 
-.history-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 14px; max-height: 170px; overflow-y: auto; display: none; }
+.history-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 14px; max-height: 200px; overflow-y: auto; display: none; }
 .history-head { padding: 9px 14px; font-size: .65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); }
-.history-item { padding: 9px 14px; border-bottom: 1px solid var(--border); font-size: .76rem; display: flex; gap: 8px; align-items: flex-start; }
+.history-item { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: .76rem; display: flex; flex-direction: column; gap: 4px; }
 .history-item:last-child { border-bottom: none; }
+.history-row { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 8px; }
 .h-icon { flex-shrink: 0; font-size: .85rem; margin-top: 1px; }
-.h-text { color: var(--muted); line-height: 1.4; }
+.h-text { color: var(--muted); line-height: 1.4; flex: 1; }
 .h-text strong { color: var(--text); }
-.h-ans { font-weight: 700; }
-.h-ans.yes { color: var(--success); }
-.h-ans.no { color: var(--danger); }
+.history-a { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.history-a.yes { color: var(--success); }
+.history-a.no { color: var(--danger); }
+.edit-btn { background: none; border: none; cursor: pointer; font-size: .9rem; opacity: 0.5; transition: 0.2s; padding: 2px; }
+.edit-btn:hover { opacity: 1; transform: scale(1.1); filter: brightness(1.2); }
+.history-note { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--warning); background: rgba(255,184,48,0.1); padding: 5px 8px; border-radius: 4px; margin-top: 4px; cursor: pointer; width: fit-content; border: 1px solid rgba(255,184,48,0.25); }
 
 .board-label { font-size: .65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; padding: 0 2px; }
 .board-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
@@ -561,17 +565,20 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
       <div id="action-used-notice" class="action-used-notice" style="display:none">⚡ Action used — turn automated</div>
 
       <div id="rollback-request-area" style="display:none">
-        <button class="rollback-btn" onclick="openRollbackModal()">⏪ Request Rollback</button>
+        <button class="rollback-btn" onclick="openRollbackModal()">⏪ Request Rollback (Online)</button>
       </div>
     </div>
 
+    <!-- Edit History & Board Section -->
     <div class="history-wrap" id="history-log">
       <div class="history-head">Game History</div>
       <div id="history-items"></div>
     </div>
 
-    <div class="board-label">Flags — tap to eliminate · tap again to restore</div>
-    <div class="board-grid" id="board-grid"></div>
+    <div id="board-section">
+      <div class="board-label">Flags — tap to eliminate · tap again to restore</div>
+      <div class="board-grid" id="board-grid"></div>
+    </div>
   </div>
   <footer>Flag Guess Who · Educational Flag Game</footer>
 </div>
@@ -609,7 +616,7 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
   </div>
 </div>
 
-<!-- ══ MODAL: ROLLBACK ══ -->
+<!-- ══ MODAL: ROLLBACK (ONLINE ONLY) ══ -->
 <div class="modal-overlay" id="modal-rollback">
   <div class="modal-card">
     <h3>⏪ Request Rollback</h3>
@@ -631,6 +638,31 @@ footer { text-align: center; padding: 24px; font-size: .72rem; color: var(--mute
     <div class="modal-btns">
       <button class="btn btn-warning" onclick="confirmGuess()">Yes, I'm sure!</button>
       <button class="btn btn-ghost" onclick="closeModal('modal-guess')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: EDIT HISTORY ══ -->
+<div class="modal-overlay" id="modal-edit-history">
+  <div class="modal-card">
+    <h3>Edit Answer</h3>
+    <p style="font-size:0.83rem; color:var(--muted); margin-bottom:12px;">Accidentally clicked the wrong answer? Change it here.</p>
+    
+    <div style="background:var(--surface); padding:12px; border-radius:8px; margin-bottom:14px; font-weight:600; border:1px solid var(--border);" id="edit-history-q">Question?</div>
+    <input type="hidden" id="edit-history-idx">
+    
+    <label class="field-label">Correct Answer</label>
+    <div style="display:flex; gap:10px; margin-top:6px; margin-bottom:14px;">
+      <button class="btn btn-ghost" id="edit-btn-yes" onclick="setEditAnswerChoice(true)">✓ YES</button>
+      <button class="btn btn-ghost" id="edit-btn-no" onclick="setEditAnswerChoice(false)">✗ NO</button>
+    </div>
+
+    <label class="field-label">Reason (Optional)</label>
+    <input class="field-input" id="edit-history-reason" placeholder="e.g. Didn't see the red stripe" style="margin-bottom:18px;">
+
+    <div class="modal-btns">
+      <button class="btn btn-warning" onclick="saveHistoryEdit()">Update Answer</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-edit-history')">Cancel</button>
     </div>
   </div>
 </div>
@@ -681,6 +713,7 @@ let state = {
 };
 let guessMode = false, pendingGuessFlag = null;
 let p1SelectTemp = null, p2SelectTemp = null;
+let editPendingAnswer = null;
 
 // Reconnect logic for mobile browsers
 document.addEventListener("visibilitychange", () => {
@@ -694,7 +727,7 @@ document.addEventListener("visibilitychange", () => {
 
 function showToast(msg, dur=2800) {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
+  t.innerHTML = msg; t.classList.add('show');
   clearTimeout(t._t);
   t._t = setTimeout(() => t.classList.remove('show'), dur);
 }
@@ -979,10 +1012,20 @@ function renderBoard() {
     panel.classList.add('my-turn');
   }
 
+  // Toon het speelbord (verbergen wordt gedaan in showAnswerPanel)
+  document.getElementById('board-section').style.display = 'block';
+
   showActionPanel(cur.actionUsed ? 'none' : 'ask');
   document.getElementById('action-used-notice').style.display = cur.actionUsed ? 'flex' : 'none';
-  document.getElementById('rollback-request-area').style.display = state.history.length > 0 ? 'block' : 'none';
+  
+  // Update Rollback buttons (online) of Edit History (lokaal)
+  if (state.mode === 'online') {
+    document.getElementById('rollback-request-area').style.display = state.history.length > 0 ? 'block' : 'none';
+  } else {
+    document.getElementById('rollback-request-area').style.display = 'none';
+  }
   document.getElementById('rollback-panel').style.display = 'none';
+  
   renderBoardGrid(); renderHistory(); guessMode = false;
 }
 
@@ -1026,24 +1069,46 @@ function renderHistory() {
   if (!state.history.length) { log.style.display = 'none'; return; }
   log.style.display = 'block';
   
-  items.innerHTML = state.history.slice().reverse().map(h => {
+  items.innerHTML = state.history.slice().reverse().map((h, i) => {
+    const realIdx = state.history.length - 1 - i;
     const isP1 = h.from === state.p1.name;
     const color = isP1 ? 'var(--accent)' : 'var(--accent2)';
     const nameTag = `<strong style="color: ${color}">${h.from}</strong>`;
 
     if (h.type === 'question') {
-      return `<div class="history-item">
-        <span class="h-icon">❓</span>
-        <div class="h-text">${nameTag} asked: "${h.text}"
-        ${h.answer!==undefined ? ` → <span class="h-ans ${h.answer?'yes':'no'}">${h.answer?'YES':'NO'}</span>` : ' <span style="opacity:.5">(pending...)</span>'}
-        </div></div>`;
+      const editBtn = (h.answer !== undefined && state.mode === 'local') 
+        ? `<button class="edit-btn" onclick="openEditHistory(${realIdx})">✏️</button>` 
+        : '';
+        
+      const editNote = h.edited 
+        ? `<div class="history-note" onclick="showToast('<b>Reden van wijziging:</b><br>${h.editReason || 'Geen reden opgegeven'}', 5000)">
+             ⚠️ Was ${h.originalAnswer ? 'YES' : 'NO'} (Tap voor reden)
+           </div>` 
+        : '';
+
+      return `
+        <div class="history-item">
+          <div class="history-row">
+            <span class="h-icon">❓</span>
+            <div class="h-text">${nameTag} asked: "${h.text}"</div>
+            <div class="history-a ${h.answer ? 'yes' : 'no'}">
+              ${h.answer !== undefined ? (h.answer ? 'YES' : 'NO') : '<span style="opacity:.5">(pending...)</span>'}
+              ${editBtn}
+            </div>
+          </div>
+          ${editNote}
+        </div>`;
     }
+    
     if (h.type === 'guess') {
-      return `<div class="history-item">
-        <span class="h-icon">${h.correct?'🏆':'❌'}</span>
-        <div class="h-text">${nameTag} guessed <strong>${h.flagName}</strong>
-        → <span class="h-ans ${h.correct?'yes':'no'}">${h.correct?'CORRECT!':'WRONG'}</span>
-        </div></div>`;
+      return `
+        <div class="history-item">
+          <div class="history-row">
+            <span class="h-icon">${h.correct?'🏆':'❌'}</span>
+            <div class="h-text">${nameTag} guessed <strong>${h.flagName}</strong></div>
+            <div class="history-a ${h.correct?'yes':'no'}">${h.correct?'CORRECT!':'WRONG'}</div>
+          </div>
+        </div>`;
     }
     return '';
   }).join('');
@@ -1153,34 +1218,35 @@ function goToSwitchForAnswer() {
 
 function showAnswerPanel() {
   const other = state.currentPlayer === 1 ? state.p2 : state.p1;
-  document.getElementById('board-player-title').textContent = other.name + "'s Board";
+  document.getElementById('board-player-title').textContent = other.name + ", answer the question!";
   document.getElementById('secret-flag-display').textContent = 'Hidden';
   state.secretVisible = false; updateSecretIcon();
+  
+  // VERBERG HET BORD EN HISTORY LOG TIJDENS BEANTWOORDEN (PRIVACY)
+  document.getElementById('board-section').style.display = 'none';
+  document.getElementById('history-log').style.display = 'none';
+  
   document.getElementById('turn-bar').textContent = '❓ Answer your opponent\'s question';
   document.getElementById('turn-bar').className = 'turn-bar waiting';
   document.getElementById('player-panel').classList.remove('my-turn');
+  
   showActionPanel('answer');
   document.getElementById('answer-from-label').textContent    = state.pendingQuestion.from + ' asks:';
   document.getElementById('answer-question-text').textContent = state.pendingQuestion.text;
   document.getElementById('action-used-notice').style.display = 'none';
   document.getElementById('rollback-request-area').style.display = 'none';
-  renderBoardGridForPlayer(other); renderHistory();
+  
   showScreen('screen-game');
-}
-
-function renderBoardGridForPlayer(playerObj) {
-  document.getElementById('board-grid').innerHTML = state.flags.map(f => {
-    const elim = playerObj.eliminated.includes(f.id);
-    return `<div class="board-flag${elim?' eliminated':''}">
-      <img class="flag-img" src="${f.img}" alt="${f.name}" loading="lazy">
-      <div class="flag-name">${f.name}</div>
-    </div>`;
-  }).join('');
 }
 
 function submitAnswer(answer) {
   const q = [...state.history].reverse().find(h => h.type==='question' && h.answer===undefined);
-  if (q) q.answer = answer;
+  if (q) {
+    q.answer = answer;
+    q.originalAnswer = null;
+    q.edited = false;
+    q.editReason = '';
+  }
   state.pendingQuestion = null;
 
   if (state.mode === 'online') {
@@ -1197,6 +1263,10 @@ function submitAnswer(answer) {
   document.getElementById('secret-flag-display').textContent = 'Hidden';
   state.secretVisible = false; updateSecretIcon();
   setMyTurnState();
+  
+  // Toon het bord weer voor de nieuwe beurt
+  document.getElementById('board-section').style.display = 'block';
+  
   renderBoardGrid(); renderHistory();
 }
 
@@ -1215,13 +1285,65 @@ function setMyTurnState() {
   document.getElementById('player-panel').classList.add('my-turn');
   showActionPanel('ask');
   document.getElementById('action-used-notice').style.display = 'none';
-  document.getElementById('rollback-request-area').style.display = state.history.length > 0 ? 'block' : 'none';
+  
+  if (state.mode === 'online') {
+    document.getElementById('rollback-request-area').style.display = state.history.length > 0 ? 'block' : 'none';
+  } else {
+    document.getElementById('rollback-request-area').style.display = 'none';
+  }
 }
 
 function resumeGameBoard() { renderBoard(); showScreen('screen-game'); }
 
 // ══════════════════════════════════════════════
-// ROLLBACK
+// EDIT HISTORY LOGIC (LOKAAL)
+// ══════════════════════════════════════════════
+function openEditHistory(idx) {
+  if (state.mode === 'online') {
+    showToast('Gebruik het online rollback-verzoek voor online games.');
+    return;
+  }
+  const h = state.history[idx];
+  document.getElementById('edit-history-idx').value = idx;
+  document.getElementById('edit-history-q').textContent = `"${h.text}"`;
+  document.getElementById('edit-history-reason').value = '';
+  setEditAnswerChoice(h.answer);
+  openModal('modal-edit-history');
+}
+
+function setEditAnswerChoice(isYes) {
+  editPendingAnswer = isYes;
+  const btnYes = document.getElementById('edit-btn-yes');
+  const btnNo = document.getElementById('edit-btn-no');
+  
+  btnYes.style.background = isYes ? 'rgba(46,204,113,0.15)' : 'var(--surface2)';
+  btnYes.style.color = isYes ? 'var(--success)' : 'var(--text)';
+  btnYes.style.borderColor = isYes ? 'rgba(46,204,113,0.3)' : 'var(--border2)';
+  
+  btnNo.style.background = !isYes ? 'rgba(255,77,109,0.12)' : 'var(--surface2)';
+  btnNo.style.color = !isYes ? 'var(--danger)' : 'var(--text)';
+  btnNo.style.borderColor = !isYes ? 'rgba(255,77,109,0.25)' : 'var(--border2)';
+}
+
+function saveHistoryEdit() {
+  const idx = document.getElementById('edit-history-idx').value;
+  const h = state.history[idx];
+  const reason = document.getElementById('edit-history-reason').value.trim();
+  
+  if (h.answer !== editPendingAnswer) {
+    if (!h.edited) h.originalAnswer = h.answer; 
+    h.answer = editPendingAnswer;
+    h.edited = true;
+    h.editReason = reason;
+    showToast(`Antwoord gewijzigd! Pas je speelbord aan indien nodig.`);
+  }
+  
+  closeModal('modal-edit-history');
+  renderHistory();
+}
+
+// ══════════════════════════════════════════════
+// ROLLBACK (ONLINE ONLY)
 // ══════════════════════════════════════════════
 function openRollbackModal() { document.getElementById('rollback-reason-input').value = ''; openModal('modal-rollback'); }
 function submitRollbackRequest() {
@@ -1249,12 +1371,6 @@ function submitRollbackRequest() {
     state.socket.emit('rollbackRequest', { reason, from: state.playerSlot, snapshot: state.rollback.snapshot, roomCode: state.roomCode });
     return;
   }
-  const other = state.currentPlayer===1?state.p2:state.p1, cur = currentPlayerObj();
-  document.getElementById('switch-turn-title').textContent = 'Rollback Requested';
-  document.getElementById('switch-turn-sub').textContent   = cur.name + ' wants to undo. ' + other.name + ', do you accept?';
-  document.getElementById('switch-turn-btn').textContent   = 'View Request →';
-  document.getElementById('switch-turn-btn').onclick = () => showRollbackPanel();
-  showScreen('screen-switch-turn');
 }
 
 function showRollbackPanel() {
@@ -1285,14 +1401,6 @@ function acceptRollback() {
     state.socket.emit('rollbackDecision', { accepted: true, roomCode: state.roomCode });
     return;
   }
-
-  if (state.rollback.p1Accepted && state.rollback.p2Accepted) { applyRollback(); return; }
-  updateRbBadges();
-  document.getElementById('switch-turn-title').textContent = 'Rollback Accepted';
-  document.getElementById('switch-turn-sub').textContent   = 'Both agreed. Undoing last action.';
-  document.getElementById('switch-turn-btn').textContent   = 'Continue →';
-  document.getElementById('switch-turn-btn').onclick = () => applyRollback();
-  showScreen('screen-switch-turn');
 }
 
 function declineRollback() {
@@ -1333,11 +1441,10 @@ function applyRollback() {
     }
     return;
   }
-  if (s.pendingQuestion) showAnswerPanel(); else { renderBoard(); showScreen('screen-game'); }
 }
 
 // ══════════════════════════════════════════════
-// GAME OVER (PLAY AGAIN & GO HOME UPDATE)
+// GAME OVER
 // ══════════════════════════════════════════════
 function endGame(winnerPlayer) {
   const winner = winnerPlayer===1?state.p1:state.p2, loser = winnerPlayer===1?state.p2:state.p1;
@@ -1428,6 +1535,10 @@ function initOnlineGame() {
     state.secretVisible = false; updateSecretIcon();
     if (isMyTurnOnline()) { setMyTurnState(); }
     else { setWaitingState('⏳ Opponent goes first — wait for their question...'); }
+    
+    // Toon het speelbord bij het starten van de online game
+    document.getElementById('board-section').style.display = 'block';
+    
     renderBoardGrid(); renderHistory();
     showScreen('screen-game');
   });
@@ -1440,6 +1551,11 @@ function initOnlineGame() {
     const tb = document.getElementById('turn-bar');
     tb.textContent = '❓ Answer your opponent\'s question'; tb.className = 'turn-bar waiting';
     document.getElementById('player-panel').classList.remove('my-turn');
+    
+    // Verberg speelbord en logboek
+    document.getElementById('board-section').style.display = 'none';
+    document.getElementById('history-log').style.display = 'none';
+    
     showActionPanel('answer');
     document.getElementById('action-used-notice').style.display='none';
     document.getElementById('rollback-request-area').style.display='none';
@@ -1466,7 +1582,11 @@ function initOnlineGame() {
     renderHistory();
 
     if (correct) { endGame(state.playerSlot===1?2:1); }
-    else { showToast('Opponent guessed ' + (f?f.name:flagId) + ' — wrong! Your turn.'); setMyTurnState(); }
+    else { 
+      showToast('Opponent guessed ' + (f?f.name:flagId) + ' — wrong! Your turn.'); 
+      setMyTurnState(); 
+      document.getElementById('board-section').style.display = 'block';
+    }
   });
 
   socket.on('guessResult', ({ correct, flagId }) => {
