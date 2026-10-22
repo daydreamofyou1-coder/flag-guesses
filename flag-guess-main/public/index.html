@@ -773,7 +773,9 @@ function registerUsername() {
 function connectLobby(usernameToRegister) {
   if (lobbySocket) return;
   if (typeof io === 'undefined') { showToast('Socket.io failed — refresh page'); return; }
-  const RENDER_URL = 'https://flag-guesses.onrender.com';
+  const RENDER_URL = window.location.hostname.includes('onrender.com')
+  ? window.location.origin
+  : 'https://flag-guesses.onrender.com';
   lobbySocket = io(RENDER_URL, { transports: ['websocket', 'polling'] });
   showToast('Connecting to server...', 4000);
 
