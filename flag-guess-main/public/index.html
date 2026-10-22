@@ -117,6 +117,8 @@ img{display:block;max-width:100%}
 .flag.selected .chk{display:grid}
 .flag.elim img,.flag.elim .n{opacity:.15}
 .flag.elim::after{content:'✕';position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(1.4rem,4vw,2rem);font-weight:900;color:var(--danger);background:rgba(10,10,15,.45);border-radius:var(--radius-sm)}
+.flag.review{border-color:var(--warning);box-shadow:0 0 0 2px rgba(255,184,48,.5)}
+.flag .rv{position:absolute;top:4px;left:4px;z-index:2;font-size:.85rem;line-height:1}
 
 /* game layout */
 .game{max-width:1200px;margin:0 auto;padding:14px clamp(12px,3vw,24px) 40px;display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
@@ -159,20 +161,23 @@ textarea:focus{border-color:var(--accent)}
 .hist ul{list-style:none;padding:10px;display:flex;flex-direction:column;gap:8px}
 .hc{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:.8rem;line-height:1.4}
 .hc > span:first-child{min-width:0;overflow-wrap:anywhere}
-.hc.edited{border-color:rgba(255,184,48,.45);background:rgba(255,184,48,.05)}
+.hc.edited{border-color:rgba(255,184,48,.55);background:rgba(255,184,48,.07)}
+.hc-r{display:flex;align-items:center;gap:4px;flex-shrink:0}
 .bdg{padding:3px 9px;border-radius:100px;font-size:.72rem;font-weight:800;white-space:nowrap}
 .bdg.g{background:rgba(46,204,113,.15);color:var(--success);border:1px solid rgba(46,204,113,.3)}
 .bdg.r{background:rgba(255,77,109,.15);color:var(--danger);border:1px solid rgba(255,77,109,.3)}
 .bdg.wait{color:var(--muted);border:1px dashed var(--border2)}
-.edit{margin-left:6px;padding:4px 8px;border-radius:6px;background:rgba(255,255,255,.06);border:1px solid var(--border2);font-size:.72rem;font-weight:600}
+.edit{padding:4px 8px;border-radius:6px;background:rgba(255,255,255,.06);border:1px solid var(--border2);font-size:.72rem;font-weight:600}
+.warn-ico{background:rgba(255,184,48,.14);border-color:rgba(255,184,48,.5)}
 
 /* modals */
 .modal{position:fixed;inset:0;z-index:200;display:flex;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:.25s}
 .modal.show{opacity:1;pointer-events:auto}
-.modal-card{width:100%;max-width:460px;background:var(--surface2);border:1px solid var(--border2);border-radius:22px 22px 0 0;padding:24px 20px 32px;transform:translateY(30px);transition:.25s}
+.modal-card{width:100%;max-width:460px;max-height:90vh;overflow-y:auto;background:var(--surface2);border:1px solid var(--border2);border-radius:22px 22px 0 0;padding:24px 20px 32px;transform:translateY(30px);transition:.25s}
 .modal.show .modal-card{transform:none}
 .modal h3{margin-bottom:12px;font-size:1.1rem}
 .modal img{width:100%;border-radius:10px;margin-bottom:16px}
+.corr{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-xs);padding:10px 12px;margin-bottom:8px;font-size:.85rem;line-height:1.45}
 @media (min-width:700px){.modal{align-items:center}.modal-card{border-radius:22px}}
 
 /* game over */
@@ -332,7 +337,7 @@ textarea:focus{border-color:var(--accent)}
     </aside>
     <main>
       <div class="board-label" id="board-title"></div>
-      <p class="board-hint">Tik op een vlag om weg te strepen</p>
+      <p class="board-hint">Tik om weg te strepen. Een ⚠️ betekent: opnieuw bekijken.</p>
       <div class="grid" id="board"></div>
     </main>
   </div>
@@ -369,15 +374,30 @@ textarea:focus{border-color:var(--accent)}
 
 <div class="modal" id="m-edit">
   <div class="modal-card">
-    <h3>✏️ Antwoord corrigeren</h3>
+    <h3>✏️ Antwoord wijzigen</h3>
     <div class="bubble" id="me-q"></div>
     <div class="yn pick" style="margin-bottom:14px">
       <button class="yes" id="me-yes" type="button">✓ JA</button>
       <button class="no" id="me-no" type="button">✗ NEE</button>
     </div>
+    <span class="lbl">Reden van de wijziging (verplicht)</span>
+    <textarea id="me-reason" rows="2" maxlength="300" placeholder="Bijv. Ik had de vraag verkeerd gelezen"></textarea>
     <div class="row">
       <button class="btn warn grow" id="me-save" type="button">Opslaan</button>
       <button class="btn ghost grow" id="me-close" type="button">Sluiten</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="m-info">
+  <div class="modal-card">
+    <h3>⚠️ Antwoord gewijzigd</h3>
+    <div class="bubble" id="mi-q"></div>
+    <div id="mi-list"></div>
+    <div id="mi-text"></div>
+    <div class="row">
+      <button class="btn warn grow hidden" id="mi-clear" type="button">Begrepen, wis markering</button>
+      <button class="btn ghost grow" id="mi-close" type="button">Sluiten</button>
     </div>
   </div>
 </div>
@@ -397,10 +417,11 @@ const S = {
   socket: null, wantName: '', myName: '', users: [],
   inviteFrom: null, inviteSent: false, inviteTimer: null,
   roomCode: '', mySlot: 0,
-  boardSize: 12, round: 1, flags: [], players: null,
+  boardSize: 12, round: 1, flagSet: [], players: null,
   currentSlot: 1, pending: null, history: [], guessMode: false,
+  evt: 0, // teller van spelgebeurtenissen, gebruikt om wijzigingen aan vragen te volgen
   pick: null, pickSlot: 0, pendingGuess: null, secretShown: false,
-  editId: null, editVal: null,
+  editId: null, editVal: null, infoId: null,
 };
 
 /* ---------- helpers ---------- */
@@ -408,12 +429,14 @@ const $ = (id) => document.getElementById(id);
 const online = () => S.mode === 'online';
 const other = (slot) => (slot === 1 ? 2 : 1);
 const viewSlot = () => (online() ? S.mySlot : S.pending ? other(S.currentSlot) : S.currentSlot);
+const tick = () => ++S.evt;
 const flagOf = (id) => FLAGS.find((f) => f.id === id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const flagHtml = (id) => {
   const f = flagOf(id);
   return f ? `<img class="mini" src="${f.img}" alt=""> ${f.name}` : '—';
 };
+const yn = (v) => `<span class="bdg ${v ? 'g' : 'r'}">${v ? 'JA' : 'NEE'}</span>`;
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === id));
@@ -452,18 +475,27 @@ function shuffle(arr, seed) {
   }
   return a;
 }
-function makeFlags(seed) {
-  const pool = shuffle(FLAGS, seed);
-  return S.boardSize === 24 ? pool : pool.slice(0, 12);
+// Welke vlaggen er in het spel zitten (zelfde voor beide spelers)
+function makeFlagSet(seed) {
+  return shuffle(FLAGS, seed).slice(0, S.boardSize);
+}
+// Eigen willekeurige volgorde per speler, zodat kolommen niets verraden
+function randomOrder(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
 function makePlayers(n1, n2) {
-  return {
-    1: { name: n1, secret: null, elim: new Set(), used: false },
-    2: { name: n2, secret: null, elim: new Set(), used: false },
-  };
+  const blank = (name) => ({ name, secret: null, used: false, order: [], elim: new Set(), elimAt: {}, review: new Set() });
+  return { 1: blank(n1), 2: blank(n2) };
 }
 function resetPlayers() {
-  Object.values(S.players).forEach((p) => { p.secret = null; p.elim = new Set(); p.used = false; });
+  Object.values(S.players).forEach((p) => Object.assign(p, {
+    secret: null, used: false, order: randomOrder(S.flagSet), elim: new Set(), elimAt: {}, review: new Set(),
+  }));
 }
 function showSwitch(icon, title, sub, btnText, next) {
   $('sw-icon').textContent = icon;
@@ -596,18 +628,22 @@ function bindSocket(s) {
 
   s.on('questionAsked', ({ id, askerSlot, from, text }) => {
     S.pending = { id, askerSlot, from, text };
-    S.history.push({ id, type: 'question', from, text, answer: null });
+    S.history.push({
+      id, type: 'question', askerSlot, from, text,
+      answer: null, evtAsked: tick(), evtAns: null, corrections: [],
+    });
     renderGame();
   });
   s.on('questionAnswered', ({ id, answer, currentSlot }) => {
-    const q = S.history.find((h) => h.id === id);
-    if (q) q.answer = answer;
+    const h = S.history.find((x) => x.id === id);
+    if (h) { h.answer = answer; h.evtAns = tick(); }
     S.pending = null;
     S.currentSlot = currentSlot;
     S.guessMode = false;
     renderGame();
     toast('Antwoord: ' + (answer ? 'JA ✓' : 'NEE ✗'));
   });
+  s.on('answerCorrected', ({ id, to, reason, byName }) => applyCorrection(id, to, reason, byName));
   s.on('guessMade', ({ guesserName, flagId, correct, currentSlot }) => {
     S.history.push({ type: 'guess', from: guesserName, flagName: flagOf(flagId)?.name ?? flagId, correct });
     S.currentSlot = currentSlot;
@@ -675,8 +711,9 @@ $('size-back').onclick = () => backToHome(true);
 
 /* ---------- secret flag picking ---------- */
 function startLocalRound() {
+  S.flagSet = makeFlagSet(String(Date.now()));
   S.players = makePlayers('Speler 1', 'Speler 2');
-  S.flags = makeFlags(String(Date.now()));
+  resetPlayers();
   S.history = [];
   S.pending = null;
   openPick(1);
@@ -684,7 +721,7 @@ function startLocalRound() {
 function startOnlineRound(size, round) {
   S.boardSize = size;
   S.round = round;
-  S.flags = makeFlags(`${S.roomCode}-${round}`);
+  S.flagSet = makeFlagSet(`${S.roomCode}-${round}`);
   resetPlayers();
   S.history = [];
   S.pending = null;
@@ -704,7 +741,7 @@ function openPick(slot) {
 }
 function renderPicker() {
   const grid = $('pick-grid');
-  grid.innerHTML = S.flags.map((f) => `
+  grid.innerHTML = S.players[S.pickSlot].order.map((f) => `
     <button class="flag" data-id="${f.id}" type="button">
       <span class="chk">✓</span>
       <img src="${f.img}" alt="" loading="lazy">
@@ -831,25 +868,32 @@ function renderOnline() {
 }
 
 function renderBoard(v) {
-  const elim = S.players[v].elim;
-  $('board').innerHTML = S.flags.map((f) => `
-    <button class="flag${elim.has(f.id) ? ' elim' : ''}" data-flag="${f.id}" type="button">
+  const p = S.players[v];
+  $('board').innerHTML = p.order.map((f) => {
+    const cls = (p.elim.has(f.id) ? ' elim' : '') + (p.review.has(f.id) ? ' review' : '');
+    return `
+    <button class="flag${cls}" data-flag="${f.id}" type="button">
+      ${p.review.has(f.id) ? '<span class="rv">⚠️</span>' : ''}
       <img src="${f.img}" alt="" loading="lazy">
       <span class="n">${f.name}</span>
-    </button>`).join('');
+    </button>`;
+  }).join('');
 }
 
 function renderHistory() {
   $('hist').classList.toggle('hidden', !S.history.length);
   $('hist-list').innerHTML = [...S.history].reverse().map((h) => {
     if (h.type === 'guess') {
-      return `<li class="hc"><span>🏆 <b>${esc(h.from)}</b> gokte <b>${esc(h.flagName)}</b></span><span class="bdg ${h.correct ? 'g' : 'r'}">${h.correct ? 'GOED' : 'FOUT'}</span></li>`;
+      return `<li class="hc"><span>🏆 <b>${esc(h.from)}</b> gokte <b>${esc(h.flagName)}</b></span><span class="hc-r"><span class="bdg ${h.correct ? 'g' : 'r'}">${h.correct ? 'GOED' : 'FOUT'}</span></span></li>`;
     }
     const badge = h.answer === null
       ? '<span class="bdg wait">…</span>'
       : `<span class="bdg ${h.answer ? 'g' : 'r'}">${h.answer ? 'JA' : 'NEE'}</span>`;
-    const edit = !online() && h.answer !== null ? `<button class="edit" data-edit="${h.id}" type="button">✏️</button>` : '';
-    return `<li class="hc${h.edited ? ' edited' : ''}"><span><b>${esc(h.from)}:</b> "${esc(h.text)}"</span><span>${badge}${edit}</span></li>`;
+    const changed = h.corrections.length > 0;
+    const info = changed ? '<button class="edit warn-ico" data-info="' + h.id + '" type="button" aria-label="Bekijk wijziging">⚠️</button>' : '';
+    const canEdit = h.answer !== null && (!online() || h.askerSlot !== S.mySlot);
+    const edit = canEdit ? '<button class="edit" data-edit="' + h.id + '" type="button" aria-label="Antwoord wijzigen">✏️</button>' : '';
+    return `<li class="hc${changed ? ' edited' : ''}"><span><b>${esc(h.from)}:</b> "${esc(h.text)}"</span><span class="hc-r">${badge}${info}${edit}</span></li>`;
   }).join('');
 }
 
@@ -871,16 +915,20 @@ function submitQuestion(raw) {
   const askerSlot = S.currentSlot;
   const asker = S.players[askerSlot];
   asker.used = true;
-  S.pending = { id: Date.now(), askerSlot, from: asker.name, text };
-  S.history.push({ id: S.pending.id, type: 'question', from: asker.name, text, answer: null });
+  const id = Date.now();
+  S.pending = { id, askerSlot, from: asker.name, text };
+  S.history.push({
+    id, type: 'question', askerSlot, from: asker.name, text,
+    answer: null, evtAsked: tick(), evtAns: null, corrections: [],
+  });
   const next = S.players[other(askerSlot)].name;
   showSwitch('🔄', `Geef door aan ${next}`, `${next} moet antwoorden`, `Beantwoord als ${next} →`, goGame);
 }
 
 function answer(ans) {
   if (online()) return S.socket.emit('answerQuestion', { answer: ans });
-  const q = S.history.find((h) => h.id === S.pending.id);
-  if (q) q.answer = ans;
+  const h = S.history.find((x) => x.id === S.pending.id);
+  if (h) { h.answer = ans; h.evtAns = tick(); }
   const asker = S.players[S.pending.askerSlot].name;
   S.pending = null;
   showSwitch('🔄', `Geef terug aan ${asker}`, 'Bekijk het antwoord en update je bord', 'Start mijn beurt →', goGame);
@@ -900,10 +948,16 @@ $('board').onclick = (e) => {
   if (!b) return;
   const id = b.dataset.flag;
   if (S.guessMode) return askGuess(id);
-  const elim = S.players[viewSlot()].elim;
-  if (elim.has(id)) elim.delete(id);
-  else elim.add(id);
-  renderBoard(viewSlot());
+  const v = viewSlot();
+  const p = S.players[v];
+  if (p.elim.has(id)) {
+    p.elim.delete(id);
+  } else {
+    p.elim.add(id);
+    p.elimAt[id] = S.evt; // onthoud wanneer weggestreept, voor de markering bij een wijziging
+  }
+  p.review.delete(id);
+  renderBoard(v);
 };
 
 function askGuess(id) {
@@ -939,18 +993,49 @@ $('eye').onclick = () => {
   $('secret-val').innerHTML = S.secretShown ? flagHtml(S.players[viewSlot()].secret) : 'Verborgen';
 };
 
-/* ---------- edit answers (local only) ---------- */
-$('hist-list').onclick = (e) => {
-  const b = e.target.closest('[data-edit]');
-  if (!b) return;
-  const h = S.history.find((x) => x.id === Number(b.dataset.edit));
+/* ---------- antwoord wijzigen & markering ---------- */
+// Vlaggen die de vrager heeft weggestreept na het antwoord, tot diens volgende vraag
+function markReview(h) {
+  const p = S.players[h.askerSlot];
+  const next = S.history.find((x) => x.type === 'question' && x.askerSlot === h.askerSlot && x.evtAsked > h.evtAsked);
+  const start = h.evtAns ?? h.evtAsked;
+  const end = next ? next.evtAsked : Infinity;
+  const ids = [...p.elim].filter((id) => {
+    const at = p.elimAt[id] ?? -1;
+    return at >= start && at < end;
+  });
+  ids.forEach((id) => p.review.add(id));
+  return ids;
+}
+
+function applyCorrection(id, to, reason, byName) {
+  const h = S.history.find((x) => x.id === id);
   if (!h) return;
-  S.editId = h.id;
+  const from = h.answer;
+  h.answer = to;
+  h.edited = true;
+  const mine = !online() || h.askerSlot === S.mySlot;
+  const flagged = mine ? markReview(h) : [];
+  h.corrections.push({ from, to, reason, by: byName, flagged });
+  toast(
+    flagged.length
+      ? '⚠️ Antwoord gewijzigd. Check de vlaggen met ⚠️ op je bord.'
+      : `⚠️ Antwoord gewijzigd door ${byName}.`,
+    3800
+  );
+  renderGame();
+}
+
+function openEdit(id) {
+  const h = S.history.find((x) => x.id === id);
+  if (!h) return;
+  S.editId = id;
   S.editVal = h.answer;
   $('me-q').textContent = `"${h.text}"`;
+  $('me-reason').value = '';
   paintEdit();
   openModal('m-edit');
-};
+}
 function paintEdit() {
   $('me-yes').classList.toggle('sel', S.editVal === true);
   $('me-no').classList.toggle('sel', S.editVal === false);
@@ -959,15 +1044,58 @@ $('me-yes').onclick = () => { S.editVal = true; paintEdit(); };
 $('me-no').onclick = () => { S.editVal = false; paintEdit(); };
 $('me-save').onclick = () => {
   const h = S.history.find((x) => x.id === S.editId);
-  if (h && h.answer !== S.editVal) {
-    h.answer = S.editVal;
-    h.edited = true;
-    toast('✅ Antwoord gecorrigeerd');
+  const why = $('me-reason').value.trim();
+  if (!h) return closeModal('m-edit');
+  if (S.editVal === h.answer) return toast('Kies het andere antwoord om te wijzigen');
+  if (why.length < 3) return toast('Geef eerst een reden voor de wijziging');
+  if (online()) {
+    S.socket.emit('correctAnswer', { id: h.id, answer: S.editVal, reason: why });
+  } else {
+    applyCorrection(h.id, S.editVal, why, S.players[other(h.askerSlot)].name);
   }
   closeModal('m-edit');
-  renderHistory();
 };
 $('me-close').onclick = () => closeModal('m-edit');
+
+function openInfo(id) {
+  const h = S.history.find((x) => x.id === id);
+  if (!h) return;
+  S.infoId = id;
+  const mine = !online() || h.askerSlot === S.mySlot;
+  const flagged = [...new Set(h.corrections.flatMap((c) => c.flagged))];
+  $('mi-q').textContent = `"${h.text}"`;
+  $('mi-list').innerHTML = h.corrections.map((c) => `
+    <div class="corr">
+      <b>${esc(c.by)}</b> wijzigde het antwoord ${yn(c.from)} → ${yn(c.to)}
+      <div class="muted" style="margin-top:6px">Reden: ${esc(c.reason)}</div>
+    </div>`).join('');
+  let text = '';
+  if (mine && flagged.length) {
+    text = '<p class="muted" style="margin-bottom:12px">Deze vlaggen heb je op basis van het oude antwoord weggestreept. Ze staan op je bord met een ⚠️. Tik op zo’n vlag om hem terug te zetten, of laat hem staan en klik op “Begrepen”.</p>';
+  } else if (!mine) {
+    text = '<p class="muted" style="margin-bottom:12px">Je tegenspeler kan de vlaggen die op basis van het oude antwoord zijn weggestreept opnieuw bekijken.</p>';
+  }
+  $('mi-text').innerHTML = text;
+  $('mi-clear').classList.toggle('hidden', !(mine && flagged.length));
+  openModal('m-info');
+}
+$('mi-clear').onclick = () => {
+  const h = S.history.find((x) => x.id === S.infoId);
+  if (h) {
+    const askerP = S.players[h.askerSlot];
+    h.corrections.forEach((c) => c.flagged.forEach((id) => askerP.review.delete(id)));
+  }
+  closeModal('m-info');
+  renderGame();
+};
+$('mi-close').onclick = () => closeModal('m-info');
+
+$('hist-list').onclick = (e) => {
+  const ed = e.target.closest('[data-edit]');
+  if (ed) return openEdit(Number(ed.dataset.edit));
+  const inf = e.target.closest('[data-info]');
+  if (inf) openInfo(Number(inf.dataset.info));
+};
 
 /* ---------- game over ---------- */
 function endGame(winnerSlot) {
