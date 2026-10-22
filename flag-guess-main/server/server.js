@@ -1,224 +1,245 @@
 const express = require('express');
-const http    = require('http');
+const http = require('http');
 const { Server } = require('socket.io');
-const cors    = require('cors');
+const path = require('path');
 
-const app    = express();
+const app = express();
 const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*' } });
 
-const FRONTEND_URL = process.env.FRONTEND_URL || '*';
-const io = new Server(server, {
-  cors: { origin: FRONTEND_URL, methods: ['GET', 'POST'] },
-  pingTimeout: 60000, 
-  connectionStateRecovery: {
-    maxDisconnectionDuration: 2 * 60 * 1000, 
-    skipMiddlewares: true,
-  }
-});
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/ping', (req, res) => res.send('pong'));
 
-const onlineUsers = new Map(); 
-const gameRooms = new Map();
+const onlineUsers = {}; // socket.id -> { id, name }
+const rooms = {};       // roomCode -> room object
 
 function broadcastOnlineUsers() {
-  const users = Array.from(onlineUsers.values()).filter(u => u.available).map(u => ({ id: u.id, name: u.name }));
+  const users = Object.values(onlineUsers);
   io.emit('onlineUsers', { users });
 }
 
-function getRoom(socket, clientRoomCode) {
-  const code = clientRoomCode || socket.data.roomCode;
-  if (code && socket.data.roomCode !== code) {
-    socket.join(code);
-    socket.data.roomCode = code;
-  }
-  return { code, room: gameRooms.get(code) };
-}
-
-app.use(cors());
-app.get('/', (_, res) => res.json({ status: 'ok', online: onlineUsers.size, activeGames: gameRooms.size }));
-app.get('/ping', (_, res) => res.send('pong'));
-
 io.on('connection', (socket) => {
+  let myRoom = null;
+  let mySlot = null;
 
-  // Normale Login
+  // 1. LOBBY & USERNAME REGISTRATIE
   socket.on('registerUsername', ({ username }) => {
-    socket.data.username = username;
-    onlineUsers.set(socket.id, { id: socket.id, name: username, available: true });
-    socket.emit('usernameOk', { username });
-    broadcastOnlineUsers();
-  });
-
-  // SMART REJOIN: Voor als een iPhone speler terugkomt na een disconnect
-  socket.on('rejoinRoom', ({ username, roomCode }) => {
-    socket.data.username = username;
-    onlineUsers.set(socket.id, { id: socket.id, name: username, available: false });
-    
-    const room = gameRooms.get(roomCode);
-    if (room) {
-      const player = room.players.find(p => p.name === username);
-      if (player) {
-        player.id = socket.id; // Update the socket ID to the newly reconnected one!
-        socket.join(roomCode);
-        socket.data.roomCode = roomCode;
-        socket.emit('rejoinSuccess');
-        socket.to(roomCode).emit('opponentReconnected');
-        return;
-      }
+    const clean = (username || '').trim();
+    if (!clean) {
+      socket.emit('usernameError', { message: 'Ongeldige naam' });
+      return;
     }
-    // Als de kamer toch verwijderd is (langer dan 5 min weg)
-    onlineUsers.get(socket.id).available = true;
-    socket.emit('usernameOk', { username });
+    const taken = Object.values(onlineUsers).some(
+      (u) => u.name.toLowerCase() === clean.toLowerCase() && u.id !== socket.id
+    );
+    if (taken) {
+      socket.emit('usernameError', { message: 'Deze naam is al in gebruik!' });
+      return;
+    }
+    onlineUsers[socket.id] = { id: socket.id, name: clean };
+    socket.emit('usernameOk', { username: clean });
     broadcastOnlineUsers();
-    socket.emit('rejoinFailed');
   });
 
+  // 2. UITNODIGINGEN VERSTUREN & BEANTWOORDEN
   socket.on('sendInvite', ({ toUsername }) => {
-    const target = Array.from(onlineUsers.values()).find(u => u.name === toUsername && u.available);
-    if (!target) return socket.emit('inviteError', { message: 'Player is offline or in a game.' });
-    io.to(target.id).emit('incomingInvite', { fromUsername: socket.data.username, fromId: socket.id });
+    const sender = onlineUsers[socket.id];
+    if (!sender) return;
+    const target = Object.values(onlineUsers).find((u) => u.name === toUsername);
+    if (!target) {
+      socket.emit('inviteError', { message: 'Speler is niet meer online.' });
+      return;
+    }
+    io.to(target.id).emit('incomingInvite', {
+      fromUsername: sender.name,
+      fromId: socket.id,
+    });
   });
 
   socket.on('respondInvite', ({ accept, fromId }) => {
-    if (!accept) {
-      io.to(fromId).emit('inviteDeclined', { byUsername: socket.data.username });
+    const responder = onlineUsers[socket.id];
+    const inviter = onlineUsers[fromId];
+    if (!inviter || !responder) {
+      socket.emit('inviteError', { message: 'Uitnodiging is verlopen.' });
       return;
     }
-    
-    const p1 = onlineUsers.get(fromId);
-    const p2 = onlineUsers.get(socket.id);
-    if (!p1 || !p2 || !p1.available || !p2.available) return socket.emit('inviteError', { message: 'Invite no longer valid.' });
+    if (!accept) {
+      io.to(fromId).emit('inviteDeclined', { byUsername: responder.name });
+      return;
+    }
 
-    p1.available = false; p2.available = false;
-    broadcastOnlineUsers();
+    const roomCode = 'ROOM-' + Math.random().toString(36).substring(2, 7).toUpperCase();
+    const inviterSocket = io.sockets.sockets.get(fromId);
+    if (!inviterSocket) {
+      socket.emit('inviteError', { message: 'Tegenstander heeft de verbinding verbroken.' });
+      return;
+    }
 
-    const roomCode = 'MATCH_' + Date.now();
-    const p1Socket = io.sockets.sockets.get(p1.id);
-    const p2Socket = socket;
-
-    p1Socket.join(roomCode);
-    p2Socket.join(roomCode);
-    p1Socket.data.roomCode = roomCode;
-    p2Socket.data.roomCode = roomCode;
-
-    gameRooms.set(roomCode, {
+    rooms[roomCode] = {
       code: roomCode,
+      boardSize: 12,
       players: [
-        { id: p1.id, name: p1.name, slot: 1, secretFlag: null, ready: false },
-        { id: p2.id, name: p2.name, slot: 2, secretFlag: null, ready: false },
+        { socket: inviterSocket, id: fromId, name: inviter.name, slot: 1, secretFlag: null, ready: false },
+        { socket: socket, id: socket.id, name: responder.name, slot: 2, secretFlag: null, ready: false },
       ],
       currentPlayer: 1,
-      history: []
-    });
+      history: [],
+      rollback: null,
+      phase: 'sizing',
+    };
 
-    p1Socket.emit('matchFound', { roomCode, slot: 1, opponentName: p2.name });
-    p2Socket.emit('matchFound', { roomCode, slot: 2, opponentName: p1.name });
+    inviterSocket.join(roomCode);
+    socket.join(roomCode);
+
+    inviterSocket.emit('matchFound', { roomCode, slot: 1, opponentName: responder.name });
+    socket.emit('matchFound', { roomCode, slot: 2, opponentName: inviter.name });
   });
 
+  // 3. BORDGROOTTE KIEZEN (ALLEEN DOOR SPELER 1)
   socket.on('selectBoardSize', ({ size, roomCode }) => {
-     const { code } = getRoom(socket, roomCode);
-     if(code) io.to(code).emit('boardSizeAgreed', { size });
+    const code = roomCode || myRoom;
+    const room = rooms[code];
+    if (!room) return;
+    room.boardSize = Number(size) === 24 ? 24 : 12;
+    room.phase = 'selecting';
+    io.to(code).emit('boardSizeAgreed', { size: room.boardSize });
   });
 
+  // 4. GEHEIME VLAG BEVESTIGEN & GAME STARTEN
   socket.on('confirmFlag', ({ flagId, roomCode }) => {
-    const { code, room } = getRoom(socket, roomCode);
+    const code = roomCode || myRoom;
+    const room = rooms[code];
     if (!room) return;
-    const targetPlayer = room.players.find(p => p.id === socket.id) || room.players.find(p => !p.ready);
-    if (!targetPlayer) return;
-    
-    targetPlayer.secretFlag = flagId;
-    targetPlayer.ready = true;
-    if (room.players.every(p => p.ready)) {
+    const player = room.players.find((p) => p.id === socket.id);
+    if (!player) return;
+
+    myRoom = code;
+    mySlot = player.slot;
+    player.secretFlag = flagId;
+    player.ready = true;
+
+    const allReady = room.players.length === 2 && room.players.every((p) => p.ready);
+    if (allReady) {
+      room.phase = 'playing';
+      room.currentPlayer = 1;
       io.to(code).emit('startGame', { startingPlayer: 1 });
     }
   });
 
+  // 5. VRAGEN, ANTWOORDEN & GOKKEN
   socket.on('askQuestion', ({ text, roomCode }) => {
-    const { room } = getRoom(socket, roomCode);
+    const code = roomCode || myRoom;
+    const room = rooms[code];
     if (!room) return;
-    const me = room.players.find(p => p.id === socket.id) || room.players[room.currentPlayer === 1 ? 0 : 1];
-    const opponent = room.players.find(p => p.id !== me.id);
+    const me = room.players.find((p) => p.id === socket.id);
+    const opponent = room.players.find((p) => p.id !== socket.id);
+    if (!opponent || !me) return;
+
     room.history.push({ type: 'question', from: me.name, text, answer: undefined });
-    io.to(opponent.id).emit('incomingQuestion', { from: me.name, text });
+    opponent.socket.emit('incomingQuestion', { from: me.name, text });
   });
 
   socket.on('answerQuestion', ({ answer, roomCode }) => {
-    const { room } = getRoom(socket, roomCode);
+    const code = roomCode || myRoom;
+    const room = rooms[code];
     if (!room) return;
-    const questioner = room.players[room.currentPlayer === 1 ? 0 : 1];
-    const q = [...room.history].reverse().find(h => h.type === 'question' && h.answer === undefined);
-    if (q) q.answer = answer;
-    
-    room.currentPlayer = room.currentPlayer === 1 ? 2 : 1;
-    io.to(questioner.id).emit('questionAnswered', { answer });
+    const questioner = room.players.find((p) => p.id !== socket.id);
+    if (!questioner) return;
+
+    const qEntry = [...room.history].reverse().find((h) => h.type === 'question' && h.answer === undefined);
+    if (qEntry) qEntry.answer = answer;
+
+    questioner.socket.emit('questionAnswered', { answer });
   });
 
   socket.on('makeGuess', ({ flagId, roomCode }) => {
-    const { room } = getRoom(socket, roomCode);
+    const code = roomCode || myRoom;
+    const room = rooms[code];
     if (!room) return;
-    const opponent = room.players.find(p => p.id !== socket.id) || room.players[room.currentPlayer === 1 ? 1 : 0];
-    io.to(opponent.id).emit('opponentGuess', { flagId, flagName: flagId });
+    const opponent = room.players.find((p) => p.id !== socket.id);
+    if (!opponent) return;
+
+    opponent.socket.emit('opponentGuess', { flagId, flagName: flagId });
   });
 
   socket.on('guessResult', ({ correct, flagId, roomCode }) => {
-    const { room } = getRoom(socket, roomCode);
+    const code = roomCode || myRoom;
+    const room = rooms[code];
     if (!room) return;
-    const guesser = room.players[room.currentPlayer === 1 ? 0 : 1];
-    room.history.push({ type: 'guess', from: guesser.name, flagId, correct });
-    io.to(guesser.id).emit('guessResult', { correct, flagId });
-    if (!correct) room.currentPlayer = room.currentPlayer === 1 ? 2 : 1;
+    const guesser = room.players.find((p) => p.id !== socket.id);
+    if (!guesser) return;
+
+    room.history.push({ type: 'guess', from: guesser.slot, flagId, correct });
+    guesser.socket.emit('guessResult', { correct, flagId });
   });
 
+  // 6. ROLLBACK / ANTWOORD CORRECTIE DOORSTUREN
   socket.on('rollbackRequest', ({ reason, from, snapshot, roomCode }) => {
-    const { room } = getRoom(socket, roomCode);
-    const opponent = room?.players.find(p => p.slot !== from);
-    if (opponent) io.to(opponent.id).emit('rollbackRequest', { reason, from, snapshot });
+    const code = roomCode || myRoom;
+    const room = rooms[code];
+    if (!room) return;
+    const opponent = room.players.find((p) => p.id !== socket.id);
+    if (opponent) opponent.socket.emit('rollbackRequest', { reason, from, snapshot });
   });
 
   socket.on('rollbackDecision', ({ accepted, roomCode }) => {
-    const { room } = getRoom(socket, roomCode);
-    const meSlot = room?.currentPlayer === 1 ? 2 : 1;
-    const requester = room?.players.find(p => p.slot !== meSlot);
-    if (requester) io.to(requester.id).emit('rollbackDecision', { accepted });
-    socket.emit('rollbackDecision', { accepted });
+    const code = roomCode || myRoom;
+    const room = rooms[code];
+    if (!room) return;
+    io.to(code).emit('rollbackDecision', { accepted });
   });
 
+  // 7. REMATCH & VERBINDING HERSTELLEN
   socket.on('playAgainRequest', ({ roomCode }) => {
-    const { room } = getRoom(socket, roomCode);
+    const code = roomCode || myRoom;
+    const room = rooms[code];
     if (!room) return;
-    room.players.forEach(p => { p.ready = false; p.secretFlag = null; });
+    room.players.forEach((p) => {
+      p.secretFlag = null;
+      p.ready = false;
+    });
     room.history = [];
-    room.currentPlayer = 1;
-    io.to(room.code).emit('rematchStarted');
+    room.phase = 'selecting';
+    io.to(code).emit('rematchStarted');
+  });
+
+  socket.on('rejoinRoom', ({ username, roomCode }) => {
+    const room = rooms[roomCode];
+    if (!room) {
+      socket.emit('rejoinFailed');
+      return;
+    }
+    const player = room.players.find((p) => p.name === username);
+    if (!player) {
+      socket.emit('rejoinFailed');
+      return;
+    }
+    player.id = socket.id;
+    player.socket = socket;
+    myRoom = roomCode;
+    mySlot = player.slot;
+    onlineUsers[socket.id] = { id: socket.id, name: username };
+    socket.join(roomCode);
+    socket.emit('rejoinSuccess');
+    const opponent = room.players.find((p) => p.id !== socket.id);
+    if (opponent) opponent.socket.emit('opponentReconnected');
   });
 
   socket.on('leaveRoom', ({ roomCode }) => {
-    const { room } = getRoom(socket, roomCode);
+    const code = roomCode || myRoom;
+    const room = rooms[code];
     if (!room) return;
-    socket.leave(roomCode);
-    socket.data.roomCode = null;
-    const opponent = room.players.find(p => p.id !== socket.id);
-    if (opponent) io.to(opponent.id).emit('opponentLeftLobby');
-    gameRooms.delete(roomCode);
-    const user = onlineUsers.get(socket.id);
-    if (user) user.available = true;
-    broadcastOnlineUsers();
+    const opponent = room.players.find((p) => p.id !== socket.id);
+    if (opponent) opponent.socket.emit('opponentLeftLobby');
+    delete rooms[code];
   });
 
   socket.on('disconnect', () => {
-    if (onlineUsers.has(socket.id)) {
-      onlineUsers.delete(socket.id);
-      broadcastOnlineUsers();
-    }
-    const code = socket.data.roomCode;
-    if (code) {
-      socket.to(code).emit('opponentDisconnected');
-      // Geef de iPhone speler 5 minuten de tijd om terug te komen!
-      setTimeout(() => {
-        const room = io.sockets.adapter.rooms.get(code);
-        if (!room || room.size === 0) gameRooms.delete(code);
-      }, 5 * 60 * 1000);
-    }
+    delete onlineUsers[socket.id];
+    broadcastOnlineUsers();
   });
 });
 
-const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => console.log(`Server on port ${PORT}`));
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Flag Guess Who server running on port ${PORT}`));
