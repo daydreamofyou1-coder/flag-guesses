@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flag Guess Who · Vs computer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0f;--surface:#13131a;--surface2:#1c1c26;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.13);
+  --text:#f0f0f8;--muted:#7070a0;
+  --accent:#7c6fff;--accent2:#ff6fa0;--accent3:#6fffd4;
+  --success:#2ecc71;--danger:#ff4d6d;--warning:#ffb830;
+  --radius:18px;--radius-sm:10px;--radius-xs:6px;
+  --font:'Outfit',system-ui,sans-serif;--mono:'DM Mono',monospace;
+  --glow:0 0 16px rgba(124,111,255,.2);
+  --cols:3;
+}
+@media (min-width:700px){:root{--cols:4}}
+@media (min-width:1000px){:root{--cols:6}}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:var(--font);font-size:clamp(14px,1.5vw,16px);
+  background:var(--bg);color:var(--text);min-height:100vh;
+  background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(124,111,255,.12),transparent 60%),radial-gradient(ellipse 40% 30% at 90% 80%,rgba(255,111,160,.06),transparent 50%);
+  background-attachment:fixed;
+}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+img{display:block;max-width:100%}
+.hidden{display:none !important}
+.muted{color:var(--muted);font-size:.8rem}
+.lbl{display:block;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+
+/* header */
+.header{position:sticky;top:0;z-index:100;height:56px;display:flex;align-items:center;gap:12px;padding:0 clamp(14px,4vw,32px);background:rgba(10,10,15,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+.logo{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:var(--glow)}
+.h-title{font-weight:700;letter-spacing:-.02em;font-size:1rem;line-height:1.2}
+.h-sub{font-size:.68rem;color:var(--muted)}
+.home{margin-left:auto;font-size:.8rem;color:var(--muted);text-decoration:none;padding:7px 12px;border:1px solid var(--border2);border-radius:100px}
+
+/* screens */
+.screen{display:none}
+.screen.active{display:block}
+.wrap{max-width:720px;margin:0 auto;padding:clamp(20px,4vw,36px) 18px}
+@media (min-width:1000px){.wrap{max-width:900px}}
+.title{font-size:clamp(1.4rem,4vw,1.8rem);font-weight:900;letter-spacing:-.03em;margin-bottom:6px}
+.sub{font-size:.9rem;color:var(--muted);margin-bottom:24px;line-height:1.5}
+.section{margin-bottom:24px}
+.size-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.size{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:clamp(16px,3vw,22px);text-align:center;transition:.2s;width:100%}
+.size:hover{border-color:var(--accent)}
+.size.selected{border-color:var(--accent);background:rgba(124,111,255,.08);box-shadow:var(--glow)}
+.size .num{display:block;font-size:clamp(1.3rem,4vw,1.6rem);font-weight:900;letter-spacing:-.03em}
+.size .d{display:block;font-size:.75rem;color:var(--muted)}
+
+/* flags */
+.grid{display:grid;grid-template-columns:repeat(var(--cols),1fr);gap:clamp(6px,1.5vw,10px);margin-bottom:18px}
+.flag{position:relative;width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:6px 5px 8px;text-align:center;transition:.15s;overflow:hidden}
+button.flag:hover{border-color:rgba(124,111,255,.4);transform:translateY(-2px)}
+.flag.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(124,111,255,.25)}
+.flag img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:5px;margin-bottom:5px}
+.flag .n{display:block;font-size:.66rem;font-weight:600;color:var(--muted);line-height:1.2}
+.flag.selected .n{color:var(--text)}
+.flag .chk{position:absolute;top:5px;right:5px;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:.7rem;font-weight:800;display:none;place-items:center}
+.flag.selected .chk{display:grid}
+.flag.out img,.flag.out .n{opacity:.15}
+.flag.out::after{content:'✕';position:absolute;inset:0;display:grid;place-items:center;font-size:clamp(1.4rem,4vw,2rem);font-weight:900;color:var(--danger);background:rgba(10,10,15,.45);border-radius:var(--radius-sm)}
+.flag.win{border-color:var(--success);box-shadow:0 0 0 2px rgba(46,204,113,.45)}
+
+/* buttons */
+.btn{width:100%;min-height:48px;padding:14px 16px;border:none;border-radius:var(--radius-sm);background:linear-gradient(135deg,var(--accent),#5a4fff);color:#fff;font-weight:700;font-size:.95rem;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 20px rgba(124,111,255,.3);transition:.15s}
+.btn:hover:not(:disabled){filter:brightness(1.1);transform:translateY(-1px)}
+.btn:active:not(:disabled){transform:scale(.98)}
+.btn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none}
+.btn.ok{background:linear-gradient(135deg,var(--success),#1a9e50)}
+.btn.no{background:linear-gradient(135deg,var(--danger),#c93a58)}
+.btn.ghost{background:var(--surface2);border:1px solid var(--border2);box-shadow:none}
+
+/* game layout */
+.game{max-width:1200px;margin:0 auto;padding:14px clamp(12px,3vw,24px) 40px;display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
+@media (min-width:900px){
+  .game{grid-template-columns:420px 1fr;padding:24px clamp(16px,3vw,32px)}
+  .chat-col{position:sticky;top:76px}
+}
+.panel{position:relative;overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.secret{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-xs);padding:9px 12px;margin-bottom:12px}
+.secret .k{flex:1;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.secret .v{font-size:.82rem;font-weight:600;display:flex;align-items:center;gap:6px}
+.mini{width:22px;height:16px;object-fit:cover;border-radius:3px}
+.eye{min-width:40px;min-height:36px;font-size:1rem}
+.status{display:inline-block;font-size:.75rem;font-weight:700;color:var(--accent);background:rgba(124,111,255,.1);border:1px solid rgba(124,111,255,.2);border-radius:100px;padding:5px 12px;margin-bottom:12px}
+.chat{height:min(460px,52vh);overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 2px 8px;margin-bottom:12px}
+.msg{max-width:88%;padding:10px 14px;border-radius:14px;font-size:.92rem;line-height:1.45;overflow-wrap:anywhere}
+.msg.bot{align-self:flex-start;background:var(--surface2);border:1px solid var(--border);border-bottom-left-radius:4px}
+.msg.me{align-self:flex-end;background:rgba(124,111,255,.22);border:1px solid rgba(124,111,255,.3);border-bottom-right-radius:4px;font-weight:700}
+.msg .hint{display:block;color:var(--muted);font-size:.75rem;margin-top:4px}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.actions .btn{width:auto;flex:1 1 130px}
+.board-label{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">🤖</div>
+  <div>
+    <div class="h-title">Flag Guess Who</div>
+    <div class="h-sub">Vs computer</div>
+  </div>
+  <a class="home" href="/">← Menu</a>
+</header>
+
+<!-- SETUP -->
+<section class="screen active" id="s-setup">
+  <div class="wrap">
+    <h2 class="title">Speel tegen de computer</h2>
+    <p class="sub">Kies je geheime vlag. De computer stelt Ja/Nee-vragen en probeert hem te raden. Antwoord eerlijk.</p>
+
+    <div class="section">
+      <span class="lbl">1. Bordgrootte</span>
+      <div class="size-row">
+        <button class="size" data-size="12" type="button"><span class="num">12</span><span class="d">Vlaggen · snelle ronde</span></button>
+        <button class="size" data-size="24" type="button"><span class="num">24</span><span class="d">Vlaggen · volledige uitdaging</span></button>
+      </div>
+    </div>
+
+    <div class="section">
+      <span class="lbl">2. Kies jouw geheime vlag</span>
+      <div class="grid" id="pick-grid"><p class="muted">Kies eerst een bordgrootte.</p></div>
+    </div>
+
+    <button class="btn" id="start-btn" type="button" disabled>Start →</button>
+  </div>
+</section>
+
+<!-- GAME -->
+<section class="screen" id="s-game">
+  <div class="game">
+    <div class="chat-col">
+      <div class="panel">
+        <div class="secret">
+          <span class="k">Jouw vlag</span>
+          <span class="v" id="secret-val">Verborgen</span>
+          <button class="eye" id="eye" type="button" aria-label="Toon jouw vlag">👁️</button>
+        </div>
+        <div class="status" id="status"></div>
+        <div class="chat" id="chat"></div>
+        <div class="actions" id="actions"></div>
+      </div>
+    </div>
+    <div class="board-col">
+      <div class="board-label">Vlaggen · <span id="left-count"></span></div>
+      <div class="grid" id="board"></div>
+    </div>
+  </div>
+</section>
+
+<script>
+/*
+  Elke vlag heeft een regel "tags" met de eigenschappen die de computer gebruikt.
+  Als je een eigenschap wilt aanpassen, verander die regel. De computer werkt daarmee.
+*/
+const FLAGS = [
+  { id: 'de', name: 'Germany',        tags: 'europe red black yellow stripes' },
+  { id: 'br', name: 'Brazil',         tags: 'southAmerica green yellow blue white star circle emblem' },
+  { id: 'tr', name: 'Turkey',         tags: 'europe asia red white star emblem' },
+  { id: 'in', name: 'India',          tags: 'asia orange white green blue circle emblem' },
+  { id: 'gb', name: 'United Kingdom', tags: 'europe red white blue cross' },
+  { id: 'gr', name: 'Greece',         tags: 'europe blue white stripes cross' },
+  { id: 'mx', name: 'Mexico',         tags: 'northAmerica green white red stripes emblem' },
+  { id: 'us', name: 'United States',  tags: 'northAmerica red white blue stripes star' },
+  { id: 'nl', name: 'Netherlands',    tags: 'europe red white blue stripes' },
+  { id: 'se', name: 'Sweden',         tags: 'europe blue yellow cross' },
+  { id: 'dk', name: 'Denmark',        tags: 'europe red white cross' },
+  { id: 'au', name: 'Australia',      tags: 'oceania blue red white star cross' },
+  { id: 'it', name: 'Italy',          tags: 'europe green white red stripes' },
+  { id: 'ca', name: 'Canada',         tags: 'northAmerica red white stripes emblem' },
+  { id: 'za', name: 'South Africa',   tags: 'africa green yellow red white blue black' },
+  { id: 'ch', name: 'Switzerland',    tags: 'europe red white cross' },
+  { id: 'jp', name: 'Japan',          tags: 'asia white red circle' },
+  { id: 'kr', name: 'South Korea',    tags: 'asia white red blue black circle emblem' },
+  { id: 'fr', name: 'France',         tags: 'europe blue white red stripes' },
+  { id: 'no', name: 'Norway',         tags: 'europe red white blue cross' },
+  { id: 'ar', name: 'Argentina',      tags: 'southAmerica blue white yellow stripes circle emblem' },
+  { id: 'es', name: 'Spain',          tags: 'europe red yellow stripes emblem' },
+  { id: 'cn', name: 'China',          tags: 'asia red yellow star' },
+  { id: 'pt', name: 'Portugal',       tags: 'europe green red yellow blue white stripes circle emblem' },
+].map((f) => ({
+  ...f,
+  img: `https://flagcdn.com/w320/${f.id}.png`,
+  tags: new Set(f.tags.split(' ')),
+}));
+
+// Vraagsleutels. Bij gelijke score wint de vraag die hier eerder staat.
+const ORDER = [
+  'europe', 'asia', 'africa', 'northAmerica', 'southAmerica', 'oceania',
+  'red', 'white', 'blue', 'green', 'yellow', 'black', 'orange',
+  'star', 'cross', 'circle', 'emblem', 'stripes',
+];
+
+const Q = {
+  europe: 'Ligt (een deel van) je land in Europa?',
+  asia: 'Ligt (een deel van) je land in Azië?',
+  africa: 'Ligt je land in Afrika?',
+  northAmerica: 'Ligt je land in Noord-Amerika?',
+  southAmerica: 'Ligt je land in Zuid-Amerika?',
+  oceania: 'Ligt je land in Oceanië?',
+  red: 'Komt de kleur rood voor op je vlag?',
+  white: 'Komt wit voor op je vlag?',
+  blue: 'Komt blauw voor op je vlag?',
+  green: 'Komt groen voor op je vlag?',
+  yellow: 'Komt geel voor op je vlag?',
+  black: 'Komt zwart voor op je vlag?',
+  orange: 'Komt oranje voor op je vlag?',
+  star: 'Heeft je vlag een ster?',
+  cross: 'Heeft je vlag een kruis?',
+  circle: 'Heeft je vlag een cirkel of schijf?',
+  emblem: 'Heeft je vlag een symbool of wapen?',
+  stripes: 'Heeft je vlag strepen of banden?',
+};
+
+const S = {
+  size: 0,
+  board: [],          // de vlaggen in het spel
+  pick: null,         // id van de gekozen geheime vlag (setup)
+  secret: null,       // id van de geheime vlag van de speler
+  constraints: [],    // alle antwoorden tot nu toe
+  log: [],            // chatberichten
+  pending: null,      // de vraag of gok waarop nu een antwoord wordt verwacht
+  secretShown: false,
+};
+
+/* ---------- helpers ---------- */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const flagOf = (id) => FLAGS.find((f) => f.id === id);
+const flagHtml = (id) => {
+  const f = flagOf(id);
+  return f ? `<img class="mini" src="${f.img}" alt=""> ${esc(f.name)}` : '—';
+};
+const vlaggen = (n) => `${n} ${n === 1 ? 'vlag' : 'vlaggen'}`;
+
+function shuffleCopy(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === id));
+  window.scrollTo(0, 0);
+}
+
+/* ---------- setup ---------- */
+document.querySelectorAll('.size').forEach((b) => {
+  b.onclick = () => {
+    S.size = Number(b.dataset.size);
+    S.board = shuffleCopy(FLAGS).slice(0, S.size);
+    S.pick = null;
+    document.querySelectorAll('.size').forEach((x) => x.classList.toggle('selected', x === b));
+    $('start-btn').disabled = true;
+    renderPickGrid();
+  };
+});
+
+function renderPickGrid() {
+  const grid = $('pick-grid');
+  if (!S.board.length) {
+    grid.innerHTML = '<p class="muted">Kies eerst een bordgrootte.</p>';
+    return;
+  }
+  grid.innerHTML = S.board.map((f) => `
+    <button class="flag${S.pick === f.id ? ' selected' : ''}" data-id="${f.id}" type="button">
+      <span class="chk">✓</span>
+      <img src="${f.img}" alt="" loading="lazy">
+      <span class="n">${esc(f.name)}</span>
+    </button>`).join('');
+}
+$('pick-grid').onclick = (e) => {
+  const b = e.target.closest('[data-id]');
+  if (!b) return;
+  S.pick = b.dataset.id;
+  renderPickGrid();
+  $('start-btn').disabled = false;
+};
+
+$('start-btn').onclick = () => {
+  if (!S.pick) return;
+  S.secret = S.pick;
+  S.constraints = [];
+  S.log = [];
+  S.pending = null;
+  S.secretShown = false;
+  $('secret-val').textContent = 'Verborgen';
+  showScreen('s-game');
+  say('bot', 'Hoi! Ik ga jouw vlag raden. Denk aan één vlag uit het bord en antwoord met Ja of Nee. Heb je iets verkeerd geklikt? Gebruik dan ↶ Ongedaan maken.');
+  botTurn();
+};
+
+function newGame() {
+  S.size = 0;
+  S.board = [];
+  S.pick = null;
+  S.secret = null;
+  S.constraints = [];
+  S.log = [];
+  S.pending = null;
+  document.querySelectorAll('.size').forEach((x) => x.classList.remove('selected'));
+  $('start-btn').disabled = true;
+  renderPickGrid();
+  showScreen('s-setup');
+}
+
+/* ---------- logica van de computer ---------- */
+// Een vlag blijft over als hij alle antwoorden tot nu toe klopt.
+// De computer kijkt niet naar S.secret; hij gebruikt alleen de antwoorden.
+function fits(f, c) {
+  if (c.type === 'ask') return f.tags.has(c.key) === c.yes;
+  return c.yes ? f.id === c.id : f.id !== c.id;
+}
+function remaining() {
+  return S.board.filter((f) => S.constraints.every((c) => fits(f, c)));
+}
+function winnerId() {
+  const last = S.constraints[S.constraints.length - 1];
+  return last && last.type === 'guess' && last.yes ? last.id : null;
+}
+
+// Kies de vraag die de kandidaten het best in twee gelijke delen splitst (maximale entropie)
+function bestQuestion(cands) {
+  const n = cands.length;
+  let best = null;
+  let bestScore = 0;
+  for (const key of ORDER) {
+    const t = cands.filter((f) => f.tags.has(key)).length;
+    if (t === 0 || t === n) continue; // deze vraag splitst niets
+    const p = t / n;
+    const score = -(p * Math.log2(p) + (1 - p) * Math.log2(1 - p));
+    if (score > bestScore) {
+      best = key;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
+function nextMove(cands) {
+  if (cands.length <= 2) return { type: 'guess', flag: cands[0] };
+  const key = bestQuestion(cands);
+  return key ? { type: 'ask', key } : { type: 'guess', flag: cands[0] };
+}
+
+/* ---------- beurten ---------- */
+function botTurn() {
+  const cands = remaining();
+  S.pending = null;
+  renderStatus(cands.length);
+  renderBoard();
+
+  if (!cands.length) {
+    say('bot', 'Hm, ik kom op geen enkele vlag meer uit. Er is waarschijnlijk een antwoord verkeerd. Maak je laatste antwoord ongedaan.');
+    setActions(['undo', 'new']);
+    return;
+  }
+
+  const m = nextMove(cands);
+  if (m.type === 'guess') {
+    S.pending = { type: 'guess', id: m.flag.id };
+    say('bot', `Ik denk dat jouw vlag <b>${esc(m.flag.name)}</b> is. Klopt dat?`);
+  } else {
+    S.pending = { type: 'ask', key: m.key };
+    say('bot', `${Q[m.key]}<span class="hint">${vlaggen(cands.length)} over</span>`);
+  }
+  setActions(['yes', 'no', 'undo', 'new']);
+}
+
+function answer(yes) {
+  const p = S.pending;
+  if (!p) return;
+  const cut = S.log.length - 1; // index van de vraag van de computer die we nu beantwoorden
+  S.constraints.push({ ...p, yes, cut });
+  say('me', yes ? 'Ja' : 'Nee');
+  if (p.type === 'guess' && yes) return win(p.id);
+  botTurn();
+}
+
+function win(id) {
+  const f = flagOf(id);
+  S.pending = null;
+  say('bot', `🎉 Gewonnen! Jouw vlag is <b>${esc(f.name)}</b>. Ik had ${S.constraints.length} beurten nodig.`);
+  $('status').textContent = `Gewonnen in ${S.constraints.length} beurten`;
+  renderBoard();
+  setActions(['undo', 'new']);
+}
+
+function undo() {
+  const c = S.constraints.pop();
+  if (!c) return;
+  S.log.length = c.cut; // verwijder die vraag, het antwoord en alles wat daarna kwam
+  botTurn();
+}
+
+/* ---------- weergave ---------- */
+function say(who, html) {
+  S.log.push({ who, html });
+  renderChat();
+}
+function renderChat() {
+  $('chat').innerHTML = S.log.map((m) => `<div class="msg ${m.who}">${m.html}</div>`).join('');
+  $('chat').scrollTop = $('chat').scrollHeight;
+}
+function renderStatus(n) {
+  $('status').textContent = `Beurt ${S.constraints.length + 1} · ${vlaggen(n)} over`;
+}
+function renderBoard() {
+  const alive = new Set(remaining().map((f) => f.id));
+  const wonId = winnerId();
+  $('left-count').textContent = `${alive.size} over`;
+  $('board').innerHTML = S.board.map((f) => {
+    const cls = (alive.has(f.id) ? '' : ' out') + (wonId === f.id ? ' win' : '');
+    return `
+    <div class="flag${cls}">
+      <img src="${f.img}" alt="" loading="lazy">
+      <span class="n">${esc(f.name)}</span>
+    </div>`;
+  }).join('');
+}
+
+const BTN = {
+  yes: '<button class="btn ok" data-a="yes" type="button">✓ Ja</button>',
+  no: '<button class="btn no" data-a="no" type="button">✗ Nee</button>',
+  undo: '<button class="btn ghost" data-a="undo" type="button">↶ Ongedaan maken</button>',
+  new: '<button class="btn ghost" data-a="new" type="button">Nieuw spel</button>',
+};
+function setActions(list) {
+  $('actions').innerHTML = list.map((k) => BTN[k]).join('');
+}
+$('actions').onclick = (e) => {
+  const b = e.target.closest('[data-a]');
+  if (!b) return;
+  const a = b.dataset.a;
+  if (a === 'yes' || a === 'no') answer(a === 'yes');
+  else if (a === 'undo') undo();
+  else if (a === 'new') newGame();
+};
+
+// Toetsenbord: J = Ja, N = Nee
+document.addEventListener('keydown', (e) => {
+  if (!$('s-game').classList.contains('active')) return;
+  if (e.key === 'j' || e.key === 'J') answer(true);
+  if (e.key === 'n' || e.key === 'N') answer(false);
+});
+
+$('eye').onclick = () => {
+  S.secretShown = !S.secretShown;
+  $('secret-val').innerHTML = S.secretShown ? flagHtml(S.secret) : 'Verborgen';
+};
+
+/* ---------- start ---------- */
+renderPickGrid();
+</script>
+</body>
+  </html>
