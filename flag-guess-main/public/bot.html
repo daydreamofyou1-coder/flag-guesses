@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Flag Guess Who · Vs computer</title>
+<title>Flag Guess Who · vs computer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -110,7 +110,7 @@ button.flag:hover{border-color:rgba(124,111,255,.4);transform:translateY(-2px)}
   <div class="logo">🤖</div>
   <div>
     <div class="h-title">Flag Guess Who</div>
-    <div class="h-sub">Vs computer</div>
+    <div class="h-sub">vs computer</div>
   </div>
   <a class="home" href="/">← Menu</a>
 </header>
@@ -118,20 +118,20 @@ button.flag:hover{border-color:rgba(124,111,255,.4);transform:translateY(-2px)}
 <!-- SETUP -->
 <section class="screen active" id="s-setup">
   <div class="wrap">
-    <h2 class="title">Speel tegen de computer</h2>
-    <p class="sub">Kies je geheime vlag. De computer stelt Ja/Nee-vragen en probeert hem te raden. Antwoord eerlijk.</p>
+    <h2 class="title">Play against the computer</h2>
+    <p class="sub">Pick your secret flag. The computer asks yes/no questions and tries to guess it. Answer honestly.</p>
 
     <div class="section">
-      <span class="lbl">1. Bordgrootte</span>
+      <span class="lbl">1. Board size</span>
       <div class="size-row">
-        <button class="size" data-size="12" type="button"><span class="num">12</span><span class="d">Vlaggen · snelle ronde</span></button>
-        <button class="size" data-size="24" type="button"><span class="num">24</span><span class="d">Vlaggen · volledige uitdaging</span></button>
+        <button class="size" data-size="12" type="button"><span class="num">12</span><span class="d">Flags · quick round</span></button>
+        <button class="size" data-size="24" type="button"><span class="num">24</span><span class="d">Flags · full challenge</span></button>
       </div>
     </div>
 
     <div class="section">
-      <span class="lbl">2. Kies jouw geheime vlag</span>
-      <div class="grid" id="pick-grid"><p class="muted">Kies eerst een bordgrootte.</p></div>
+      <span class="lbl">2. Choose your secret flag</span>
+      <div class="grid" id="pick-grid"><p class="muted">Choose a board size first.</p></div>
     </div>
 
     <button class="btn" id="start-btn" type="button" disabled>Start →</button>
@@ -144,9 +144,9 @@ button.flag:hover{border-color:rgba(124,111,255,.4);transform:translateY(-2px)}
     <div class="chat-col">
       <div class="panel">
         <div class="secret">
-          <span class="k">Jouw vlag</span>
-          <span class="v" id="secret-val">Verborgen</span>
-          <button class="eye" id="eye" type="button" aria-label="Toon jouw vlag">👁️</button>
+          <span class="k">Your flag</span>
+          <span class="v" id="secret-val">Hidden</span>
+          <button class="eye" id="eye" type="button" aria-label="Show your flag">👁️</button>
         </div>
         <div class="status" id="status"></div>
         <div class="chat" id="chat"></div>
@@ -154,7 +154,7 @@ button.flag:hover{border-color:rgba(124,111,255,.4);transform:translateY(-2px)}
       </div>
     </div>
     <div class="board-col">
-      <div class="board-label">Vlaggen · <span id="left-count"></span></div>
+      <div class="board-label">Flags · <span id="left-count"></span></div>
       <div class="grid" id="board"></div>
     </div>
   </div>
@@ -162,8 +162,8 @@ button.flag:hover{border-color:rgba(124,111,255,.4);transform:translateY(-2px)}
 
 <script>
 /*
-  Elke vlag heeft een regel "tags" met de eigenschappen die de computer gebruikt.
-  Als je een eigenschap wilt aanpassen, verander die regel. De computer werkt daarmee.
+  Each flag has a "tags" line with the properties the computer uses.
+  To change a property, edit that line. The computer works from these tags.
 */
 const FLAGS = [
   { id: 'de', name: 'Germany',        tags: 'europe red black yellow stripes' },
@@ -196,7 +196,7 @@ const FLAGS = [
   tags: new Set(f.tags.split(' ')),
 }));
 
-// Vraagsleutels. Bij gelijke score wint de vraag die hier eerder staat.
+// Question keys. When scores are equal, the question listed first is chosen.
 const ORDER = [
   'europe', 'asia', 'africa', 'northAmerica', 'southAmerica', 'oceania',
   'red', 'white', 'blue', 'green', 'yellow', 'black', 'orange',
@@ -204,34 +204,34 @@ const ORDER = [
 ];
 
 const Q = {
-  europe: 'Ligt (een deel van) je land in Europa?',
-  asia: 'Ligt (een deel van) je land in Azië?',
-  africa: 'Ligt je land in Afrika?',
-  northAmerica: 'Ligt je land in Noord-Amerika?',
-  southAmerica: 'Ligt je land in Zuid-Amerika?',
-  oceania: 'Ligt je land in Oceanië?',
-  red: 'Komt de kleur rood voor op je vlag?',
-  white: 'Komt wit voor op je vlag?',
-  blue: 'Komt blauw voor op je vlag?',
-  green: 'Komt groen voor op je vlag?',
-  yellow: 'Komt geel voor op je vlag?',
-  black: 'Komt zwart voor op je vlag?',
-  orange: 'Komt oranje voor op je vlag?',
-  star: 'Heeft je vlag een ster?',
-  cross: 'Heeft je vlag een kruis?',
-  circle: 'Heeft je vlag een cirkel of schijf?',
-  emblem: 'Heeft je vlag een symbool of wapen?',
-  stripes: 'Heeft je vlag strepen of banden?',
+  europe: 'Is (part of) your country in Europe?',
+  asia: 'Is (part of) your country in Asia?',
+  africa: 'Is your country in Africa?',
+  northAmerica: 'Is your country in North America?',
+  southAmerica: 'Is your country in South America?',
+  oceania: 'Is your country in Oceania?',
+  red: 'Is there red on your flag?',
+  white: 'Is there white on your flag?',
+  blue: 'Is there blue on your flag?',
+  green: 'Is there green on your flag?',
+  yellow: 'Is there yellow on your flag?',
+  black: 'Is there black on your flag?',
+  orange: 'Is there orange on your flag?',
+  star: 'Is there a star on your flag?',
+  cross: 'Is there a cross on your flag?',
+  circle: 'Is there a circle or disc on your flag?',
+  emblem: 'Does your flag have a symbol or coat of arms?',
+  stripes: 'Does your flag have stripes or bands?',
 };
 
 const S = {
   size: 0,
-  board: [],          // de vlaggen in het spel
-  pick: null,         // id van de gekozen geheime vlag (setup)
-  secret: null,       // id van de geheime vlag van de speler
-  constraints: [],    // alle antwoorden tot nu toe
-  log: [],            // chatberichten
-  pending: null,      // de vraag of gok waarop nu een antwoord wordt verwacht
+  board: [],          // the flags in this game
+  pick: null,         // id of the secret flag chosen in setup
+  secret: null,       // id of the player's secret flag
+  constraints: [],    // all answers so far
+  log: [],            // chat messages
+  pending: null,      // the question or guess waiting for an answer
   secretShown: false,
 };
 
@@ -243,7 +243,7 @@ const flagHtml = (id) => {
   const f = flagOf(id);
   return f ? `<img class="mini" src="${f.img}" alt=""> ${esc(f.name)}` : '—';
 };
-const vlaggen = (n) => `${n} ${n === 1 ? 'vlag' : 'vlaggen'}`;
+const flagsLeft = (n) => `${n} ${n === 1 ? 'flag' : 'flags'} left`;
 
 function shuffleCopy(arr) {
   const a = [...arr];
@@ -273,7 +273,7 @@ document.querySelectorAll('.size').forEach((b) => {
 function renderPickGrid() {
   const grid = $('pick-grid');
   if (!S.board.length) {
-    grid.innerHTML = '<p class="muted">Kies eerst een bordgrootte.</p>';
+    grid.innerHTML = '<p class="muted">Choose a board size first.</p>';
     return;
   }
   grid.innerHTML = S.board.map((f) => `
@@ -298,9 +298,9 @@ $('start-btn').onclick = () => {
   S.log = [];
   S.pending = null;
   S.secretShown = false;
-  $('secret-val').textContent = 'Verborgen';
+  $('secret-val').textContent = 'Hidden';
   showScreen('s-game');
-  say('bot', 'Hoi! Ik ga jouw vlag raden. Denk aan één vlag uit het bord en antwoord met Ja of Nee. Heb je iets verkeerd geklikt? Gebruik dan ↶ Ongedaan maken.');
+  say('bot', 'Hi! I’m going to guess your flag. Think of one flag on the board and answer Yes or No. Clicked something wrong? Use ↶ Undo.');
   botTurn();
 };
 
@@ -318,9 +318,9 @@ function newGame() {
   showScreen('s-setup');
 }
 
-/* ---------- logica van de computer ---------- */
-// Een vlag blijft over als hij alle antwoorden tot nu toe klopt.
-// De computer kijkt niet naar S.secret; hij gebruikt alleen de antwoorden.
+/* ---------- the computer's logic ---------- */
+// A flag stays possible if it matches all answers so far.
+// The computer never looks at S.secret; it only uses the answers.
 function fits(f, c) {
   if (c.type === 'ask') return f.tags.has(c.key) === c.yes;
   return c.yes ? f.id === c.id : f.id !== c.id;
@@ -333,14 +333,14 @@ function winnerId() {
   return last && last.type === 'guess' && last.yes ? last.id : null;
 }
 
-// Kies de vraag die de kandidaten het best in twee gelijke delen splitst (maximale entropie)
+// Pick the question that splits the remaining flags most evenly (maximum entropy)
 function bestQuestion(cands) {
   const n = cands.length;
   let best = null;
   let bestScore = 0;
   for (const key of ORDER) {
     const t = cands.filter((f) => f.tags.has(key)).length;
-    if (t === 0 || t === n) continue; // deze vraag splitst niets
+    if (t === 0 || t === n) continue; // this question splits nothing
     const p = t / n;
     const score = -(p * Math.log2(p) + (1 - p) * Math.log2(1 - p));
     if (score > bestScore) {
@@ -357,7 +357,7 @@ function nextMove(cands) {
   return key ? { type: 'ask', key } : { type: 'guess', flag: cands[0] };
 }
 
-/* ---------- beurten ---------- */
+/* ---------- turns ---------- */
 function botTurn() {
   const cands = remaining();
   S.pending = null;
@@ -365,7 +365,7 @@ function botTurn() {
   renderBoard();
 
   if (!cands.length) {
-    say('bot', 'Hm, ik kom op geen enkele vlag meer uit. Er is waarschijnlijk een antwoord verkeerd. Maak je laatste antwoord ongedaan.');
+    say('bot', 'Hmm, I can’t narrow it down to any flag. One of your answers was probably wrong. Undo your last answer.');
     setActions(['undo', 'new']);
     return;
   }
@@ -373,10 +373,10 @@ function botTurn() {
   const m = nextMove(cands);
   if (m.type === 'guess') {
     S.pending = { type: 'guess', id: m.flag.id };
-    say('bot', `Ik denk dat jouw vlag <b>${esc(m.flag.name)}</b> is. Klopt dat?`);
+    say('bot', `I think your flag is <b>${esc(m.flag.name)}</b>. Is that right?`);
   } else {
     S.pending = { type: 'ask', key: m.key };
-    say('bot', `${Q[m.key]}<span class="hint">${vlaggen(cands.length)} over</span>`);
+    say('bot', `${Q[m.key]}<span class="hint">${flagsLeft(cands.length)}</span>`);
   }
   setActions(['yes', 'no', 'undo', 'new']);
 }
@@ -384,9 +384,9 @@ function botTurn() {
 function answer(yes) {
   const p = S.pending;
   if (!p) return;
-  const cut = S.log.length - 1; // index van de vraag van de computer die we nu beantwoorden
+  const cut = S.log.length - 1; // index of the computer's message we are answering
   S.constraints.push({ ...p, yes, cut });
-  say('me', yes ? 'Ja' : 'Nee');
+  say('me', yes ? 'Yes' : 'No');
   if (p.type === 'guess' && yes) return win(p.id);
   botTurn();
 }
@@ -394,8 +394,8 @@ function answer(yes) {
 function win(id) {
   const f = flagOf(id);
   S.pending = null;
-  say('bot', `🎉 Gewonnen! Jouw vlag is <b>${esc(f.name)}</b>. Ik had ${S.constraints.length} beurten nodig.`);
-  $('status').textContent = `Gewonnen in ${S.constraints.length} beurten`;
+  say('bot', `🎉 I win! Your flag is <b>${esc(f.name)}</b>. It took me ${S.constraints.length} turns.`);
+  $('status').textContent = `Won in ${S.constraints.length} turns`;
   renderBoard();
   setActions(['undo', 'new']);
 }
@@ -403,11 +403,11 @@ function win(id) {
 function undo() {
   const c = S.constraints.pop();
   if (!c) return;
-  S.log.length = c.cut; // verwijder die vraag, het antwoord en alles wat daarna kwam
+  S.log.length = c.cut; // remove that question, the answer, and everything after it
   botTurn();
 }
 
-/* ---------- weergave ---------- */
+/* ---------- display ---------- */
 function say(who, html) {
   S.log.push({ who, html });
   renderChat();
@@ -417,12 +417,12 @@ function renderChat() {
   $('chat').scrollTop = $('chat').scrollHeight;
 }
 function renderStatus(n) {
-  $('status').textContent = `Beurt ${S.constraints.length + 1} · ${vlaggen(n)} over`;
+  $('status').textContent = `Turn ${S.constraints.length + 1} · ${flagsLeft(n)}`;
 }
 function renderBoard() {
   const alive = new Set(remaining().map((f) => f.id));
   const wonId = winnerId();
-  $('left-count').textContent = `${alive.size} over`;
+  $('left-count').textContent = `${alive.size} left`;
   $('board').innerHTML = S.board.map((f) => {
     const cls = (alive.has(f.id) ? '' : ' out') + (wonId === f.id ? ' win' : '');
     return `
@@ -434,10 +434,10 @@ function renderBoard() {
 }
 
 const BTN = {
-  yes: '<button class="btn ok" data-a="yes" type="button">✓ Ja</button>',
-  no: '<button class="btn no" data-a="no" type="button">✗ Nee</button>',
-  undo: '<button class="btn ghost" data-a="undo" type="button">↶ Ongedaan maken</button>',
-  new: '<button class="btn ghost" data-a="new" type="button">Nieuw spel</button>',
+  yes: '<button class="btn ok" data-a="yes" type="button">✓ Yes</button>',
+  no: '<button class="btn no" data-a="no" type="button">✗ No</button>',
+  undo: '<button class="btn ghost" data-a="undo" type="button">↶ Undo</button>',
+  new: '<button class="btn ghost" data-a="new" type="button">New game</button>',
 };
 function setActions(list) {
   $('actions').innerHTML = list.map((k) => BTN[k]).join('');
@@ -451,20 +451,20 @@ $('actions').onclick = (e) => {
   else if (a === 'new') newGame();
 };
 
-// Toetsenbord: J = Ja, N = Nee
+// Keyboard: Y = Yes, N = No
 document.addEventListener('keydown', (e) => {
   if (!$('s-game').classList.contains('active')) return;
-  if (e.key === 'j' || e.key === 'J') answer(true);
+  if (e.key === 'y' || e.key === 'Y') answer(true);
   if (e.key === 'n' || e.key === 'N') answer(false);
 });
 
 $('eye').onclick = () => {
   S.secretShown = !S.secretShown;
-  $('secret-val').innerHTML = S.secretShown ? flagHtml(S.secret) : 'Verborgen';
+  $('secret-val').innerHTML = S.secretShown ? flagHtml(S.secret) : 'Hidden';
 };
 
 /* ---------- start ---------- */
 renderPickGrid();
 </script>
 </body>
-  </html>
+</html>
