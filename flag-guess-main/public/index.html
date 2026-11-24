@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -157,7 +157,7 @@ textarea:focus{border-color:var(--accent)}
 .yn.pick button{opacity:.4}
 .yn.pick button.sel{opacity:1}
 
-/* geschiedenis: overzicht per zet */
+/* game history: overview per move */
 .hist{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);max-height:min(440px,55vh);overflow-y:auto}
 .hist-h{position:sticky;top:0;z-index:2;background:var(--surface);padding:10px 14px;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border)}
 .hist ul{list-style:none;padding:12px;display:flex;flex-direction:column;gap:12px}
@@ -200,7 +200,7 @@ textarea:focus{border-color:var(--accent)}
   <div class="logo">🚩</div>
   <div>
     <div class="h-title">Flag Guess Who</div>
-    <div class="h-sub">Lokaal &amp; online</div>
+    <div class="h-sub">Local &amp; online</div>
   </div>
 </header>
 
@@ -208,10 +208,10 @@ textarea:focus{border-color:var(--accent)}
 
 <div class="invite" id="invite" role="dialog">
   <strong id="invite-title"></strong>
-  <p class="muted">Wil je deze uitdaging aannemen?</p>
+  <p class="muted">Do you want to accept this challenge?</p>
   <div class="row">
-    <button class="btn ok sm grow" id="inv-yes" type="button">✓ Accepteren</button>
-    <button class="btn ghost sm grow" id="inv-no" type="button">✗ Afwijzen</button>
+    <button class="btn ok sm grow" id="inv-yes" type="button">✓ Accept</button>
+    <button class="btn ghost sm grow" id="inv-no" type="button">✗ Decline</button>
   </div>
 </div>
 
@@ -221,26 +221,26 @@ textarea:focus{border-color:var(--accent)}
     <div class="hero">
       <span class="hero-emoji">🌍</span>
       <h1>Flag Guess Who</h1>
-      <p>Kies je spelmodus</p>
+      <p>Choose your game mode</p>
     </div>
 
     <div class="mode-grid">
       <button class="card selected" data-mode="local" type="button">
-        <span class="ico">🏠</span><span class="t">Lokaal</span><span class="d">Speel op één toestel</span>
+        <span class="ico">🏠</span><span class="t">Local</span><span class="d">Play on one device</span>
       </button>
       <button class="card" data-mode="online" type="button">
-        <span class="ico">🌐</span><span class="t">Online</span><span class="d">Speel via internet</span>
+        <span class="ico">🌐</span><span class="t">Online</span><span class="d">Play over the internet</span>
       </button>
     </div>
 
     <div id="online-box" class="hidden">
       <div id="name-step" class="box">
-        <label class="lbl" for="player-name">Kies je gebruikersnaam</label>
+        <label class="lbl" for="player-name">Choose your username</label>
         <div class="row">
-          <input class="input" id="player-name" maxlength="20" placeholder="Typ je naam…" autocomplete="off">
+          <input class="input" id="player-name" maxlength="20" placeholder="Type your name…" autocomplete="off">
           <button class="btn sm" id="name-btn" type="button">Start →</button>
         </div>
-        <p class="muted" id="conn-status" style="margin-top:10px">Verbinden met server…</p>
+        <p class="muted" id="conn-status" style="margin-top:10px">Connecting to server…</p>
       </div>
 
       <div id="lobby" class="hidden">
@@ -249,7 +249,7 @@ textarea:focus{border-color:var(--accent)}
           <strong id="my-name"></strong>
         </div>
         <div class="box">
-          <span class="lbl">Online spelers · tik op ▶ om uit te nodigen</span>
+          <span class="lbl">Online players · tap ▶ to invite</span>
           <div id="player-list"></div>
         </div>
         <div id="invite-wait" class="box row hidden" style="align-items:center">
@@ -262,38 +262,38 @@ textarea:focus{border-color:var(--accent)}
       </div>
     </div>
 
-    <button class="btn" id="local-go" type="button">Doorgaan →</button>
-    <a class="btn ghost" href="/bot.html" style="margin-top:12px;text-decoration:none">🤖 Speel tegen de computer →</a>
+    <button class="btn" id="local-go" type="button">Continue →</button>
+    <a class="btn ghost" href="/bot.html" style="margin-top:12px;text-decoration:none">🤖 Play against the computer →</a>
   </div>
 </section>
 
 <!-- SIZE -->
 <section class="screen" id="s-size">
   <div class="wrap">
-    <div class="note hidden" id="size-note">🌐 Jij kiest de bordgrootte voor jullie beide</div>
-    <h2 class="title">Bordgrootte</h2>
-    <p class="sub">Met hoeveel vlaggen wil je spelen?</p>
+    <div class="note hidden" id="size-note">🌐 You choose the board size for both of you</div>
+    <h2 class="title">Board size</h2>
+    <p class="sub">How many flags do you want to play with?</p>
     <button class="card size-card" data-size="12" type="button">
       <span class="ico-box">⚡</span>
-      <span><span class="num">12 <small>vlaggen</small></span><span class="muted">Snelle ronde</span></span>
+      <span><span class="num">12 <small>flags</small></span><span class="muted">Quick round</span></span>
     </button>
     <button class="card size-card" data-size="24" type="button">
       <span class="ico-box">🌍</span>
-      <span><span class="num">24 <small>vlaggen</small></span><span class="muted">Volledige uitdaging</span></span>
+      <span><span class="num">24 <small>flags</small></span><span class="muted">Full challenge</span></span>
     </button>
-    <button class="btn" id="size-go" type="button" disabled>Kies een grootte →</button>
-    <button class="btn ghost" id="size-back" type="button" style="margin-top:9px">← Terug</button>
+    <button class="btn" id="size-go" type="button" disabled>Choose a size →</button>
+    <button class="btn ghost" id="size-back" type="button" style="margin-top:9px">← Back</button>
   </div>
 </section>
 
 <!-- PICK SECRET FLAG -->
 <section class="screen" id="s-pick">
   <div class="wrap">
-    <span class="badge">🔒 Geheime selectie</span>
+    <span class="badge">🔒 Secret selection</span>
     <h2 class="title" id="pick-title"></h2>
     <p class="sub" id="pick-sub"></p>
     <div class="grid" id="pick-grid"></div>
-    <button class="btn" id="pick-go" type="button" disabled>Bevestig selectie →</button>
+    <button class="btn" id="pick-go" type="button" disabled>Confirm selection →</button>
   </div>
 </section>
 
@@ -316,7 +316,7 @@ textarea:focus{border-color:var(--accent)}
       <div class="glyph"><span class="pulse"></span></div>
       <h2 id="wt-title"></h2>
       <p id="wt-sub"></p>
-      <button class="btn ghost" id="wt-leave" type="button">← Verlaten</button>
+      <button class="btn ghost" id="wt-leave" type="button">← Leave</button>
     </div>
   </div>
 </section>
@@ -326,26 +326,26 @@ textarea:focus{border-color:var(--accent)}
   <div class="game">
     <aside class="side">
       <div class="online-bar hidden" id="online-bar">
-        <span class="dot"></span><span>Online verbonden</span><span class="chip-room" id="room-chip"></span>
+        <span class="dot"></span><span>Connected online</span><span class="chip-room" id="room-chip"></span>
       </div>
       <div class="panel">
         <div class="secret">
-          <span class="k">Geheime vlag</span>
-          <span class="v" id="secret-val">Verborgen</span>
-          <button class="eye" id="eye" type="button" aria-label="Toon geheime vlag">👁️</button>
+          <span class="k">Secret flag</span>
+          <span class="v" id="secret-val">Hidden</span>
+          <button class="eye" id="eye" type="button" aria-label="Show secret flag">👁️</button>
         </div>
         <div class="turn" id="turn"></div>
         <div id="act"></div>
-        <button class="btn warn hidden" id="end-btn" type="button">Beurt beëindigen →</button>
+        <button class="btn warn hidden" id="end-btn" type="button">End turn →</button>
       </div>
       <div class="hist hidden" id="hist">
-        <div class="hist-h">Spelgeschiedenis · <span id="hist-count"></span></div>
+        <div class="hist-h">Game history · <span id="hist-count"></span></div>
         <ul id="hist-list"></ul>
       </div>
     </aside>
     <main>
       <div class="board-label" id="board-title"></div>
-      <p class="board-hint">Tik om weg te strepen. Een ⚠️ betekent: opnieuw bekijken.</p>
+      <p class="board-hint">Tap to cross out. A ⚠️ means: check again.</p>
       <div class="grid" id="board"></div>
     </main>
   </div>
@@ -362,8 +362,8 @@ textarea:focus{border-color:var(--accent)}
         <figure><img id="over-f1" alt=""><figcaption id="over-n1"></figcaption></figure>
         <figure><img id="over-f2" alt=""><figcaption id="over-n2"></figcaption></figure>
       </div>
-      <button class="btn" id="again-btn" type="button">Opnieuw spelen</button>
-      <button class="btn ghost" id="over-home" type="button" style="margin-top:9px">Terug naar hoofdmenu</button>
+      <button class="btn" id="again-btn" type="button">Play again</button>
+      <button class="btn ghost" id="over-home" type="button" style="margin-top:9px">Back to main menu</button>
     </div>
   </div>
 </section>
@@ -374,44 +374,44 @@ textarea:focus{border-color:var(--accent)}
     <h3 id="mg-title"></h3>
     <img id="mg-img" alt="">
     <div class="row">
-      <button class="btn warn grow" id="mg-yes" type="button">Ja, zeker weten!</button>
-      <button class="btn ghost grow" id="mg-no" type="button">Annuleren</button>
+      <button class="btn warn grow" id="mg-yes" type="button">Yes, I’m sure!</button>
+      <button class="btn ghost grow" id="mg-no" type="button">Cancel</button>
     </div>
   </div>
 </div>
 
 <div class="modal" id="m-edit">
   <div class="modal-card">
-    <h3>✏️ Antwoord wijzigen</h3>
+    <h3>✏️ Change answer</h3>
     <div class="bubble" id="me-q"></div>
     <div class="yn pick" style="margin-bottom:14px">
-      <button class="yes" id="me-yes" type="button">✓ JA</button>
-      <button class="no" id="me-no" type="button">✗ NEE</button>
+      <button class="yes" id="me-yes" type="button">✓ YES</button>
+      <button class="no" id="me-no" type="button">✗ NO</button>
     </div>
-    <span class="lbl">Reden van de wijziging (verplicht)</span>
-    <textarea id="me-reason" rows="2" maxlength="300" placeholder="Bijv. Ik had de vraag verkeerd gelezen"></textarea>
+    <span class="lbl">Reason for the change (required)</span>
+    <textarea id="me-reason" rows="2" maxlength="300" placeholder="E.g. I misread the question"></textarea>
     <div class="row">
-      <button class="btn warn grow" id="me-save" type="button">Opslaan</button>
-      <button class="btn ghost grow" id="me-close" type="button">Sluiten</button>
+      <button class="btn warn grow" id="me-save" type="button">Save</button>
+      <button class="btn ghost grow" id="me-close" type="button">Close</button>
     </div>
   </div>
 </div>
 
 <div class="modal" id="m-info">
   <div class="modal-card">
-    <h3>⚠️ Antwoord gewijzigd</h3>
+    <h3>⚠️ Answer changed</h3>
     <div class="bubble" id="mi-q"></div>
     <div id="mi-list"></div>
     <div id="mi-text"></div>
     <div class="row">
-      <button class="btn warn grow hidden" id="mi-clear" type="button">Begrepen, wis markering</button>
-      <button class="btn ghost grow" id="mi-close" type="button">Sluiten</button>
+      <button class="btn warn grow hidden" id="mi-clear" type="button">Got it, clear marking</button>
+      <button class="btn ghost grow" id="mi-close" type="button">Close</button>
     </div>
   </div>
 </div>
 
 <script>
-const SERVER_URL = 'https://flag-guesses.onrender.com'; // ← zet hier jouw Render-URL
+const SERVER_URL = 'https://flag-guesses.onrender.com'; // ← put your Render URL here
 
 const FLAGS = [
   ['de', 'Germany'], ['br', 'Brazil'], ['tr', 'Turkey'], ['in', 'India'], ['gb', 'United Kingdom'], ['gr', 'Greece'],
@@ -427,7 +427,7 @@ const S = {
   roomCode: '', mySlot: 0,
   boardSize: 12, round: 1, flagSet: [], players: null,
   currentSlot: 1, pending: null, history: [], guessMode: false,
-  evt: 0, // teller van spelgebeurtenissen, gebruikt om wijzigingen aan vragen te volgen
+  evt: 0, // counter of game events, used to track changes to questions
   pick: null, pickSlot: 0, pendingGuess: null, secretShown: false,
   editId: null, editVal: null, infoId: null,
 };
@@ -444,7 +444,7 @@ const flagHtml = (id) => {
   const f = flagOf(id);
   return f ? `<img class="mini" src="${f.img}" alt=""> ${f.name}` : '—';
 };
-const yn = (v) => `<span class="bdg ${v ? 'g' : 'r'}">${v ? 'JA' : 'NEE'}</span>`;
+const yn = (v) => `<span class="bdg ${v ? 'g' : 'r'}">${v ? 'YES' : 'NO'}</span>`;
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === id));
@@ -483,11 +483,11 @@ function shuffle(arr, seed) {
   }
   return a;
 }
-// Welke vlaggen er in het spel zitten (zelfde voor beide spelers)
+// Which flags are in the game (the same for both players)
 function makeFlagSet(seed) {
   return shuffle(FLAGS, seed).slice(0, S.boardSize);
 }
-// Eigen willekeurige volgorde per speler, zodat kolommen niets verraden
+// Each player gets their own random order, so columns reveal nothing
 function randomOrder(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -546,7 +546,7 @@ $('local-go').onclick = () => { setSizeScreen(false); showScreen('s-size'); };
 /* ---------- lobby & socket ---------- */
 function connect() {
   if (S.socket) return;
-  if (typeof io === 'undefined') return toast('Kon de verbinding niet laden. Check je internet.');
+  if (typeof io === 'undefined') return toast('Could not load the connection. Check your internet.');
   S.socket = io(SERVER_URL, { transports: ['websocket', 'polling'] });
   bindSocket(S.socket);
 }
@@ -555,10 +555,10 @@ $('name-btn').onclick = submitName;
 $('player-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') submitName(); });
 function submitName() {
   const name = $('player-name').value.trim().slice(0, 20);
-  if (!name) return toast('Typ eerst een naam!');
+  if (!name) return toast('Type a name first!');
   S.wantName = name;
   if (S.socket?.connected) S.socket.emit('registerUsername', { username: name });
-  else toast('Even geduld, we maken verbinding…');
+  else toast('Please wait, connecting…');
 }
 
 $('player-list').onclick = (e) => {
@@ -570,21 +570,21 @@ function renderPlayers() {
   $('player-list').innerHTML = others.length
     ? others.map((u) => `
         <div class="p-row">
-          <span>👤 ${esc(u.name)}${u.busy ? ' <span class="muted">· speelt</span>' : ''}</span>
-          <button class="chip" data-id="${u.id}" ${u.busy || S.inviteSent ? 'disabled' : ''}>▶ Nodig uit</button>
+          <span>👤 ${esc(u.name)}${u.busy ? ' <span class="muted">· playing</span>' : ''}</span>
+          <button class="chip" data-id="${u.id}" ${u.busy || S.inviteSent ? 'disabled' : ''}>▶ Invite</button>
         </div>`).join('')
-    : '<p class="muted">Nog niemand online. Stuur de link naar een vriend!</p>';
+    : '<p class="muted">Nobody else is online yet. Send the link to a friend!</p>';
 }
 function invite(toId) {
   const target = S.users.find((u) => u.id === toId);
   S.socket.emit('sendInvite', { toId });
   S.inviteSent = true;
-  $('invite-wait-title').textContent = `Wachten op ${target?.name ?? 'speler'}…`;
-  $('invite-wait-sub').textContent = 'Uitnodiging verstuurd';
+  $('invite-wait-title').textContent = `Waiting for ${target?.name ?? 'player'}…`;
+  $('invite-wait-sub').textContent = 'Invitation sent';
   $('invite-wait').classList.remove('hidden');
   clearTimeout(S.inviteTimer);
   S.inviteTimer = setTimeout(() => {
-    if (S.inviteSent) { endInviteWait(); toast('Geen reactie op je uitnodiging.'); }
+    if (S.inviteSent) { endInviteWait(); toast('No response to your invitation.'); }
   }, 30000);
   renderPlayers();
 }
@@ -603,13 +603,13 @@ $('inv-no').onclick = () => respond(false);
 
 function bindSocket(s) {
   s.on('connect', () => {
-    setStatus('Verbonden ✓ — kies je naam');
+    setStatus('Connected ✓ — choose your name');
     if (S.wantName) s.emit('registerUsername', { username: S.wantName });
   });
-  s.on('connect_error', () => setStatus('Server wordt wakker… dit kan tot 60 seconden duren.'));
+  s.on('connect_error', () => setStatus('Server is waking up… this can take up to 60 seconds.'));
   s.on('disconnect', () => {
     if (S.roomCode) backToHome(false);
-    toast('Verbinding verloren, we proberen opnieuw…');
+    toast('Connection lost, trying again…');
   });
 
   s.on('usernameOk', ({ username }) => {
@@ -617,17 +617,17 @@ function bindSocket(s) {
     $('name-step').classList.add('hidden');
     $('lobby').classList.remove('hidden');
     $('my-name').textContent = '👋 ' + username;
-    toast('Welkom, ' + username + '!');
+    toast('Welcome, ' + username + '!');
   });
   s.on('usernameError', ({ message }) => { S.wantName = ''; toast(message); });
   s.on('onlineUsers', ({ users }) => { S.users = users; renderPlayers(); });
 
   s.on('incomingInvite', ({ fromId, fromUsername }) => {
     S.inviteFrom = fromId;
-    $('invite-title').textContent = fromUsername + ' wil spelen!';
+    $('invite-title').textContent = fromUsername + ' wants to play!';
     $('invite').classList.add('show');
   });
-  s.on('inviteDeclined', ({ byUsername }) => { endInviteWait(); toast(byUsername + ' heeft je uitnodiging afgewezen'); });
+  s.on('inviteDeclined', ({ byUsername }) => { endInviteWait(); toast(byUsername + ' declined your invitation'); });
   s.on('inviteError', ({ message }) => { endInviteWait(); toast(message); });
 
   s.on('matchFound', onMatch);
@@ -649,7 +649,7 @@ function bindSocket(s) {
     S.currentSlot = currentSlot;
     S.guessMode = false;
     renderGame();
-    toast('Antwoord: ' + (answer ? 'JA ✓' : 'NEE ✗'));
+    toast('Answer: ' + (answer ? 'YES ✓' : 'NO ✗'));
   });
   s.on('answerCorrected', ({ id, to, reason, byName }) => applyCorrection(id, to, reason, byName));
   s.on('guessMade', ({ guesserName, flagId, correct, currentSlot }) => {
@@ -657,7 +657,7 @@ function bindSocket(s) {
     S.currentSlot = currentSlot;
     S.guessMode = false;
     renderGame();
-    if (!correct) toast(`${guesserName} gokte fout. Beurt wisselt.`);
+    if (!correct) toast(`${guesserName} guessed wrong. Turn passes.`);
   });
   s.on('gameOver', ({ winnerSlot, flags }) => {
     S.players[1].secret = flags[1];
@@ -666,7 +666,7 @@ function bindSocket(s) {
   });
 
   s.on('rematchStarted', ({ round }) => startOnlineRound(S.boardSize, round));
-  s.on('opponentLeft', () => { toast('Tegenstander heeft het spel verlaten'); backToHome(false); });
+  s.on('opponentLeft', () => { toast('Opponent left the game'); backToHome(false); });
 }
 
 function onMatch({ roomCode, slot, opponentName }) {
@@ -679,7 +679,7 @@ function onMatch({ roomCode, slot, opponentName }) {
     setSizeScreen(true);
     showScreen('s-size');
   } else {
-    showWait('Match gevonden! 🎉', `Wachten tot ${opponentName} de bordgrootte kiest…`);
+    showWait('Match found! 🎉', `Waiting for ${opponentName} to choose the board size…`);
   }
 }
 
@@ -696,7 +696,7 @@ document.querySelectorAll('.size-card').forEach((c) => (c.onclick = () => setSiz
 
 function setSizeScreen(isOnline) {
   $('size-note').classList.toggle('hidden', !isOnline);
-  $('size-back').textContent = isOnline ? '← Verlaten' : '← Terug';
+  $('size-back').textContent = isOnline ? '← Leave' : '← Back';
   setSizeSel(0);
 }
 function setSizeSel(n) {
@@ -704,7 +704,7 @@ function setSizeSel(n) {
   document.querySelectorAll('.size-card').forEach((c) => c.classList.toggle('selected', Number(c.dataset.size) === n));
   const b = $('size-go');
   b.disabled = !n;
-  b.textContent = !n ? 'Kies een grootte →' : online() ? `Bevestig (${n} vlaggen) →` : `Start spel (${n} vlaggen) →`;
+  b.textContent = !n ? 'Choose a size →' : online() ? `Confirm (${n} flags) →` : `Start game (${n} flags) →`;
 }
 $('size-go').onclick = () => {
   if (!S.boardSize) return;
@@ -720,7 +720,7 @@ $('size-back').onclick = () => backToHome(true);
 /* ---------- secret flag picking ---------- */
 function startLocalRound() {
   S.flagSet = makeFlagSet(String(Date.now()));
-  S.players = makePlayers('Speler 1', 'Speler 2');
+  S.players = makePlayers('Player 1', 'Player 2');
   resetPlayers();
   S.history = [];
   S.pending = null;
@@ -741,8 +741,8 @@ function openPick(slot) {
   S.pick = null;
   const me = S.players[slot].name;
   const opp = S.players[other(slot)].name;
-  $('pick-title').textContent = online() ? 'Kies je geheime vlag' : `${me}: kies je geheime vlag`;
-  $('pick-sub').textContent = `${opp} gaat deze vlag proberen te raden.`;
+  $('pick-title').textContent = online() ? 'Choose your secret flag' : `${me}: choose your secret flag`;
+  $('pick-sub').textContent = `${opp} will try to guess this flag.`;
   $('pick-go').disabled = true;
   renderPicker();
   showScreen('s-pick');
@@ -770,13 +770,13 @@ $('pick-go').onclick = () => {
   if (online()) {
     S.socket.emit('confirmFlag', { flagId: S.pick });
     $('pick-go').disabled = true;
-    showWait('Vlag gekozen ✓', `Wachten tot ${S.players[other(slot)].name} ook kiest…`);
+    showWait('Flag chosen ✓', `Waiting for ${S.players[other(slot)].name} to choose too…`);
     return;
   }
   if (slot === 1) {
-    showSwitch('🔄', 'Geef door aan Speler 2', 'Laat Speler 1 even wegkijken', 'Start beurt Speler 2 →', () => openPick(2));
+    showSwitch('🔄', 'Hand over to Player 2', 'Ask Player 1 to look away', 'Start Player 2’s turn →', () => openPick(2));
   } else {
-    showSwitch('🎮', 'Klaar om te beginnen!', 'Geef het toestel terug aan Speler 1', 'Start spel →', () => beginGame(1));
+    showSwitch('🎮', 'Ready to start!', 'Hand the device back to Player 1', 'Start game →', () => beginGame(1));
   }
 };
 $('wt-leave').onclick = () => backToHome(true);
@@ -785,8 +785,8 @@ $('wt-leave').onclick = () => backToHome(true);
 function renderGame() {
   const v = viewSlot();
   S.secretShown = false;
-  $('board-title').textContent = `Bord van ${S.players[v].name}`;
-  $('secret-val').textContent = 'Verborgen';
+  $('board-title').textContent = `${S.players[v].name}’s board`;
+  $('secret-val').textContent = 'Hidden';
   $('online-bar').classList.toggle('hidden', !online());
   $('end-btn').classList.add('hidden');
   if (online()) renderOnline(); else renderLocal();
@@ -802,28 +802,28 @@ function setTurn(cls, text) {
 
 const askPanel = () => `
   <div class="act ask">
-    <span class="lbl">Stel een ja/nee-vraag</span>
-    <textarea id="q-in" rows="2" maxlength="200" placeholder="Bijv. Heeft de vlag rood?"></textarea>
+    <span class="lbl">Ask a yes/no question</span>
+    <textarea id="q-in" rows="2" maxlength="200" placeholder="E.g. Does the flag have red?"></textarea>
     <div class="row">
-      <button class="btn ghost grow" data-guess="1" type="button">💡 Gok i.p.v. vraag</button>
-      <button class="btn grow" data-ask="1" type="button">Verstuur →</button>
+      <button class="btn ghost grow" data-guess="1" type="button">💡 Guess instead</button>
+      <button class="btn grow" data-ask="1" type="button">Send →</button>
     </div>
   </div>`;
 
 const guessPanel = () => `
   <div class="act gue">
-    <span class="lbl">Doe je gok</span>
-    <p class="muted" style="margin-bottom:12px">⚠️ Foute gok = beurt voorbij. Tik op een vlag op het bord.</p>
-    <button class="btn ghost" data-cancel="1" type="button">← Terug naar vraag stellen</button>
+    <span class="lbl">Make your guess</span>
+    <p class="muted" style="margin-bottom:12px">⚠️ Wrong guess = your turn is over. Tap a flag on the board.</p>
+    <button class="btn ghost" data-cancel="1" type="button">← Back to asking a question</button>
   </div>`;
 
 const answerPanel = (p) => `
   <div class="act ans">
-    <span class="lbl">Vraag van ${esc(p.from)}</span>
+    <span class="lbl">Question from ${esc(p.from)}</span>
     <div class="bubble">${esc(p.text)}</div>
     <div class="yn">
-      <button class="yes" data-ans="1" type="button">✓ JA</button>
-      <button class="no" data-ans="0" type="button">✗ NEE</button>
+      <button class="yes" data-ans="1" type="button">✓ YES</button>
+      <button class="no" data-ans="0" type="button">✗ NO</button>
     </div>
   </div>`;
 
@@ -839,17 +839,17 @@ function renderLocal() {
   const cur = S.players[S.currentSlot];
   const act = $('act');
   if (S.pending) {
-    setTurn('hot', `💬 ${S.pending.from} vraagt. Beantwoord eerlijk.`);
+    setTurn('hot', `💬 ${S.pending.from} asks. Answer honestly.`);
     act.innerHTML = answerPanel(S.pending);
     return;
   }
   if (cur.used) {
-    setTurn('done', '✅ Actie gebruikt. Beëindig je beurt.');
+    setTurn('done', '✅ Action used. End your turn.');
     $('end-btn').classList.remove('hidden');
     act.innerHTML = '';
     return;
   }
-  setTurn('mine', `🎯 ${cur.name}, jouw beurt. Stel een vraag of doe een gok!`);
+  setTurn('mine', `🎯 ${cur.name}, your turn. Ask a question or make a guess!`);
   act.innerHTML = S.guessMode ? guessPanel() : askPanel();
 }
 
@@ -858,20 +858,20 @@ function renderOnline() {
   const oppName = S.players[other(S.mySlot)].name;
   if (S.pending) {
     if (S.pending.askerSlot === S.mySlot) {
-      setTurn('mine', `⏳ Wachten op antwoord van ${oppName}`);
-      act.innerHTML = waitPanel(`Wachten op ${oppName}…`, S.pending.text);
+      setTurn('mine', `⏳ Waiting for ${oppName}’s answer`);
+      act.innerHTML = waitPanel(`Waiting for ${oppName}…`, S.pending.text);
     } else {
-      setTurn('hot', `💬 ${S.pending.from} vraagt iets`);
+      setTurn('hot', `💬 ${S.pending.from} asks something`);
       act.innerHTML = answerPanel(S.pending);
     }
     return;
   }
   if (S.currentSlot === S.mySlot) {
-    setTurn('mine', '🎯 Jouw beurt. Stel een vraag of doe een gok!');
+    setTurn('mine', '🎯 Your turn. Ask a question or make a guess!');
     act.innerHTML = S.guessMode ? guessPanel() : askPanel();
   } else {
-    setTurn('', `⏳ ${oppName} is aan de beurt`);
-    act.innerHTML = waitPanel(`Wachten op ${oppName}…`, '');
+    setTurn('', `⏳ It’s ${oppName}’s turn`);
+    act.innerHTML = waitPanel(`Waiting for ${oppName}…`, '');
   }
 }
 
@@ -888,23 +888,23 @@ function renderBoard(v) {
   }).join('');
 }
 
-// Geschiedenis als overzicht: oudste zet bovenaan, genummerd, met kleur per speler
+// Game history as an overview: oldest move at the top, numbered, colored per player
 function renderHistory() {
   const box = $('hist');
   box.classList.toggle('hidden', !S.history.length);
   const n = S.history.length;
-  $('hist-count').textContent = `${n} zet${n === 1 ? '' : 'ten'}`;
+  $('hist-count').textContent = `${n} move${n === 1 ? '' : 's'}`;
   $('hist-list').innerHTML = S.history.map((h, i) => {
     const nr = i + 1;
     if (h.type === 'guess') {
       const slot = S.players[1].name === h.from ? 1 : 2;
       return `
         <li class="zet" data-slot="${slot}">
-          <div class="zet-h"><span class="dot"></span><span>Zet ${nr} · ${esc(h.from)} gokt</span></div>
-          <div class="zet-b">🏆 Gok op <b>${esc(h.flagName)}</b></div>
+          <div class="zet-h"><span class="dot"></span><span>Move ${nr} · ${esc(h.from)} guesses</span></div>
+          <div class="zet-b">🏆 Guess <b>${esc(h.flagName)}</b></div>
           <div class="zet-f">
-            <span class="muted">Resultaat</span>
-            <span class="hc-r"><span class="bdg ${h.correct ? 'g' : 'r'}">${h.correct ? 'GOED' : 'FOUT'}</span></span>
+            <span class="muted">Result</span>
+            <span class="hc-r"><span class="bdg ${h.correct ? 'g' : 'r'}">${h.correct ? 'CORRECT' : 'WRONG'}</span></span>
           </div>
         </li>`;
     }
@@ -912,14 +912,14 @@ function renderHistory() {
     const answerer = S.players[other(slot)].name;
     const changed = h.corrections.length > 0;
     const canEdit = h.answer !== null && (!online() || h.askerSlot !== S.mySlot);
-    const info = changed ? `<button class="edit warn-ico" data-info="${h.id}" type="button" aria-label="Bekijk wijziging">⚠️</button>` : '';
-    const edit = canEdit ? `<button class="edit" data-edit="${h.id}" type="button" aria-label="Antwoord wijzigen">✏️</button>` : '';
+    const info = changed ? `<button class="edit warn-ico" data-info="${h.id}" type="button" aria-label="View change">⚠️</button>` : '';
+    const edit = canEdit ? `<button class="edit" data-edit="${h.id}" type="button" aria-label="Change answer">✏️</button>` : '';
     const result = h.answer === null
-      ? `<span class="muted">Wacht op ${esc(answerer)}…</span>`
-      : `<span class="muted">${esc(answerer)} antwoordde</span> ${yn(h.answer)}`;
+      ? `<span class="muted">Waiting for ${esc(answerer)}…</span>`
+      : `<span class="muted">${esc(answerer)} answered</span> ${yn(h.answer)}`;
     return `
       <li class="zet${changed ? ' edited' : ''}" data-slot="${slot}">
-        <div class="zet-h"><span class="dot"></span><span>Zet ${nr} · ${esc(h.from)} vraagt</span></div>
+        <div class="zet-h"><span class="dot"></span><span>Move ${nr} · ${esc(h.from)} asks</span></div>
         <div class="zet-b">"${esc(h.text)}"</div>
         <div class="zet-f">
           <span class="hc-r">${result}</span>
@@ -942,7 +942,7 @@ $('act').onclick = (e) => {
 
 function submitQuestion(raw) {
   const text = raw.trim().slice(0, 200);
-  if (!text) return toast('Typ eerst een vraag');
+  if (!text) return toast('Type a question first');
   if (online()) return S.socket.emit('askQuestion', { text });
 
   const askerSlot = S.currentSlot;
@@ -955,7 +955,7 @@ function submitQuestion(raw) {
     answer: null, evtAsked: tick(), evtAns: null, corrections: [],
   });
   const next = S.players[other(askerSlot)].name;
-  showSwitch('🔄', `Geef door aan ${next}`, `${next} moet antwoorden`, `Beantwoord als ${next} →`, goGame);
+  showSwitch('🔄', `Hand over to ${next}`, `${next} must answer`, `Answer as ${next} →`, goGame);
 }
 
 function answer(ans) {
@@ -964,7 +964,7 @@ function answer(ans) {
   if (h) { h.answer = ans; h.evtAns = tick(); }
   const asker = S.players[S.pending.askerSlot].name;
   S.pending = null;
-  showSwitch('🔄', `Geef terug aan ${asker}`, 'Bekijk het antwoord en update je bord', 'Start mijn beurt →', goGame);
+  showSwitch('🔄', `Hand back to ${asker}`, 'Check the answer and update your board', 'Start my turn →', goGame);
 }
 
 function endTurn() {
@@ -972,7 +972,7 @@ function endTurn() {
   S.currentSlot = other(S.currentSlot);
   S.guessMode = false;
   const next = S.players[S.currentSlot].name;
-  showSwitch('🔄', `Geef door aan ${next}`, `Het is de beurt van ${next}!`, 'Start beurt →', goGame);
+  showSwitch('🔄', `Hand over to ${next}`, `It’s ${next}’s turn!`, 'Start turn →', goGame);
 }
 $('end-btn').onclick = endTurn;
 
@@ -987,7 +987,7 @@ $('board').onclick = (e) => {
     p.elim.delete(id);
   } else {
     p.elim.add(id);
-    p.elimAt[id] = S.evt; // onthoud wanneer weggestreept, voor de markering bij een wijziging
+    p.elimAt[id] = S.evt; // remember when it was crossed out, for the marking on a change
   }
   p.review.delete(id);
   renderBoard(v);
@@ -996,7 +996,7 @@ $('board').onclick = (e) => {
 function askGuess(id) {
   const f = flagOf(id);
   S.pendingGuess = id;
-  $('mg-title').textContent = `Gok: ${f.name}?`;
+  $('mg-title').textContent = `Guess: ${f.name}?`;
   $('mg-img').src = f.img;
   openModal('m-guess');
 }
@@ -1017,17 +1017,17 @@ function localGuess(id) {
   S.history.push({ type: 'guess', from: guesser.name, flagName: flagOf(id).name, correct });
   if (correct) return endGame(S.currentSlot);
   guesser.used = true;
-  toast('❌ Foute gok! Beurt voorbij.');
+  toast('❌ Wrong guess! Your turn is over.');
   setTimeout(endTurn, 1400);
 }
 
 $('eye').onclick = () => {
   S.secretShown = !S.secretShown;
-  $('secret-val').innerHTML = S.secretShown ? flagHtml(S.players[viewSlot()].secret) : 'Verborgen';
+  $('secret-val').innerHTML = S.secretShown ? flagHtml(S.players[viewSlot()].secret) : 'Hidden';
 };
 
-/* ---------- antwoord wijzigen & markering ---------- */
-// Vlaggen die de vrager heeft weggestreept na het antwoord, tot diens volgende vraag
+/* ---------- changing answers & marking ---------- */
+// Flags the asker crossed out after the answer, until their next question
 function markReview(h) {
   const p = S.players[h.askerSlot];
   const next = S.history.find((x) => x.type === 'question' && x.askerSlot === h.askerSlot && x.evtAsked > h.evtAsked);
@@ -1052,8 +1052,8 @@ function applyCorrection(id, to, reason, byName) {
   h.corrections.push({ from, to, reason, by: byName, flagged });
   toast(
     flagged.length
-      ? '⚠️ Antwoord gewijzigd. Check de vlaggen met ⚠️ op je bord.'
-      : `⚠️ Antwoord gewijzigd door ${byName}.`,
+      ? '⚠️ Answer changed. Check the flags marked ⚠️ on your board.'
+      : `⚠️ Answer changed by ${byName}.`,
     3800
   );
   renderGame();
@@ -1079,8 +1079,8 @@ $('me-save').onclick = () => {
   const h = S.history.find((x) => x.id === S.editId);
   const why = $('me-reason').value.trim();
   if (!h) return closeModal('m-edit');
-  if (S.editVal === h.answer) return toast('Kies het andere antwoord om te wijzigen');
-  if (why.length < 3) return toast('Geef eerst een reden voor de wijziging');
+  if (S.editVal === h.answer) return toast('Choose the other answer to change it');
+  if (why.length < 3) return toast('Give a reason for the change first');
   if (online()) {
     S.socket.emit('correctAnswer', { id: h.id, answer: S.editVal, reason: why });
   } else {
@@ -1099,14 +1099,14 @@ function openInfo(id) {
   $('mi-q').textContent = `"${h.text}"`;
   $('mi-list').innerHTML = h.corrections.map((c) => `
     <div class="corr">
-      <b>${esc(c.by)}</b> wijzigde het antwoord ${yn(c.from)} → ${yn(c.to)}
-      <div class="muted" style="margin-top:6px">Reden: ${esc(c.reason)}</div>
+      <b>${esc(c.by)}</b> changed the answer ${yn(c.from)} → ${yn(c.to)}
+      <div class="muted" style="margin-top:6px">Reason: ${esc(c.reason)}</div>
     </div>`).join('');
   let text = '';
   if (mine && flagged.length) {
-    text = '<p class="muted" style="margin-bottom:12px">Deze vlaggen heb je op basis van het oude antwoord weggestreept. Ze staan op je bord met een ⚠️. Tik op zo’n vlag om hem terug te zetten, of laat hem staan en klik op “Begrepen”.</p>';
+    text = '<p class="muted" style="margin-bottom:12px">You crossed out these flags based on the old answer. They are marked with a ⚠️ on your board. Tap a flag to restore it, or leave it and click “Got it”.</p>';
   } else if (!mine) {
-    text = '<p class="muted" style="margin-bottom:12px">Je tegenspeler kan de vlaggen die op basis van het oude antwoord zijn weggestreept opnieuw bekijken.</p>';
+    text = '<p class="muted" style="margin-bottom:12px">Your opponent can re-check the flags they crossed out based on the old answer.</p>';
   }
   $('mi-text').innerHTML = text;
   $('mi-clear').classList.toggle('hidden', !(mine && flagged.length));
@@ -1135,14 +1135,14 @@ function endGame(winnerSlot) {
   const w = S.players[winnerSlot];
   const p1 = S.players[1];
   const p2 = S.players[2];
-  $('over-title').textContent = `${w.name} wint! 🏆`;
-  $('over-sub').textContent = 'De juiste vlag is geraden!';
+  $('over-title').textContent = `${w.name} wins! 🏆`;
+  $('over-sub').textContent = 'The correct flag was guessed!';
   $('over-f1').src = flagOf(p1.secret)?.img ?? '';
   $('over-n1').textContent = p1.name;
   $('over-f2').src = flagOf(p2.secret)?.img ?? '';
   $('over-n2').textContent = p2.name;
   $('again-btn').disabled = false;
-  $('again-btn').textContent = 'Opnieuw spelen';
+  $('again-btn').textContent = 'Play again';
   showScreen('s-over');
 }
 $('again-btn').onclick = () => {
@@ -1152,7 +1152,7 @@ $('again-btn').onclick = () => {
   }
   S.socket.emit('playAgainRequest');
   $('again-btn').disabled = true;
-  $('again-btn').textContent = '⏳ Wachten op tegenstander…';
+  $('again-btn').textContent = '⏳ Waiting for opponent…';
 };
 $('over-home').onclick = () => backToHome(true);
 
