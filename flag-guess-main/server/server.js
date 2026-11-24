@@ -7,7 +7,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
-// server/ staat in een submap, dus public/ ligt één map hoger
+// This file lives in the server/ folder, so public/ is one level up
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 app.use(express.static(PUBLIC_DIR));
 app.get('/', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
@@ -46,9 +46,9 @@ io.on('connection', (socket) => {
 
   socket.on('registerUsername', ({ username } = {}) => {
     const name = clean(username, 20);
-    if (!name) return socket.emit('usernameError', { message: 'Vul een naam in.' });
+    if (!name) return socket.emit('usernameError', { message: 'Please enter a name.' });
     const taken = [...users.values()].some((u) => u.id !== socket.id && u.name.toLowerCase() === name.toLowerCase());
-    if (taken) return socket.emit('usernameError', { message: 'Deze naam is al in gebruik!' });
+    if (taken) return socket.emit('usernameError', { message: 'This name is already taken!' });
     users.set(socket.id, { id: socket.id, name });
     socket.emit('usernameOk', { username: name });
     broadcastUsers();
@@ -58,9 +58,9 @@ io.on('connection', (socket) => {
     const me = users.get(socket.id);
     const target = users.get(toId);
     if (!me) return;
-    if (!target || target.id === me.id) return socket.emit('inviteError', { message: 'Speler is niet meer online.' });
+    if (!target || target.id === me.id) return socket.emit('inviteError', { message: 'Player is no longer online.' });
     if (playerRoom.has(me.id) || playerRoom.has(target.id)) {
-      return socket.emit('inviteError', { message: 'Speler zit al in een spel.' });
+      return socket.emit('inviteError', { message: 'Player is already in a game.' });
     }
     io.to(target.id).emit('incomingInvite', { fromId: me.id, fromUsername: me.name });
   });
@@ -69,10 +69,10 @@ io.on('connection', (socket) => {
     const me = users.get(socket.id);
     const inviter = users.get(fromId);
     const inviterSocket = io.sockets.sockets.get(fromId);
-    if (!me || !inviter || !inviterSocket) return socket.emit('inviteError', { message: 'Uitnodiging is verlopen.' });
+    if (!me || !inviter || !inviterSocket) return socket.emit('inviteError', { message: 'Invitation has expired.' });
     if (!accept) return inviterSocket.emit('inviteDeclined', { byUsername: me.name });
     if (playerRoom.has(me.id) || playerRoom.has(inviter.id)) {
-      return socket.emit('inviteError', { message: 'Speler zit al in een spel.' });
+      return socket.emit('inviteError', { message: 'Player is already in a game.' });
     }
 
     const code = makeCode();
@@ -135,11 +135,11 @@ io.on('connection', (socket) => {
     const q = r.qs.get(id);
     if (q) q.answer = answer === true;
     r.pending = null;
-    r.currentSlot = p.slot; // na het antwoord is de antwoorder aan de beurt
+    r.currentSlot = p.slot; // after answering, the answerer has the next turn
     io.to(r.code).emit('questionAnswered', { id, answer: answer === true, currentSlot: r.currentSlot });
   });
 
-  // Alleen de speler die antwoordde mag het antwoord wijzigen, met een reden
+  // Only the player who answered may change the answer, and a reason is required
   socket.on('correctAnswer', ({ id, answer, reason } = {}) => {
     const r = roomOf();
     const p = r && meIn(r);
@@ -158,7 +158,7 @@ io.on('connection', (socket) => {
     const t = r && oppIn(r);
     if (!r || !p || r.phase !== 'playing' || r.pending || p.slot !== r.currentSlot || typeof flagId !== 'string') return;
     const correct = flagId === t.secret;
-    r.currentSlot = correct ? p.slot : t.slot; // foute gok = beurt voorbij
+    r.currentSlot = correct ? p.slot : t.slot; // wrong guess = turn is over
     io.to(r.code).emit('guessMade', { guesserName: p.name, flagId, correct, currentSlot: r.currentSlot });
     if (correct) {
       r.phase = 'over';
@@ -173,7 +173,7 @@ io.on('connection', (socket) => {
     const r = roomOf();
     if (!r || r.phase !== 'over') return;
     r.rematchVotes.add(socket.id);
-    if (r.rematchVotes.size < 2) return; // wacht tot beide spelers rematch willen
+    if (r.rematchVotes.size < 2) return; // wait until both players want a rematch
     r.rematchVotes.clear();
     r.round += 1;
     r.phase = 'selecting';
@@ -193,4 +193,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Flag Guess Who draait op poort ${PORT}`));
+server.listen(PORT, () => console.log(`Flag Guess Who running on port ${PORT}`));
